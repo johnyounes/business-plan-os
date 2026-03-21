@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Due Diligence — PGM Business Plan OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+.topnav{height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.nav-brand .sep{color:var(--text3);}
+.nav-brand .current{color:var(--text);font-weight:500;}
+.nav-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
+.topnav-spacer{flex:1;}
+.module-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:rgba(46,196,182,.1);border:1px solid rgba(46,196,182,.2);border-radius:20px;padding:3px 10px;}
+.settings-btn{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:6px 14px;font-size:12px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;}
+.settings-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(61,127,255,.06);}
+
+/* LAYOUT */
+.page{display:flex;flex:1;overflow:hidden;height:calc(100vh - 54px);}
+
+/* LEFT PANEL */
+.panel-left{width:270px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-header{padding:16px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-header h2{font-size:13px;font-weight:600;color:var(--text);}
+.btn-sm{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-sm:hover{background:var(--accent2);}
+.deals-list{flex:1;overflow-y:auto;padding:8px;}
+.deal-item{padding:12px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:2px;border:1px solid transparent;}
+.deal-item:hover{background:var(--bg3);}
+.deal-item.active{background:var(--bg3);border-color:var(--border2);}
+.deal-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;line-height:1.3;}
+.deal-meta{font-size:11px;color:var(--text3);}
+.deal-progress{margin-top:6px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.deal-progress-bar{height:100%;border-radius:2px;transition:width .3s;}
+
+/* RIGHT PANEL */
+.panel-right{flex:1;overflow-y:auto;}
+.no-sel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:14px;text-align:center;}
+.no-sel .ns-icon{font-size:48px;opacity:.2;}
+.no-sel h3{font-size:16px;color:var(--text2);font-weight:500;}
+.no-sel p{font-size:13px;max-width:260px;line-height:1.7;}
+
+/* STICKY SUMMARY BAR */
+.summary-bar{position:sticky;top:0;z-index:20;background:var(--bg2);border-bottom:1px solid var(--border2);padding:14px 28px;display:flex;align-items:center;gap:20px;flex-wrap:nowrap;overflow-x:auto;}
+.sb-title{font-size:15px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-metrics{display:flex;gap:0;flex-shrink:0;}
+.sb-metric{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0 16px;border-right:1px solid var(--border);}
+.sb-metric:last-child{border-right:none;}
+.sb-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.sb-value{font-size:15px;font-weight:600;font-family:var(--mono);}
+.sb-value.good{color:var(--green);}
+.sb-value.warn{color:var(--amber);}
+.sb-value.bad{color:var(--red);}
+.sb-value.neutral{color:var(--text2);}
+.sb-status{flex-shrink:0;font-size:12px;font-weight:600;padding:6px 16px;border-radius:20px;letter-spacing:.04em;}
+.status-clear{background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.25);}
+.status-flagged{background:rgba(232,80,74,.12);color:var(--red);border:1px solid rgba(232,80,74,.25);}
+.status-review{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.25);}
+.status-incomplete{background:rgba(140,147,158,.1);color:var(--text2);border:1px solid var(--border2);}
+
+/* CONTENT */
+.dd-content{padding:24px 28px 48px;}
+
+/* RISK PANEL */
+.risk-panel{background:var(--bg2);border:1px solid rgba(232,80,74,.25);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:none;}
+.risk-panel.show{display:block;}
+.risk-panel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.risk-icon{font-size:16px;}
+.risk-title{font-size:13px;font-weight:600;color:var(--red);}
+.risk-sub{font-size:11px;color:var(--text3);margin-left:auto;}
+.risk-items{display:flex;flex-direction:column;gap:6px;}
+.risk-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:rgba(232,80,74,.06);border:1px solid rgba(232,80,74,.15);border-radius:8px;}
+.risk-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:4px;}
+.risk-text{font-size:12px;color:var(--text2);line-height:1.5;}
+.risk-cat{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-left:auto;flex-shrink:0;}
+
+/* PROGRESS OVERVIEW */
+.progress-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.cat-progress-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s;}
+.cat-progress-card:hover{border-color:var(--border2);}
+.cat-progress-card.active-cat{border-color:var(--accent);}
+.cpc-name{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cpc-bar{height:4px;background:var(--bg4);border-radius:2px;margin-bottom:6px;overflow:hidden;}
+.cpc-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+.cpc-stats{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono);}
+
+/* SECTIONS */
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;}
+.section-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s;}
+.section-head:hover{background:var(--bg3);}
+.section-icon{font-size:14px;color:var(--text3);flex-shrink:0;}
+.section-title{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.section-progress{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.section-prog-text{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.section-flag-count{font-size:10px;font-weight:700;background:rgba(232,80,74,.12);color:var(--red);border-radius:10px;padding:2px 7px;}
+.section-chev{color:var(--text3);font-size:12px;transition:transform .2s;flex-shrink:0;}
+.section-chev.open{transform:rotate(180deg);}
+.section-body{display:none;}
+.section-body.open{display:block;}
+
+/* CHECKLIST ITEMS */
+.checklist-items{padding:0;}
+.check-item{display:flex;align-items:flex-start;gap:0;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
+.check-item:last-child{border-bottom:none;}
+.check-item:hover{background:rgba(255,255,255,.015);}
+.check-item.status-complete{border-left:2px solid var(--green);}
+.check-item.status-flagged{border-left:2px solid var(--red);}
+.check-item.status-review{border-left:2px solid var(--amber);}
+.check-item.status-pending{border-left:2px solid transparent;}
+.check-item.status-na{border-left:2px solid var(--text3);opacity:.6;}
+
+/* STATUS TOGGLE */
+.status-btn-group{display:flex;flex-direction:column;gap:3px;margin-right:14px;flex-shrink:0;}
+.status-cycle-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--bg4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;position:relative;}
+.status-cycle-btn:hover{border-color:var(--border2);background:var(--bg3);}
+.status-cycle-btn.s-complete{background:rgba(34,201,122,.15);border-color:rgba(34,201,122,.3);}
+.status-cycle-btn.s-flagged {background:rgba(232,80,74,.15);border-color:rgba(232,80,74,.3);}
+.status-cycle-btn.s-review  {background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.3);}
+.status-cycle-btn.s-na      {background:rgba(140,147,158,.1);border-color:var(--border);}
+
+/* ITEM CONTENT */
+.item-content{flex:1;min-width:0;}
+.item-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+.item-label{font-size:13px;color:var(--text);font-weight:400;line-height:1.3;}
+.item-critical{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--red);background:rgba(232,80,74,.1);border:1px solid rgba(232,80,74,.2);border-radius:4px;padding:2px 6px;flex-shrink:0;}
+.item-status-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:10px;flex-shrink:0;}
+.badge-complete {background:rgba(34,201,122,.12);color:var(--green);}
+.badge-flagged  {background:rgba(232,80,74,.12);color:var(--red);}
+.badge-review   {background:rgba(245,166,35,.12);color:var(--amber);}
+.badge-pending  {background:rgba(140,147,158,.08);color:var(--text3);}
+.badge-na       {background:rgba(140,147,158,.08);color:var(--text3);}
+
+.item-notes{width:100%;background:none;border:none;outline:none;font-size:12px;font-family:var(--font);color:var(--text2);resize:none;line-height:1.5;padding:0;margin-top:2px;transition:color .15s;}
+.item-notes:focus{color:var(--text);}
+.item-notes::placeholder{color:var(--text3);}
+
+/* STATUS SELECTOR DROPDOWN */
+.status-selector{position:relative;margin-right:14px;flex-shrink:0;}
+.status-selector-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border2);background:var(--bg4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;}
+.status-selector-btn:hover{border-color:var(--border2);background:var(--bg3);}
+.status-selector-btn.s-complete{background:rgba(34,201,122,.15);border-color:rgba(34,201,122,.35);}
+.status-selector-btn.s-flagged {background:rgba(232,80,74,.15);border-color:rgba(232,80,74,.35);}
+.status-selector-btn.s-review  {background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.35);}
+.status-selector-btn.s-na      {background:rgba(140,147,158,.1);border-color:var(--border);}
+.status-dropdown{position:absolute;left:0;top:calc(100% + 6px);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:4px;z-index:50;min-width:130px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.status-dropdown.hidden{display:none;}
+.status-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);transition:background .15s;}
+.status-opt:hover{background:var(--bg4);color:var(--text);}
+.status-opt .opt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.opt-complete .opt-dot{background:var(--green);}
+.opt-flagged  .opt-dot{background:var(--red);}
+.opt-review   .opt-dot{background:var(--amber);}
+.opt-pending  .opt-dot{background:var(--text3);}
+.opt-na       .opt-dot{background:var(--text3);}
+
+/* ADD ITEM ROW */
+.add-item-row{padding:10px 20px;border-top:1px solid var(--border);}
+.add-item-input-wrap{display:flex;gap:8px;align-items:center;}
+.add-item-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;}
+.add-item-input:focus{border-color:var(--accent);}
+.add-item-input::placeholder{color:var(--text3);}
+.add-item-crit-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);cursor:pointer;white-space:nowrap;}
+.add-item-crit-toggle input{accent-color:var(--red);}
+.btn-add-item{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;white-space:nowrap;}
+.btn-add-item:hover{background:var(--accent2);}
+
+/* FORM FOOTER */
+.form-footer{display:flex;align-items:center;justify-content:space-between;padding:20px 0 0;margin-top:8px;border-top:1px solid var(--border);}
+.footer-left{font-size:12px;color:var(--text3);}
+.footer-right{display:flex;gap:10px;}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-ghost:hover{color:var(--text);background:var(--bg3);}
+
+/* TEMPLATE MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:660px;max-width:100%;}
+.modal-header{padding:22px 28px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.modal-header-left h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.modal-header-left p{font-size:12px;color:var(--text3);line-height:1.6;}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:22px;line-height:1;transition:color .15s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px 28px;max-height:65vh;overflow-y:auto;}
+.modal-footer{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.modal-footer-note{font-size:11px;color:var(--text3);}
+
+/* Template items */
+.tmpl-category{margin-bottom:16px;}
+.tmpl-cat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.tmpl-cat-name{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;}
+.tmpl-items{display:flex;flex-direction:column;gap:4px;}
+.tmpl-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;}
+.tmpl-item-label{flex:1;font-size:12px;color:var(--text);}
+.tmpl-crit-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--red);background:rgba(232,80,74,.1);border:1px solid rgba(232,80,74,.15);border-radius:4px;padding:2px 6px;}
+.tmpl-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px;transition:color .15s;}
+.tmpl-del:hover{color:var(--red);}
+.tmpl-crit-toggle{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);cursor:pointer;}
+.tmpl-crit-toggle input{accent-color:var(--red);}
+.tmpl-add-row{display:flex;gap:8px;margin-top:6px;}
+.tmpl-add-input{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 11px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;}
+.tmpl-add-input:focus{border-color:var(--accent);}
+.tmpl-add-input::placeholder{color:var(--text3);}
+.btn-tmpl-add{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:7px 12px;font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-tmpl-add:hover{border-color:var(--accent);color:var(--accent);}
+.admin-badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:rgba(61,127,255,.1);border:1px solid rgba(61,127,255,.2);border-radius:10px;padding:2px 8px;margin-left:8px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{display:flex;}
+.toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="nav-brand">
+    <span class="logo">BPOS</span>
+    <span class="sep">›</span><span>Properties</span>
+    <span class="sep">›</span><span class="current">Due Diligence</span>
+  </div>
+  <div class="topnav-spacer"></div>
+  <button class="settings-btn" onclick="openTemplate()">⚙ Edit Master Template</button>
+  <span class="module-badge" style="margin-left:8px;">Module 3 · Diligence</span>
+</div>
+
+<div class="page">
+  <!-- LEFT -->
+  <div class="panel-left">
+    <div class="panel-header">
+      <h2>Properties</h2>
+      <button class="btn-sm" onclick="newDeal()">+ New</button>
+    </div>
+    <div class="deals-list" id="deals-list"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right" id="panel-right">
+    <div class="no-sel" id="no-sel">
+      <div class="ns-icon">◉</div>
+      <h3>No property selected</h3>
+      <p>Select a property to review its due diligence checklist.</p>
+    </div>
+    <div id="dd-main" style="display:none;">
+      <div class="summary-bar" id="summary-bar"></div>
+      <div class="dd-content" id="dd-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATE MODAL -->
+<div class="modal-overlay" id="tmpl-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Master Checklist Template <span class="admin-badge">Admin</span></h2>
+        <p>Add or remove items from the master template. Changes apply to all new DD checklists. Existing checklists are not affected.</p>
+      </div>
+      <button class="modal-close" onclick="closeTemplate()">×</button>
+    </div>
+    <div class="modal-body" id="tmpl-body"></div>
+    <div class="modal-footer">
+      <span class="modal-footer-note">Changes apply to new checklists only.</span>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="resetTemplate()">Reset to defaults</button>
+        <button class="btn-primary" onclick="saveTemplate()">Save template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ══════════════════════════════════════
+// STATUS CONFIG
+// ══════════════════════════════════════
+const STATUSES = [
+  {id:'pending',  label:'Pending',  icon:'○', cls:'s-pending',  badge:'badge-pending'},
+  {id:'complete', label:'Complete', icon:'✓', cls:'s-complete', badge:'badge-complete'},
+  {id:'flagged',  label:'Flagged',  icon:'⚑', cls:'s-flagged',  badge:'badge-flagged'},
+  {id:'review',   label:'Review',   icon:'?', cls:'s-review',   badge:'badge-review'},
+  {id:'na',       label:'N/A',      icon:'—', cls:'s-na',       badge:'badge-na'},
+];
+const CATEGORIES = [
+  {id:'physical',    label:'Physical / property condition', icon:'◈'},
+  {id:'financial',   label:'Financial documents',           icon:'◑'},
+  {id:'legal',       label:'Legal & title',                 icon:'◉'},
+  {id:'environmental',label:'Environmental',                icon:'◎'},
+  {id:'utilities',   label:'Utilities & mechanicals',       icon:'◐'},
+  {id:'market',      label:'Market & zoning',               icon:'▣'},
+  {id:'insurance',   label:'Insurance',                     icon:'◬'},
+  {id:'management',  label:'Management & operations',       icon:'▷'},
+];
+
+// ══════════════════════════════════════
+// MASTER TEMPLATE
+// ══════════════════════════════════════
+let MASTER_TEMPLATE = {
+  physical:[
+    {label:'Roof condition — age, material, remaining life',       critical:true},
+    {label:'Foundation inspection — cracks, settling, drainage',   critical:true},
+    {label:'Exterior walls, siding, paint condition',              critical:false},
+    {label:'Windows and doors — condition, seals, locks',          critical:false},
+    {label:'Parking lot condition — striping, drainage, potholes', critical:false},
+    {label:'Common area condition — hallways, laundry, amenities', critical:false},
+    {label:'Unit interior sample inspection (min 20% of units)',   critical:true},
+    {label:'Flooring condition across sampled units',              critical:false},
+    {label:'Kitchen and bath condition per unit type',             critical:false},
+    {label:'Evidence of mold, water damage, or pest activity',     critical:true},
+  ],
+  financial:[
+    {label:'T-12 income statement — verify against actuals',       critical:true},
+    {label:'Current rent roll — all units, rents, lease dates',    critical:true},
+    {label:'Lease agreements — sample review for terms',           critical:true},
+    {label:'Security deposit ledger — verify amounts held',        critical:false},
+    {label:'Outstanding rent delinquency report',                  critical:true},
+    {label:'Utility billing records — past 12 months',             critical:false},
+    {label:'Service contracts and vendor agreements',              critical:false},
+    {label:'Capital expenditure history — prior 3 years',          critical:false},
+    {label:'Bank statements — verify income deposits',             critical:true},
+  ],
+  legal:[
+    {label:'Preliminary title report — review exceptions',         critical:true},
+    {label:'Existing liens and encumbrances',                      critical:true},
+    {label:'Easements and access rights',                          critical:true},
+    {label:'Property survey — boundary confirmation',              critical:false},
+    {label:'HOA documents (if applicable)',                        critical:false},
+    {label:'Pending litigation — seller disclosure reviewed',      critical:true},
+    {label:'Certificate of occupancy for all structures',          critical:true},
+    {label:'Building permits — open or un-permitted work',         critical:true},
+  ],
+  environmental:[
+    {label:'Phase I Environmental Site Assessment',                critical:true},
+    {label:'Phase II ESA (if Phase I flags concerns)',             critical:true},
+    {label:'Lead paint disclosure (pre-1978 buildings)',           critical:true},
+    {label:'Asbestos survey (pre-1980 buildings)',                 critical:true},
+    {label:'Underground storage tanks — presence confirmed',       critical:false},
+    {label:'Flood zone determination — FEMA map check',            critical:true},
+  ],
+  utilities:[
+    {label:'HVAC systems — age, condition, recent service',        critical:true},
+    {label:'Plumbing — water pressure, pipe material, age',        critical:true},
+    {label:'Electrical panels — amperage, condition, code',        critical:true},
+    {label:'Water heaters — age and condition per unit',           critical:false},
+    {label:'Sewer lateral inspection (camera)',                    critical:true},
+    {label:'Gas lines and meters — condition, leaks',              critical:true},
+    {label:'Master metered vs. individually metered utilities',    critical:false},
+  ],
+  market:[
+    {label:'Zoning confirmation — current and intended use',       critical:true},
+    {label:'Rent comparables — 3–5 comparable properties',        critical:true},
+    {label:'Vacancy rate in submarket — verify assumptions',       critical:false},
+    {label:'Planned development nearby — impact assessment',       critical:false},
+    {label:'School district and walkability scores reviewed',      critical:false},
+    {label:'Crime statistics for property location',               critical:false},
+  ],
+  insurance:[
+    {label:'Current insurance policy — review coverages',          critical:true},
+    {label:'Claims history — prior 5 years',                       critical:true},
+    {label:'Flood insurance requirement confirmed',                critical:false},
+    {label:'New insurance quote obtained for acquisition',         critical:true},
+    {label:'Liability coverage adequacy confirmed',                critical:false},
+  ],
+  management:[
+    {label:'Current PM agreement — terms and termination',         critical:true},
+    {label:'Staffing — on-site manager, maintenance coverage',     critical:false},
+    {label:'Property management software in use — data export',   critical:false},
+    {label:'Maintenance log and open work orders reviewed',        critical:true},
+    {label:'Vendor relationships — preferred vendors identified',  critical:false},
+    {label:'Move-in/move-out procedures documented',               critical:false},
+    {label:'Resident communication history reviewed',              critical:false},
+  ],
+};
+const DEFAULT_TEMPLATE = JSON.parse(JSON.stringify(MASTER_TEMPLATE));
+
+// ══════════════════════════════════════
+// DEALS
+// ══════════════════════════════════════
+function buildChecklist() {
+  const cl = {};
+  CATEGORIES.forEach(cat => {
+    cl[cat.id] = (MASTER_TEMPLATE[cat.id]||[]).map((item,i) => ({
+      id: cat.id+'_'+i+'_'+Date.now(),
+      label: item.label,
+      critical: item.critical,
+      status: 'pending',
+      notes: '',
+    }));
+  });
+  return cl;
+}
+
+let deals = [
+  {
+    id:1, name:'Maple Ridge (Prospect)', address:'5500 Maple Ave, Dallas, TX', units:56,
+    checklist: (() => {
+      const cl = {};
+      CATEGORIES.forEach(cat => {
+        cl[cat.id] = (MASTER_TEMPLATE[cat.id]||[]).map((item,i) => ({
+          id: cat.id+'_'+i, label:item.label, critical:item.critical,
+          status: ['complete','complete','complete','flagged','complete','complete','complete','complete','review'][i%9]||'pending',
+          notes: i===3?'Evidence of minor moisture staining in unit 14 closet — inspector follow-up required.':
+                 i===7?'Two units not accessible during walkthrough — schedule return visit.':'',
+        }));
+      });
+      // Mark some flagged for demo
+      cl.legal[1].status='flagged'; cl.legal[1].notes='Unresolved mechanics lien from 2023 — title company notified.';
+      cl.environmental[0].status='complete'; cl.environmental[1].status='pending';
+      cl.physical[9].status='flagged'; cl.physical[9].notes='Unit 22 shows active water intrusion behind tub surround. Needs remediation estimate.';
+      return cl;
+    })(),
+    openCats: new Set(['physical','financial','legal']),
+  },
+  {
+    id:2, name:'Northgate Commons', address:'1200 N Gate Blvd, Omaha, NE', units:32,
+    checklist: buildChecklist(),
+    openCats: new Set(['physical']),
+  },
+];
+let selectedId = null;
+let openDropdown = null;
+
+// ══════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════
+function getDealStats(deal) {
+  let total=0, complete=0, flagged=0, review=0, pending=0, critFlagged=0;
+  CATEGORIES.forEach(cat => {
+    (deal.checklist[cat.id]||[]).forEach(item => {
+      total++;
+      if(item.status==='complete') complete++;
+      else if(item.status==='flagged') { flagged++; if(item.critical) critFlagged++; }
+      else if(item.status==='review') review++;
+      else if(item.status==='pending') pending++;
+    });
+  });
+  const pct = total>0?Math.round(complete/total*100):0;
+  let overallStatus = 'incomplete';
+  if (critFlagged>0) overallStatus='flagged';
+  else if (flagged>0||review>0) overallStatus='review';
+  else if (pending===0&&total>0) overallStatus='clear';
+  return {total,complete,flagged,review,pending,critFlagged,pct,overallStatus};
+}
+
+function getCatStats(deal, catId) {
+  const items = deal.checklist[catId]||[];
+  const total = items.length;
+  const complete = items.filter(i=>i.status==='complete').length;
+  const flagged  = items.filter(i=>i.status==='flagged').length;
+  const na       = items.filter(i=>i.status==='na').length;
+  const pct = total>0?Math.round((complete+na)/total*100):0;
+  return {total, complete, flagged, na, pct};
+}
+
+function getFlaggedItems(deal) {
+  const out = [];
+  CATEGORIES.forEach(cat => {
+    (deal.checklist[cat.id]||[]).forEach(item => {
+      if(item.status==='flagged') out.push({...item, catLabel:cat.label});
+    });
+  });
+  return out;
+}
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function renderSummaryBar(deal) {
+  const s = getDealStats(deal);
+  const statusLabel = {clear:'All Clear',flagged:'Critical Issues',review:'Needs Review',incomplete:'In Progress'}[s.overallStatus];
+  const statusCls   = {clear:'status-clear',flagged:'status-flagged',review:'status-review',incomplete:'status-incomplete'}[s.overallStatus];
+  document.getElementById('summary-bar').innerHTML = `
+    <div class="sb-title">${deal.name}</div>
+    <div class="sb-metrics">
+      <div class="sb-metric"><div class="sb-label">Complete</div><div class="sb-value good">${s.complete}</div></div>
+      <div class="sb-metric"><div class="sb-label">Flagged</div><div class="sb-value ${s.flagged>0?'bad':'neutral'}">${s.flagged}</div></div>
+      <div class="sb-metric"><div class="sb-label">Review</div><div class="sb-value ${s.review>0?'warn':'neutral'}">${s.review}</div></div>
+      <div class="sb-metric"><div class="sb-label">Pending</div><div class="sb-value neutral">${s.pending}</div></div>
+      <div class="sb-metric"><div class="sb-label">Progress</div><div class="sb-value neutral">${s.pct}%</div></div>
+    </div>
+    <div class="sb-status ${statusCls}">${statusLabel}</div>`;
+}
+
+function renderContent(deal) {
+  const s = getDealStats(deal);
+  const flaggedItems = getFlaggedItems(deal);
+
+  // Risk panel
+  const riskHtml = flaggedItems.length>0 ? `
+    <div class="risk-panel show">
+      <div class="risk-panel-head">
+        <span class="risk-icon">⚑</span>
+        <span class="risk-title">Flagged items requiring attention</span>
+        <span class="risk-sub">${flaggedItems.filter(i=>i.critical).length} critical · ${flaggedItems.length} total</span>
+      </div>
+      <div class="risk-items">
+        ${flaggedItems.map(item=>`
+          <div class="risk-item">
+            <div class="risk-dot"></div>
+            <div class="risk-text">
+              ${item.critical?'<strong style="color:var(--red);">Critical — </strong>':''}${item.label}
+              ${item.notes?`<br/><span style="color:var(--text3);font-size:11px;">${item.notes}</span>`:''}
+            </div>
+            <span class="risk-cat">${item.catLabel}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  // Progress overview grid
+  const overviewHtml = `
+    <div class="progress-overview">
+      ${CATEGORIES.map(cat=>{
+        const cs = getCatStats(deal, cat.id);
+        const barColor = cs.flagged>0?'var(--red)':cs.pct===100?'var(--green)':'var(--accent)';
+        const isActive = deal.openCats.has(cat.id);
+        return `<div class="cat-progress-card ${isActive?'active-cat':''}" onclick="scrollToSection('${cat.id}',${deal.id})">
+          <div class="cpc-name">${cat.label}</div>
+          <div class="cpc-bar"><div class="cpc-bar-fill" style="width:${cs.pct}%;background:${barColor};"></div></div>
+          <div class="cpc-stats"><span>${cs.complete}/${cs.total}</span><span style="color:${cs.flagged>0?'var(--red)':'var(--text3)'};">${cs.flagged>0?cs.flagged+' flagged':cs.pct+'%'}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // Checklist sections
+  const sectionsHtml = CATEGORIES.map(cat => {
+    const items = deal.checklist[cat.id]||[];
+    const cs = getCatStats(deal, cat.id);
+    const isOpen = deal.openCats.has(cat.id);
+    const flagCount = items.filter(i=>i.status==='flagged').length;
+
+    const itemsHtml = items.map((item,idx) => {
+      const st = STATUSES.find(s=>s.id===item.status)||STATUSES[0];
+      return `
+        <div class="check-item status-${item.status}" id="item-${item.id}">
+          <div class="status-selector" id="ss-${item.id}">
+            <button class="status-selector-btn ${st.cls}" onclick="toggleDropdown('${item.id}','${cat.id}',${deal.id})">${st.icon}</button>
+            <div class="status-dropdown hidden" id="dd-${item.id}">
+              ${STATUSES.map(s=>`
+                <div class="status-opt opt-${s.id}" onclick="setStatus(${deal.id},'${cat.id}',${idx},'${s.id}')">
+                  <span class="opt-dot"></span>${s.label}
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-top">
+              <span class="item-label">${item.label}</span>
+              ${item.critical?'<span class="item-critical">Critical</span>':''}
+              <span class="item-status-badge ${st.badge}">${st.label}</span>
+            </div>
+            <textarea class="item-notes" rows="1" placeholder="Add notes…"
+              onchange="setNotes(${deal.id},'${cat.id}',${idx},this.value)"
+              oninput="autoResize(this)"
+            >${item.notes}</textarea>
+          </div>
+          <button class="tmpl-del" style="margin-left:8px;align-self:flex-start;margin-top:2px;" onclick="deleteItem(${deal.id},'${cat.id}',${idx})" title="Remove item">×</button>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="section" id="sec-${cat.id}">
+        <div class="section-head" onclick="togCat(${deal.id},'${cat.id}')">
+          <span class="section-icon">${cat.icon}</span>
+          <span class="section-title">${cat.label}</span>
+          <div class="section-progress">
+            <span class="section-prog-text">${cs.complete}/${cs.total}</span>
+            ${flagCount>0?`<span class="section-flag-count">${flagCount} flagged</span>`:''}
+          </div>
+          <span class="section-chev ${isOpen?'open':''}" id="chev-${cat.id}">▾</span>
+        </div>
+        <div class="section-body ${isOpen?'open':''}" id="body-${cat.id}">
+          <div class="checklist-items">${itemsHtml}</div>
+          <div class="add-item-row">
+            <div class="add-item-input-wrap">
+              <input type="text" class="add-item-input" id="new-item-${cat.id}" placeholder="Add checklist item…" onkeydown="if(event.key==='Enter')addItem(${deal.id},'${cat.id}')"/>
+              <label class="add-item-crit-toggle">
+                <input type="checkbox" id="new-crit-${cat.id}"/> Critical
+              </label>
+              <button class="btn-add-item" onclick="addItem(${deal.id},'${cat.id}')">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('dd-content').innerHTML =
+    riskHtml + overviewHtml + sectionsHtml +
+    `<div class="form-footer">
+      <div class="footer-left">Auto-saves on change · ${getFlaggedItems(deal).length} flagged items</div>
+      <div class="footer-right">
+        <button class="btn-ghost" onclick="showToast('DD report export coming soon.')">Export Report</button>
+        <button class="btn-primary" onclick="advanceDeal(${deal.id})">Lock plan &amp; advance →</button>
+      </div>
+    </div>`;
+}
+
+function renderAll(deal) {
+  document.getElementById('no-sel').style.display='none';
+  document.getElementById('dd-main').style.display='block';
+  renderSummaryBar(deal);
+  renderContent(deal);
+}
+
+// ══════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════
+function togCat(dealId, catId) {
+  const deal = deals.find(d=>d.id===dealId); if(!deal) return;
+  const b=document.getElementById('body-'+catId), c=document.getElementById('chev-'+catId);
+  if(!b) return;
+  const isOpen = b.classList.contains('open');
+  b.classList.toggle('open',!isOpen);
+  if(c) c.classList.toggle('open',!isOpen);
+  isOpen ? deal.openCats.delete(catId) : deal.openCats.add(catId);
+  // Update progress card highlight
+  document.querySelectorAll('.cat-progress-card').forEach((el,i) => {
+    el.classList.toggle('active-cat', deal.openCats.has(CATEGORIES[i]?.id));
+  });
+}
+
+function scrollToSection(catId, dealId) {
+  const deal = deals.find(d=>d.id===dealId); if(!deal) return;
+  deal.openCats.add(catId);
+  renderAll(deal);
+  setTimeout(()=>{
+    const el=document.getElementById('sec-'+catId);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },50);
+}
+
+let openDropdownId = null;
+function toggleDropdown(itemId, catId, dealId) {
+  // Close any open dropdown
+  if(openDropdownId && openDropdownId!==itemId) {
+    const prev=document.getElementById('dd-'+openDropdownId);
+    if(prev) prev.classList.add('hidden');
+  }
+  const dd=document.getElementById('dd-'+itemId);
+  if(!dd) return;
+  const isHidden=dd.classList.contains('hidden');
+  dd.classList.toggle('hidden',!isHidden);
+  openDropdownId=isHidden?itemId:null;
+}
+
+function setStatus(dealId, catId, idx, status) {
+  const deal=deals.find(d=>d.id===dealId); if(!deal) return;
+  deal.checklist[catId][idx].status=status;
+  // Close dropdown
+  const item=deal.checklist[catId][idx];
+  const dd=document.getElementById('dd-'+item.id);
+  if(dd) dd.classList.add('hidden');
+  openDropdownId=null;
+  // Update item row visually
+  const row=document.getElementById('item-'+item.id);
+  if(row){
+    row.className=`check-item status-${status}`;
+    const st=STATUSES.find(s=>s.id===status);
+    const btn=row.querySelector('.status-selector-btn');
+    if(btn){btn.className=`status-selector-btn ${st.cls}`;btn.textContent=st.icon;}
+    const badge=row.querySelector('.item-status-badge');
+    if(badge){badge.className=`item-status-badge ${st.badge}`;badge.textContent=st.label;}
+  }
+  // Refresh summary + risk + progress
+  renderSummaryBar(deal);
+  refreshProgress(deal);
+  renderList();
+  showToast(`Status updated to ${STATUSES.find(s=>s.id===status)?.label}.`);
+}
+
+function setNotes(dealId, catId, idx, val) {
+  const deal=deals.find(d=>d.id===dealId); if(!deal) return;
+  deal.checklist[catId][idx].notes=val;
+}
+
+function addItem(dealId, catId) {
+  const deal=deals.find(d=>d.id===dealId); if(!deal) return;
+  const input=document.getElementById('new-item-'+catId);
+  const critCb=document.getElementById('new-crit-'+catId);
+  const label=input?.value.trim(); if(!label) return;
+  const critical=critCb?.checked||false;
+  deal.checklist[catId].push({
+    id:catId+'_'+Date.now(), label, critical, status:'pending', notes:''
+  });
+  renderAll(deal); renderList();
+  showToast('Item added to checklist.');
+}
+
+function deleteItem(dealId, catId, idx) {
+  const deal=deals.find(d=>d.id===dealId); if(!deal) return;
+  deal.checklist[catId].splice(idx,1);
+  renderAll(deal); renderList();
+}
+
+function refreshProgress(deal) {
+  // Lightweight — just update section headers and progress cards without full re-render
+  CATEGORIES.forEach(cat => {
+    const cs=getCatStats(deal,cat.id);
+    const pt=document.querySelector(`#sec-${cat.id} .section-prog-text`);
+    if(pt) pt.textContent=`${cs.complete}/${cs.total}`;
+    const fc=document.querySelector(`#sec-${cat.id} .section-flag-count`);
+    const flagCount=deal.checklist[cat.id]?.filter(i=>i.status==='flagged').length||0;
+    if(fc){fc.textContent=`${flagCount} flagged`;fc.style.display=flagCount>0?'':'none';}
+    // Risk panel re-render
+    const riskPanel=document.querySelector('.risk-panel');
+    const flaggedItems=getFlaggedItems(deal);
+    if(riskPanel){
+      if(flaggedItems.length>0){
+        riskPanel.classList.add('show');
+        const ri=riskPanel.querySelector('.risk-items');
+        if(ri) ri.innerHTML=flaggedItems.map(item=>`
+          <div class="risk-item">
+            <div class="risk-dot"></div>
+            <div class="risk-text">
+              ${item.critical?'<strong style="color:var(--red);">Critical — </strong>':''}${item.label}
+              ${item.notes?`<br/><span style="color:var(--text3);font-size:11px;">${item.notes}</span>`:''}
+            </div>
+            <span class="risk-cat">${item.catLabel}</span>
+          </div>`).join('');
+        const rs=riskPanel.querySelector('.risk-sub');
+        if(rs) rs.textContent=`${flaggedItems.filter(i=>i.critical).length} critical · ${flaggedItems.length} total`;
+      } else { riskPanel.classList.remove('show'); }
+    }
+  });
+}
+
+function autoResize(el) {
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+
+function advanceDeal(id) {
+  const deal=deals.find(d=>d.id===id); if(!deal) return;
+  const s=getDealStats(deal);
+  if(s.critFlagged>0){showToast(`${s.critFlagged} critical item${s.critFlagged>1?'s':''} still flagged — resolve before advancing.`,true);return;}
+  if(s.pending>0){showToast(`${s.pending} items still pending — complete checklist before locking plan.`,true);return;}
+  showToast(`${deal.name} DD complete. Advancing to Plan Lock. (Module coming soon)`);
+}
+
+// Close dropdowns when clicking elsewhere
+document.addEventListener('click', e => {
+  if(openDropdownId && !e.target.closest('.status-selector')) {
+    const dd=document.getElementById('dd-'+openDropdownId);
+    if(dd) dd.classList.add('hidden');
+    openDropdownId=null;
+  }
+});
+
+// ══════════════════════════════════════
+// TEMPLATE MODAL
+// ══════════════════════════════════════
+function openTemplate() {
+  renderTemplateModal();
+  document.getElementById('tmpl-modal').classList.add('open');
+}
+function closeTemplate() { document.getElementById('tmpl-modal').classList.remove('open'); }
+
+function renderTemplateModal() {
+  document.getElementById('tmpl-body').innerHTML = CATEGORIES.map(cat=>`
+    <div class="tmpl-category">
+      <div class="tmpl-cat-head">
+        <span class="tmpl-cat-name">${cat.icon} ${cat.label}</span>
+        <span style="font-size:11px;color:var(--text3);">${(MASTER_TEMPLATE[cat.id]||[]).length} items</span>
+      </div>
+      <div class="tmpl-items" id="tmpl-items-${cat.id}">
+        ${(MASTER_TEMPLATE[cat.id]||[]).map((item,i)=>`
+          <div class="tmpl-item" id="tmpl-item-${cat.id}-${i}">
+            <span class="tmpl-item-label">${item.label}</span>
+            ${item.critical?'<span class="tmpl-crit-badge">Critical</span>':''}
+            <label class="tmpl-crit-toggle">
+              <input type="checkbox" ${item.critical?'checked':''} onchange="tmplSetCrit('${cat.id}',${i},this.checked)"/> Critical
+            </label>
+            <button class="tmpl-del" onclick="tmplDel('${cat.id}',${i})">×</button>
+          </div>`).join('')}
+      </div>
+      <div class="tmpl-add-row">
+        <input type="text" class="tmpl-add-input" id="tmpl-new-${cat.id}" placeholder="Add new item…" onkeydown="if(event.key==='Enter')tmplAdd('${cat.id}')"/>
+        <button class="btn-tmpl-add" onclick="tmplAdd('${cat.id}')">+ Add</button>
+      </div>
+    </div>`).join('');
+}
+
+function tmplAdd(catId) {
+  const input=document.getElementById('tmpl-new-'+catId);
+  const label=input?.value.trim(); if(!label) return;
+  MASTER_TEMPLATE[catId].push({label,critical:false});
+  input.value='';
+  renderTemplateModal();
+  showToast('Item added to master template.');
+}
+function tmplDel(catId,i) {
+  MASTER_TEMPLATE[catId].splice(i,1);
+  renderTemplateModal();
+}
+function tmplSetCrit(catId,i,val) {
+  MASTER_TEMPLATE[catId][i].critical=val;
+}
+function saveTemplate() {
+  closeTemplate();
+  showToast('Master template saved. Applies to new checklists.');
+}
+function resetTemplate() {
+  MASTER_TEMPLATE=JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+  renderTemplateModal();
+  showToast('Template reset to defaults.');
+}
+
+// ══════════════════════════════════════
+// DEALS LIST
+// ══════════════════════════════════════
+function renderList() {
+  const el=document.getElementById('deals-list');
+  if(!deals.length){el.innerHTML='<div style="padding:24px 16px;text-align:center;font-size:12px;color:var(--text3);">No properties yet.</div>';return;}
+  el.innerHTML=deals.map(d=>{
+    const s=getDealStats(d);
+    const barColor=s.overallStatus==='flagged'?'var(--red)':s.overallStatus==='clear'?'var(--green)':'var(--accent)';
+    return `<div class="deal-item ${selectedId===d.id?'active':''}" onclick="selectDeal(${d.id})">
+      <div class="deal-name">${d.name}</div>
+      <div class="deal-meta">${d.units} units · ${s.complete}/${s.total} complete</div>
+      <div class="deal-progress"><div class="deal-progress-bar" style="width:${s.pct}%;background:${barColor};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function selectDeal(id){ selectedId=id; renderList(); const d=deals.find(d=>d.id===id); if(d) renderAll(d); }
+
+function newDeal(){
+  const id=Date.now();
+  deals.unshift({id,name:'New property',address:'—',units:0,checklist:buildChecklist(),openCats:new Set(['physical'])});
+  renderList(); selectDeal(id);
+  showToast('New DD checklist created from master template.');
+}
+
+function showToast(msg,err=false){
+  document.getElementById('tdot').style.background=err?'var(--red)':'var(--green)';
+  document.getElementById('tmsg').textContent=msg;
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+renderList();
+if(deals.length) selectDeal(deals[0].id);
+</script>
+</body>
+</html>

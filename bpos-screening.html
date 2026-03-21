@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Deal Screening — PGM Business Plan OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0d0f12; --bg2:#13161b; --bg3:#1a1e25; --bg4:#22272f;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e8eaed; --text2:#8c939e; --text3:#555c66;
+  --accent:#3d7fff; --accent2:#1a5ce8;
+  --green:#22c97a; --amber:#f5a623; --red:#e8504a;
+  --purple:#9b7aff; --teal:#2ec4b6;
+  --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace; --display:'Playfair Display',serif;
+}
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+.topnav { height:54px; flex-shrink:0; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 28px; gap:16px; }
+.nav-brand { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text2); }
+.nav-brand .sep { color:var(--text3); }
+.nav-brand .current { color:var(--text); font-weight:500; }
+.nav-brand .logo { font-family:var(--display); font-size:14px; color:var(--accent); }
+.topnav-spacer { flex:1; }
+.module-badge { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--purple); background:rgba(155,122,255,.1); border:1px solid rgba(155,122,255,.2); border-radius:20px; padding:3px 10px; }
+.settings-btn { background:none; border:1px solid var(--border2); color:var(--text2); border-radius:8px; padding:6px 14px; font-size:12px; font-family:var(--font); cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
+.settings-btn:hover { color:var(--text); border-color:var(--accent); background:rgba(61,127,255,.06); }
+
+.page { display:flex; flex:1; overflow:hidden; height:calc(100vh - 54px); }
+
+.panel-left { width:300px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.panel-header { padding:18px 18px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.panel-header h2 { font-size:13px; font-weight:600; color:var(--text); }
+.btn-sm { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; font-family:var(--font); cursor:pointer; display:flex; align-items:center; gap:5px; transition:background .15s; }
+.btn-sm:hover { background:var(--accent2); }
+.deals-list { flex:1; overflow-y:auto; padding:8px; }
+.deal-item { padding:12px; border-radius:8px; cursor:pointer; transition:background .15s; margin-bottom:2px; border:1px solid transparent; }
+.deal-item:hover { background:var(--bg3); }
+.deal-item.active { background:var(--bg3); border-color:var(--border2); }
+.deal-item-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.deal-name { font-size:13px; font-weight:500; color:var(--text); line-height:1.3; }
+.deal-status { flex-shrink:0; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:10px; }
+.status-pass   { background:rgba(34,201,122,.12); color:var(--green); }
+.status-fail   { background:rgba(232,80,74,.12);  color:var(--red); }
+.status-review { background:rgba(245,166,35,.12); color:var(--amber); }
+.status-draft  { background:rgba(140,147,158,.12); color:var(--text2); }
+.deal-meta { font-size:11px; color:var(--text3); }
+.empty-deals { padding:40px 20px; text-align:center; color:var(--text3); font-size:13px; line-height:1.7; }
+
+.panel-right { flex:1; overflow-y:auto; padding:28px 32px; background:var(--bg); }
+.no-selection { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text3); gap:14px; text-align:center; }
+.no-selection .ns-icon { font-size:48px; opacity:.2; }
+.no-selection h3 { font-size:16px; color:var(--text2); font-weight:500; }
+.no-selection p { font-size:13px; max-width:280px; line-height:1.7; }
+
+.form-header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.form-title h1 { font-family:var(--display); font-size:22px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.form-title .sub { font-size:12px; color:var(--text3); }
+.outcome-panel { background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:16px 20px; min-width:210px; text-align:center; display:flex; flex-direction:column; gap:8px; }
+.outcome-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); }
+.outcome-result { font-size:22px; font-weight:700; font-family:var(--mono); letter-spacing:.05em; }
+.outcome-result.pass   { color:var(--green); }
+.outcome-result.fail   { color:var(--red); }
+.outcome-result.review { color:var(--amber); }
+.outcome-result.draft  { color:var(--text3); }
+.outcome-score { font-size:12px; color:var(--text2); }
+.outcome-actions { display:flex; gap:8px; justify-content:center; margin-top:4px; }
+.btn-action { font-size:11px; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer; border:none; font-family:var(--font); transition:opacity .15s; }
+.btn-action:hover { opacity:.82; }
+.btn-pass { background:rgba(34,201,122,.15); color:var(--green); border:1px solid rgba(34,201,122,.3); }
+.btn-flag { background:rgba(245,166,35,.15);  color:var(--amber); border:1px solid rgba(245,166,35,.3); }
+.btn-fail { background:rgba(232,80,74,.15);   color:var(--red);   border:1px solid rgba(232,80,74,.3); }
+
+.section { background:var(--bg2); border:1px solid var(--border); border-radius:12px; margin-bottom:18px; overflow:hidden; }
+.section-head { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; transition:background .15s; }
+.section-head:hover { background:var(--bg3); }
+.section-icon { font-size:14px; color:var(--text3); }
+.section-title { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+.section-summary { font-size:11px; color:var(--text3); }
+.section-chevron { color:var(--text3); font-size:12px; transition:transform .2s; }
+.section-chevron.open { transform:rotate(180deg); }
+.section-body { padding:20px; display:none; }
+.section-body.open { display:block; }
+
+.field-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.field-group { display:flex; flex-direction:column; gap:6px; }
+.field-group label { font-size:11px; font-weight:500; color:var(--text2); text-transform:uppercase; letter-spacing:.07em; }
+.field-group input,.field-group select,.field-group textarea { background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:9px 13px; font-size:13px; font-family:var(--font); color:var(--text); outline:none; transition:border-color .15s; width:100%; }
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus { border-color:var(--accent); }
+.field-group input::placeholder,.field-group textarea::placeholder { color:var(--text3); }
+.field-group textarea { resize:vertical; min-height:70px; }
+select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-color:var(--bg3); }
+
+.criteria-list { display:flex; flex-direction:column; gap:10px; }
+.criterion { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:1fr auto auto; align-items:start; gap:14px; transition:border-color .25s; }
+.criterion.pass-row   { border-color:rgba(34,201,122,.22); }
+.criterion.fail-row   { border-color:rgba(232,80,74,.22); }
+.criterion.review-row { border-color:rgba(245,166,35,.22); }
+.crit-left { display:flex; flex-direction:column; gap:6px; }
+.crit-name { font-size:13px; font-weight:500; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.crit-required { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--red); background:rgba(232,80,74,.1); padding:2px 6px; border-radius:4px; }
+.crit-threshold { font-size:11px; color:var(--text3); line-height:1.5; }
+.crit-suggest { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; padding:3px 9px; border-radius:20px; margin-top:2px; width:fit-content; }
+.crit-suggest.suggest-pass   { background:rgba(34,201,122,.12); color:var(--green); }
+.crit-suggest.suggest-fail   { background:rgba(232,80,74,.12);  color:var(--red); }
+.crit-suggest.suggest-review { background:rgba(245,166,35,.12); color:var(--amber); }
+.suggest-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.suggest-pass .suggest-dot   { background:var(--green); }
+.suggest-fail .suggest-dot   { background:var(--red); }
+.suggest-review .suggest-dot { background:var(--amber); }
+.crit-input-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.crit-input { background:var(--bg4); border:1px solid var(--border2); border-radius:6px; padding:7px 10px; font-size:12px; font-family:var(--mono); color:var(--text); outline:none; width:140px; transition:border-color .15s; }
+.crit-input:focus { border-color:var(--accent); }
+.crit-input::placeholder { color:var(--text3); }
+.crit-unit { font-size:11px; color:var(--text3); }
+.crit-notes-wrap { margin-top:8px; }
+.crit-notes { background:var(--bg4); border:1px solid var(--border); border-radius:6px; padding:7px 10px; font-size:12px; font-family:var(--font); color:var(--text); outline:none; width:100%; resize:none; min-height:48px; line-height:1.5; transition:border-color .15s; }
+.crit-notes:focus { border-color:var(--accent); }
+.crit-notes::placeholder { color:var(--text3); }
+.crit-toggle { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.toggle-group { display:flex; border-radius:6px; overflow:hidden; border:1px solid var(--border2); }
+.tgl { background:none; border:none; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:6px 10px; cursor:pointer; font-family:var(--font); color:var(--text3); transition:all .15s; }
+.tgl+.tgl { border-left:1px solid var(--border2); }
+.tgl.pass-active   { background:rgba(34,201,122,.15); color:var(--green); }
+.tgl.fail-active   { background:rgba(232,80,74,.15);  color:var(--red); }
+.tgl.review-active { background:rgba(245,166,35,.15); color:var(--amber); }
+.override-badge { font-size:9px; color:var(--amber); background:rgba(245,166,35,.1); border:1px solid rgba(245,166,35,.2); border-radius:4px; padding:2px 7px; display:none; }
+.override-badge.show { display:block; }
+.override-hint { font-size:9px; color:var(--text3); text-align:center; max-width:76px; line-height:1.4; }
+
+.upload-zone { border:1.5px dashed var(--border2); border-radius:10px; padding:24px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; margin-bottom:14px; }
+.upload-zone:hover { border-color:var(--accent); background:rgba(61,127,255,.04); }
+.upload-zone .up-icon { font-size:28px; opacity:.3; margin-bottom:8px; }
+.upload-zone p { font-size:13px; color:var(--text2); margin-bottom:4px; }
+.upload-zone span { font-size:11px; color:var(--text3); }
+.upload-zone input { display:none; }
+.doc-list { display:flex; flex-direction:column; gap:8px; }
+.doc-item { display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px 14px; }
+.doc-icon { font-size:16px; }
+.doc-info { flex:1; }
+.doc-name { font-size:12px; font-weight:500; color:var(--text); }
+.doc-size { font-size:10px; color:var(--text3); }
+.doc-remove { background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; transition:color .15s; padding:0 4px; }
+.doc-remove:hover { color:var(--red); }
+
+.form-footer { display:flex; align-items:center; justify-content:space-between; padding:20px 0 0; margin-top:8px; border-top:1px solid var(--border); gap:12px; }
+.footer-left { font-size:12px; color:var(--text3); }
+.footer-right { display:flex; gap:10px; }
+.btn-ghost { background:none; border:1px solid var(--border2); color:var(--text2); border-radius:8px; padding:9px 18px; font-size:13px; font-weight:500; font-family:var(--font); cursor:pointer; transition:all .15s; }
+.btn-ghost:hover { color:var(--text); background:var(--bg3); }
+.btn-primary { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:13px; font-weight:500; font-family:var(--font); cursor:pointer; transition:background .15s; }
+.btn-primary:hover { background:var(--accent2); }
+
+/* ══ SETTINGS MODAL ══ */
+.modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.72); display:none; align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg2); border:1px solid var(--border2); border-radius:16px; width:740px; max-width:100%; }
+.modal-header { padding:22px 28px 18px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.modal-header-left h2 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:5px; }
+.modal-header-left p { font-size:12px; color:var(--text3); line-height:1.6; max-width:500px; }
+.modal-close { background:none; border:none; color:var(--text3); cursor:pointer; font-size:22px; line-height:1; transition:color .15s; }
+.modal-close:hover { color:var(--text); }
+.modal-body { padding:24px 28px; display:flex; flex-direction:column; gap:0; max-height:65vh; overflow-y:auto; }
+.modal-footer { padding:18px 28px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.modal-footer-note { font-size:11px; color:var(--text3); }
+
+.setting-row { background:var(--bg3); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px; }
+.setting-row-head { padding:13px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; user-select:none; transition:background .15s; }
+.setting-row-head:hover { background:var(--bg4); }
+.setting-row-name { font-size:13px; font-weight:500; color:var(--text); flex:1; }
+.type-badge { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; padding:2px 8px; border-radius:10px; }
+.type-quant { background:rgba(61,127,255,.12); color:var(--accent); }
+.type-qual  { background:rgba(155,122,255,.12); color:var(--purple); }
+.setting-row-chev { font-size:11px; color:var(--text3); transition:transform .2s; }
+.setting-row-chev.open { transform:rotate(180deg); }
+.setting-row-body { display:none; padding:16px 18px 18px; border-top:1px solid var(--border); }
+.setting-row-body.open { display:block; }
+
+.s-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+.s-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.s-field { display:flex; flex-direction:column; gap:5px; }
+.s-field label { font-size:10px; font-weight:500; color:var(--text2); text-transform:uppercase; letter-spacing:.07em; }
+.s-field input,.s-field textarea { background:var(--bg4); border:1px solid var(--border2); border-radius:7px; padding:8px 11px; font-size:12px; font-family:var(--font); color:var(--text); outline:none; transition:border-color .15s; width:100%; }
+.s-field input:focus,.s-field textarea:focus { border-color:var(--accent); }
+.s-field input::placeholder,.s-field textarea::placeholder { color:var(--text3); }
+.s-field textarea { resize:vertical; min-height:54px; }
+.s-field-full { grid-column:1/-1; }
+
+.preview-box { background:var(--bg4); border:1px solid var(--border); border-radius:8px; padding:11px 14px; margin-top:4px; }
+.preview-label { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.07em; color:var(--text3); margin-bottom:8px; }
+.preview-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text2); margin-bottom:5px; }
+.preview-row:last-child { margin-bottom:0; }
+.p-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.p-green { background:var(--green); }
+.p-amber { background:var(--amber); }
+.p-red   { background:var(--red); }
+
+.req-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.tog-sw { position:relative; width:36px; height:20px; flex-shrink:0; display:inline-block; }
+.tog-sw input { opacity:0; width:0; height:0; position:absolute; }
+.tog-track { position:absolute; inset:0; background:var(--bg4); border:1px solid var(--border2); border-radius:10px; cursor:pointer; transition:background .2s,border-color .2s; }
+.tog-sw input:checked+.tog-track { background:var(--accent); border-color:var(--accent); }
+.tog-knob { position:absolute; top:2px; left:2px; width:14px; height:14px; background:#fff; border-radius:50%; transition:transform .2s; pointer-events:none; }
+.tog-sw input:checked~.tog-knob { transform:translateX(16px); }
+.req-label { font-size:12px; color:var(--text2); }
+
+.toast { position:fixed; bottom:24px; right:24px; background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:12px 18px; font-size:13px; color:var(--text); display:none; align-items:center; gap:10px; z-index:300; box-shadow:0 8px 32px rgba(0,0,0,.4); }
+.toast.show { display:flex; }
+.toast .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:4px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="nav-brand">
+    <span class="logo">BPOS</span>
+    <span class="sep">›</span><span>Properties</span>
+    <span class="sep">›</span><span class="current">Deal Screening</span>
+  </div>
+  <div class="topnav-spacer"></div>
+  <button class="settings-btn" onclick="openSettings()">⚙ Criteria Settings</button>
+  <span class="module-badge" style="margin-left:8px;">Module 1 · Acquisition</span>
+</div>
+
+<div class="page">
+  <div class="panel-left">
+    <div class="panel-header">
+      <h2>Screened deals</h2>
+      <button class="btn-sm" onclick="newDeal()">+ New</button>
+    </div>
+    <div class="deals-list" id="deals-list"></div>
+  </div>
+  <div class="panel-right" id="panel-right">
+    <div class="no-selection" id="no-selection">
+      <div class="ns-icon">◎</div>
+      <h3>No deal selected</h3>
+      <p>Select a deal from the list or create a new one to begin screening.</p>
+    </div>
+    <div id="screening-form" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>⚙ Criteria Settings &nbsp;<span style="font-size:11px;font-weight:500;color:var(--accent);background:rgba(61,127,255,.1);border:1px solid rgba(61,127,255,.2);border-radius:10px;padding:2px 8px;">Admin only</span></h2>
+        <p>Adjust pass / flag / fail thresholds for each screening criterion. For quantitative criteria, enter numeric cutoffs and the system will auto-suggest a result when a value is entered. Qualitative criteria use descriptive rules shown to the screener.</p>
+      </div>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="modal-body" id="settings-body"></div>
+    <div class="modal-footer">
+      <span class="modal-footer-note">Changes apply immediately to all active and future screens.</span>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="resetDefaults()">Reset to defaults</button>
+        <button class="btn-primary" onclick="saveSettings()">Save &amp; apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ══ CRITERIA CONFIG ══
+let CRITERIA = [
+  { id:'asset_class',    name:'Asset class / property type',       type:'qualitative', required:true,
+    threshold:'Multifamily residential only (duplex through large apartment)',
+    passLabel:'Confirmed multifamily residential', failLabel:'Not multifamily or outside acceptable asset class',
+    unit:null, direction:null, passMin:null, passMax:null, reviewMin:null, reviewMax:null, failMin:null, failMax:null },
+  { id:'market',         name:'Location / market criteria',         type:'qualitative', required:true,
+    threshold:'DFW, Wichita KS, or Omaha NE — expansion markets require AM approval',
+    passLabel:'Approved market', failLabel:'Outside approved markets without AM approval',
+    unit:null, direction:null, passMin:null, passMax:null, reviewMin:null, reviewMax:null, failMin:null, failMax:null },
+  { id:'unit_count',     name:'Unit count range',                   type:'quantitative', required:true,
+    threshold:'Pass ≥ 10 units; fail below 10',
+    unit:'units', direction:'higher_is_better',
+    passMin:10, passMax:null, reviewMin:null, reviewMax:null, failMin:null, failMax:9 },
+  { id:'price_per_unit', name:'Purchase price / price per unit',    type:'quantitative', required:true,
+    threshold:'Pass ≤ $75K/unit; flag $75K–$90K; fail above $90K',
+    unit:'$/unit', direction:'lower_is_better',
+    passMin:null, passMax:75000, reviewMin:75001, reviewMax:90000, failMin:90001, failMax:null },
+  { id:'cap_rate',       name:'Cap rate / return thresholds',       type:'quantitative', required:true,
+    threshold:'Pass ≥ 6.0%; flag 5.0–5.99%; fail below 5.0%',
+    unit:'%', direction:'higher_is_better',
+    passMin:6.0, passMax:null, reviewMin:5.0, reviewMax:5.99, failMin:null, failMax:4.99 },
+  { id:'year_built',     name:'Year built / condition',             type:'quantitative', required:false,
+    threshold:'Pass 1970 or newer; flag 1950–1969; fail pre-1950',
+    unit:'year', direction:'higher_is_better',
+    passMin:1970, passMax:null, reviewMin:1950, reviewMax:1969, failMin:null, failMax:1949 },
+  { id:'occupancy',      name:'Occupancy at acquisition',           type:'quantitative', required:false,
+    threshold:'Pass ≥ 80%; flag 70–79%; fail below 70%',
+    unit:'%', direction:'higher_is_better',
+    passMin:80, passMax:null, reviewMin:70, reviewMax:79, failMin:null, failMax:69 },
+  { id:'value_add',      name:'Value-add potential',                type:'qualitative', required:false,
+    threshold:'Identifiable rent upside, deferred maintenance opportunity, or operational inefficiency',
+    passLabel:'Clear value-add thesis identified', failLabel:'Fully stabilized — no remaining upside',
+    unit:null, direction:null, passMin:null, passMax:null, reviewMin:null, reviewMax:null, failMin:null, failMax:null },
+];
+const DEFAULTS = JSON.parse(JSON.stringify(CRITERIA));
+
+let deals = [
+  { id:1, name:'Maple Ridge (Prospect)', address:'5500 Maple Ave, Dallas, TX', units:56, price:3600000, status:'review', createdAt:'2026-03-10', docs:[], overallNotes:'Strong value-add story. Cap rate and PPU borderline — flagged for AM review.',
+    criteria:{ asset_class:{result:'pass',value:'',notes:'Confirmed multifamily',overridden:false}, market:{result:'pass',value:'',notes:'DFW approved',overridden:false}, unit_count:{result:'pass',value:'56',notes:'',overridden:false}, price_per_unit:{result:'review',value:'64285',notes:'Above target — comp review pending',overridden:false}, cap_rate:{result:'review',value:'5.8',notes:'Below 6% — value-add path under review',overridden:false}, year_built:{result:'pass',value:'1986',notes:'',overridden:false}, occupancy:{result:'pass',value:'88',notes:'',overridden:false}, value_add:{result:'pass',value:'',notes:'Unrenovated interiors — $80–120/unit upside post-turn',overridden:false} } },
+  { id:2, name:'Northgate Commons', address:'1200 N Gate Blvd, Omaha, NE', units:32, price:2100000, status:'pass', createdAt:'2026-03-14', docs:[], overallNotes:'Clean screen. All criteria met. Advance to underwriting.',
+    criteria:{ asset_class:{result:'pass',value:'',notes:'',overridden:false}, market:{result:'pass',value:'',notes:'Omaha approved',overridden:false}, unit_count:{result:'pass',value:'32',notes:'',overridden:false}, price_per_unit:{result:'pass',value:'65625',notes:'',overridden:false}, cap_rate:{result:'pass',value:'6.4',notes:'',overridden:false}, year_built:{result:'pass',value:'1979',notes:'',overridden:false}, occupancy:{result:'pass',value:'93',notes:'',overridden:false}, value_add:{result:'pass',value:'',notes:'Exterior deferred maintenance + below-market rents',overridden:false} } },
+  { id:3, name:'Riverside Flats', address:'400 River Rd, Wichita, KS', units:8, price:720000, status:'fail', createdAt:'2026-03-06', docs:[], overallNotes:'Too small, cap rate too low, no value-add. Do not advance.',
+    criteria:{ asset_class:{result:'pass',value:'',notes:'',overridden:false}, market:{result:'pass',value:'',notes:'',overridden:false}, unit_count:{result:'fail',value:'8',notes:'Below minimum 10-unit threshold',overridden:false}, price_per_unit:{result:'pass',value:'90000',notes:'',overridden:false}, cap_rate:{result:'fail',value:'5.1',notes:'Well below threshold — no value-add path',overridden:false}, year_built:{result:'pass',value:'1995',notes:'',overridden:false}, occupancy:{result:'pass',value:'100',notes:'',overridden:false}, value_add:{result:'fail',value:'',notes:'Fully renovated — no remaining upside',overridden:false} } },
+];
+let selectedId = null;
+
+// ══ AUTO-SUGGEST ══
+function autoSuggest(cr, val) {
+  if (cr.type === 'qualitative' || val === '' || val === null) return null;
+  const v = parseFloat(val); if (isNaN(v)) return null;
+  const hi = cr.direction === 'higher_is_better';
+  if (hi) {
+    if (cr.passMin !== null && v >= cr.passMin) return 'pass';
+    if (cr.reviewMin !== null && cr.reviewMax !== null && v >= cr.reviewMin && v <= cr.reviewMax) return 'review';
+    if (cr.failMax !== null && v <= cr.failMax) return 'fail';
+  } else {
+    if (cr.passMax !== null && v <= cr.passMax) return 'pass';
+    if (cr.reviewMin !== null && cr.reviewMax !== null && v >= cr.reviewMin && v <= cr.reviewMax) return 'review';
+    if (cr.failMin !== null && v >= cr.failMin) return 'fail';
+  }
+  return null;
+}
+
+// ══ DEALS LIST ══
+function renderList() {
+  const el = document.getElementById('deals-list');
+  if (!deals.length) { el.innerHTML='<div class="empty-deals">No deals yet.<br/>Click "+ New" to start.</div>'; return; }
+  el.innerHTML = deals.map(d=>`
+    <div class="deal-item ${selectedId===d.id?'active':''}" onclick="selectDeal(${d.id})">
+      <div class="deal-item-top"><div class="deal-name">${d.name}</div><span class="deal-status status-${d.status}">${d.status}</span></div>
+      <div class="deal-meta">${d.address} · ${d.units} units</div>
+    </div>`).join('');
+}
+
+function selectDeal(id) { selectedId=id; renderList(); renderForm(deals.find(d=>d.id===id)); }
+
+function computeOutcome(deal) {
+  const rs = Object.values(deal.criteria).map(c=>c.result);
+  if (rs.includes('fail')) return 'fail';
+  if (rs.includes('review')) return 'review';
+  if (rs.some(r=>r==='pass')) return 'pass';
+  return 'draft';
+}
+function outcomeLabel(o) { return {pass:'PASS',fail:'FAIL',review:'REVIEW',draft:'IN PROGRESS'}[o]||'DRAFT'; }
+function passCount(deal) { const rs=Object.values(deal.criteria); return `${rs.filter(c=>c.result==='pass').length} / ${CRITERIA.length} criteria met`; }
+
+// ══ RENDER FORM ══
+function renderForm(deal) {
+  document.getElementById('no-selection').style.display='none';
+  const form = document.getElementById('screening-form');
+  form.style.display='block';
+  const outcome = computeOutcome(deal);
+
+  const critHtml = CRITERIA.map(cr => {
+    const cd = deal.criteria[cr.id]||{result:'none',value:'',notes:'',overridden:false};
+    const suggest = autoSuggest(cr, cd.value);
+    const isOverridden = cd.overridden && suggest && suggest !== cd.result;
+    const rowCls = cd.result==='pass'?'pass-row':cd.result==='fail'?'fail-row':cd.result==='review'?'review-row':'';
+    const suggestHtml = suggest ? `<div class="crit-suggest suggest-${suggest}"><span class="suggest-dot"></span>Auto-suggest: ${suggest==='pass'?'Pass':suggest==='fail'?'Fail':'Flag'}</div>` : '';
+    const inputHtml = cr.type==='quantitative' ? `
+      <div class="crit-input-row">
+        <input class="crit-input" type="text" placeholder="Enter value" value="${cd.value}"
+          oninput="onValInput(${deal.id},'${cr.id}',this.value)"/>
+        <span class="crit-unit">${cr.unit}</span>
+      </div>${suggestHtml}` : '';
+    return `
+    <div class="criterion ${rowCls}" id="cr-${cr.id}">
+      <div class="crit-left">
+        <div class="crit-name">${cr.name}${cr.required?'<span class="crit-required">Required</span>':''}</div>
+        <div class="crit-threshold">Threshold: ${cr.threshold}</div>
+        ${inputHtml}
+        <div class="crit-notes-wrap"><textarea class="crit-notes" rows="2" placeholder="Notes on this criterion…"
+          onchange="updateCrit(${deal.id},'${cr.id}','notes',this.value)">${cd.notes}</textarea></div>
+      </div>
+      <div style="width:1px;background:var(--border);align-self:stretch;"></div>
+      <div class="crit-toggle">
+        <div class="toggle-group">
+          <button class="tgl ${cd.result==='pass'?'pass-active':''}"   onclick="setResult(${deal.id},'${cr.id}','pass',true)">Pass</button>
+          <button class="tgl ${cd.result==='review'?'review-active':''}" onclick="setResult(${deal.id},'${cr.id}','review',true)">Flag</button>
+          <button class="tgl ${cd.result==='fail'?'fail-active':''}"   onclick="setResult(${deal.id},'${cr.id}','fail',true)">Fail</button>
+        </div>
+        <div class="override-badge ${isOverridden?'show':''}" id="ob-${cr.id}">Manual override</div>
+        <div class="override-hint">Auto-suggest<br/>+ override</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  form.innerHTML = `
+    <div class="form-header">
+      <div class="form-title">
+        <h1>${deal.name}</h1>
+        <div class="sub">${deal.address} · ${deal.units} units · Added ${deal.createdAt}</div>
+      </div>
+      <div class="outcome-panel">
+        <div class="outcome-label">Screening outcome</div>
+        <div class="outcome-result ${outcome}" id="oc-result">${outcomeLabel(outcome)}</div>
+        <div class="outcome-score" id="oc-score">${passCount(deal)}</div>
+        <div class="outcome-actions">
+          <button class="btn-action btn-pass" onclick="setStatus(${deal.id},'pass')">✓ Pass</button>
+          <button class="btn-action btn-flag" onclick="setStatus(${deal.id},'review')">⚑ Flag</button>
+          <button class="btn-action btn-fail" onclick="setStatus(${deal.id},'fail')">✕ Fail</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head" onclick="tog('info')"><span class="section-icon">◈</span><span class="section-title">Property information</span><span class="section-summary">${deal.address}</span><span class="section-chevron open" id="chev-info">▾</span></div>
+      <div class="section-body open" id="body-info">
+        <div class="field-grid">
+          <div class="field-group"><label>Property name</label><input type="text" value="${deal.name}" onchange="updField(${deal.id},'name',this.value)"/></div>
+          <div class="field-group"><label>Address</label><input type="text" value="${deal.address}" onchange="updField(${deal.id},'address',this.value)"/></div>
+          <div class="field-group"><label>Total units</label><input type="number" value="${deal.units}" onchange="updField(${deal.id},'units',+this.value)"/></div>
+          <div class="field-group"><label>Asking price</label><input type="text" value="$${deal.price.toLocaleString()}" onchange="updField(${deal.id},'price',this.value)"/></div>
+          <div class="field-group"><label>Market</label><select><option>Dallas-Fort Worth (DFW)</option><option>Wichita, KS</option><option>Omaha, NE</option><option>Expansion market — AM approval required</option></select></div>
+          <div class="field-group"><label>Source / broker</label><input type="text" placeholder="e.g. Marcus &amp; Millichap, direct seller"/></div>
+          <div class="field-group"><label>Submitted by</label><input type="text" placeholder="Team member name"/></div>
+          <div class="field-group"><label>Date submitted</label><input type="date" value="${deal.createdAt}"/></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head" onclick="tog('criteria')"><span class="section-icon">◎</span><span class="section-title">Screening criteria</span><span class="section-summary" id="crit-sum">${passCount(deal)}</span><span class="section-chevron open" id="chev-criteria">▾</span></div>
+      <div class="section-body open" id="body-criteria"><div class="criteria-list">${critHtml}</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head" onclick="tog('docs')"><span class="section-icon">◑</span><span class="section-title">Supporting documents</span><span class="section-summary" id="doc-sum">${deal.docs.length} file${deal.docs.length!==1?'s':''} attached</span><span class="section-chevron" id="chev-docs">▾</span></div>
+      <div class="section-body" id="body-docs">
+        <div class="upload-zone" onclick="document.getElementById('fi-${deal.id}').click()">
+          <div class="up-icon">⤒</div><p>Drop files here or click to upload</p><span>OM, flyer, market report, broker package…</span>
+          <input type="file" id="fi-${deal.id}" multiple onchange="handleUpload(${deal.id},this.files)"/>
+        </div>
+        <div class="doc-list" id="doc-list-${deal.id}">${renderDocs(deal)}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head" onclick="tog('notes')"><span class="section-icon">◐</span><span class="section-title">Overall screening notes</span><span class="section-summary">Summary &amp; recommendation</span><span class="section-chevron open" id="chev-notes">▾</span></div>
+      <div class="section-body open" id="body-notes">
+        <div class="field-group"><label>Notes &amp; recommendation</label>
+          <textarea rows="4" placeholder="Summarize findings and recommend next steps…" onchange="updField(${deal.id},'overallNotes',this.value)">${deal.overallNotes}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <div class="footer-left">Auto-saves on change · ${deal.createdAt}</div>
+      <div class="footer-right">
+        <button class="btn-ghost" onclick="deleteDeal(${deal.id})">Delete deal</button>
+        <button class="btn-primary" onclick="advanceDeal(${deal.id})">Advance to underwriting →</button>
+      </div>
+    </div>`;
+}
+
+// ══ INTERACTIONS ══
+function tog(id) {
+  const b=document.getElementById('body-'+id), c=document.getElementById('chev-'+id);
+  if(!b) return; const o=b.classList.contains('open');
+  b.classList.toggle('open',!o); if(c) c.classList.toggle('open',!o);
+}
+
+function onValInput(dealId, critId, val) {
+  const deal=deals.find(d=>d.id===dealId), cr=CRITERIA.find(c=>c.id===critId);
+  if(!deal||!cr) return;
+  deal.criteria[critId].value = val;
+  const s = autoSuggest(cr, val);
+  if (s && !deal.criteria[critId].overridden) {
+    deal.criteria[critId].result = s;
+    updateCritRow(deal, critId, s, false);
+  } else if (s) {
+    const row=document.getElementById('cr-'+critId);
+    if(row){ const chip=row.querySelector('.crit-suggest'); if(chip){ chip.className=`crit-suggest suggest-${s}`; chip.innerHTML=`<span class="suggest-dot"></span>Auto-suggest: ${s==='pass'?'Pass':s==='fail'?'Fail':'Flag'}`; } }
+  }
+  refreshOutcome(deal);
+}
+
+function setResult(dealId, critId, result, manual) {
+  const deal=deals.find(d=>d.id===dealId), cr=CRITERIA.find(c=>c.id===critId);
+  if(!deal) return;
+  const s = autoSuggest(cr, deal.criteria[critId].value);
+  const overridden = manual && s && s !== result;
+  deal.criteria[critId].result = result;
+  deal.criteria[critId].overridden = overridden;
+  updateCritRow(deal, critId, result, overridden);
+  refreshOutcome(deal);
+}
+
+function updateCritRow(deal, critId, result, overridden) {
+  const row=document.getElementById('cr-'+critId); if(!row) return;
+  row.className=`criterion ${result==='pass'?'pass-row':result==='fail'?'fail-row':result==='review'?'review-row':''}`;
+  const t=row.querySelectorAll('.tgl');
+  if(t[0]) t[0].className=`tgl ${result==='pass'?'pass-active':''}`;
+  if(t[1]) t[1].className=`tgl ${result==='review'?'review-active':''}`;
+  if(t[2]) t[2].className=`tgl ${result==='fail'?'fail-active':''}`;
+  const ob=document.getElementById('ob-'+critId); if(ob) ob.classList.toggle('show',!!overridden);
+}
+
+function updateCrit(dealId, critId, field, val) { const d=deals.find(d=>d.id===dealId); if(d&&d.criteria[critId]) d.criteria[critId][field]=val; }
+function updField(dealId, field, val) { const d=deals.find(d=>d.id===dealId); if(d) d[field]=val; }
+
+function refreshOutcome(deal) {
+  const o=computeOutcome(deal);
+  const er=document.getElementById('oc-result'), es=document.getElementById('oc-score'), cs=document.getElementById('crit-sum');
+  if(er){er.className=`outcome-result ${o}`;er.textContent=outcomeLabel(o);}
+  if(es) es.textContent=passCount(deal);
+  if(cs) cs.textContent=passCount(deal);
+  deal.status=o; renderList();
+}
+
+function setStatus(dealId, s) {
+  const d=deals.find(d=>d.id===dealId); if(!d) return;
+  d.status=s;
+  const er=document.getElementById('oc-result');
+  if(er){er.className=`outcome-result ${s}`;er.textContent=outcomeLabel(s);}
+  renderList();
+  showToast({pass:'Deal marked as Pass.',review:'Deal flagged for review.',fail:'Deal marked as Fail.'}[s]||'Updated.', s==='fail');
+}
+
+function newDeal() {
+  const id=Date.now(), bc={};
+  CRITERIA.forEach(cr=>{ bc[cr.id]={result:'none',value:'',notes:'',overridden:false}; });
+  deals.unshift({id,name:'New deal',address:'—',units:0,price:0,status:'draft',criteria:bc,docs:[],overallNotes:'',createdAt:new Date().toISOString().split('T')[0]});
+  renderList(); selectDeal(id);
+  showToast('New deal created.');
+}
+function deleteDeal(id) {
+  deals=deals.filter(d=>d.id!==id); selectedId=null; renderList();
+  document.getElementById('no-selection').style.display='flex';
+  document.getElementById('screening-form').style.display='none';
+  showToast('Deal removed.',true);
+}
+function advanceDeal(id) {
+  const d=deals.find(d=>d.id===id); if(!d) return;
+  if(d.status==='fail'){showToast('Failed screening — cannot advance.',true);return;}
+  if(d.status==='draft'){showToast('Complete screening before advancing.',true);return;}
+  showToast(`${d.name} advanced to underwriting. (Module coming soon)`);
+}
+function renderDocs(deal) {
+  return deal.docs.map((doc,i)=>`
+    <div class="doc-item"><span class="doc-icon">📄</span>
+      <div class="doc-info"><div class="doc-name">${doc.name}</div><div class="doc-size">${doc.size}</div></div>
+      <button class="doc-remove" onclick="removeDoc(${deal.id},${i})">×</button>
+    </div>`).join('');
+}
+function handleUpload(id, files) {
+  const d=deals.find(d=>d.id===id); if(!d) return;
+  Array.from(files).forEach(f=>d.docs.push({name:f.name,size:f.size>1048576?(f.size/1048576).toFixed(1)+' MB':Math.round(f.size/1024)+' KB'}));
+  const l=document.getElementById('doc-list-'+id); if(l) l.innerHTML=renderDocs(d);
+  const s=document.getElementById('doc-sum'); if(s) s.textContent=`${d.docs.length} file${d.docs.length!==1?'s':''} attached`;
+  showToast(`${files.length} doc${files.length>1?'s':''} attached.`);
+}
+function removeDoc(id, i) {
+  const d=deals.find(d=>d.id===id); if(!d) return;
+  d.docs.splice(i,1);
+  const l=document.getElementById('doc-list-'+id); if(l) l.innerHTML=renderDocs(d);
+}
+
+// ══ SETTINGS MODAL ══
+function openSettings() { renderSettingsBody(); document.getElementById('settings-modal').classList.add('open'); }
+function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+
+function renderSettingsBody() {
+  document.getElementById('settings-body').innerHTML = CRITERIA.map(cr => {
+    const isQ = cr.type==='quantitative';
+    const hi  = cr.direction==='higher_is_better';
+    const passVal  = isQ ? (hi ? (cr.passMin??'')  : (cr.passMax??''))  : '';
+    const revLo    = isQ ? (cr.reviewMin??'') : '';
+    const revHi    = isQ ? (cr.reviewMax??'') : '';
+    const passLabel= isQ ? (hi?'Pass minimum':'Pass maximum') : '';
+
+    const quantSection = isQ ? `
+      <div class="s-grid-3" style="margin-top:12px;">
+        <div class="s-field"><label>${passLabel} (${cr.unit})</label>
+          <input type="number" step="any" id="sp-${cr.id}" value="${passVal}" placeholder="e.g. ${hi?cr.passMin??'':cr.passMax??''}"/></div>
+        <div class="s-field"><label>Flag zone — low (${cr.unit})</label>
+          <input type="number" step="any" id="srl-${cr.id}" value="${revLo}" placeholder="Low end"/></div>
+        <div class="s-field"><label>Flag zone — high (${cr.unit})</label>
+          <input type="number" step="any" id="srh-${cr.id}" value="${revHi}" placeholder="High end"/></div>
+      </div>
+      <div class="preview-box" id="prev-${cr.id}">
+        <div class="preview-label">Logic preview</div>
+        ${buildPreview(cr)}
+      </div>` : `
+      <div class="s-grid-2" style="margin-top:12px;">
+        <div class="s-field"><label>Pass — condition description</label>
+          <input type="text" id="spd-${cr.id}" value="${cr.passLabel||''}" placeholder="What constitutes a pass"/></div>
+        <div class="s-field"><label>Fail — condition description</label>
+          <input type="text" id="sfd-${cr.id}" value="${cr.failLabel||''}" placeholder="What constitutes a fail"/></div>
+      </div>`;
+
+    return `
+    <div class="setting-row">
+      <div class="setting-row-head" onclick="togSR('sb-${cr.id}','sc-${cr.id}')">
+        <span class="setting-row-name">${cr.name}</span>
+        <span class="type-badge ${isQ?'type-quant':'type-qual'}">${isQ?'Quantitative':'Qualitative'}</span>
+        <div class="req-row" style="margin:0;" onclick="event.stopPropagation()">
+          <label class="tog-sw">
+            <input type="checkbox" id="sreq-${cr.id}" ${cr.required?'checked':''} onchange="updReq('${cr.id}',this.checked)"/>
+            <span class="tog-track"></span><span class="tog-knob"></span>
+          </label>
+          <span class="req-label">Required</span>
+        </div>
+        <span class="setting-row-chev" id="sc-${cr.id}">▾</span>
+      </div>
+      <div class="setting-row-body" id="sb-${cr.id}">
+        <div class="s-field"><label>Threshold description (shown to screeners)</label>
+          <textarea id="st-${cr.id}" rows="2">${cr.threshold}</textarea></div>
+        ${quantSection}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildPreview(cr) {
+  const hi=cr.direction==='higher_is_better', u=cr.unit||'';
+  const pv = hi?cr.passMin:cr.passMax, fv = hi?cr.failMax:cr.failMin;
+  let rows='';
+  if(pv!==null) rows+=`<div class="preview-row"><span class="p-dot p-green"></span>Pass: ${hi?'≥':'≤'} ${pv} ${u}</div>`;
+  if(cr.reviewMin!==null&&cr.reviewMax!==null) rows+=`<div class="preview-row"><span class="p-dot p-amber"></span>Flag: ${cr.reviewMin}–${cr.reviewMax} ${u}</div>`;
+  if(fv!==null)  rows+=`<div class="preview-row"><span class="p-dot p-red"></span>Fail: ${hi?'≤':'≥'} ${fv} ${u}</div>`;
+  return rows||'<div class="preview-row" style="color:var(--text3)">No thresholds set yet</div>';
+}
+
+function togSR(bodyId, chevId) {
+  const b=document.getElementById(bodyId),c=document.getElementById(chevId);
+  if(!b) return; const o=b.classList.contains('open');
+  b.classList.toggle('open',!o); if(c) c.classList.toggle('open',!o);
+}
+function updReq(id,val) { const c=CRITERIA.find(c=>c.id===id); if(c) c.required=val; }
+
+function saveSettings() {
+  CRITERIA.forEach(cr => {
+    const t=document.getElementById('st-'+cr.id); if(t) cr.threshold=t.value;
+    if(cr.type==='quantitative') {
+      const hi=cr.direction==='higher_is_better';
+      const pv  = parseFloat(document.getElementById('sp-'+cr.id)?.value);
+      const rlo = parseFloat(document.getElementById('srl-'+cr.id)?.value);
+      const rhi = parseFloat(document.getElementById('srh-'+cr.id)?.value);
+      if(hi) { cr.passMin=isNaN(pv)?null:pv; cr.reviewMin=isNaN(rlo)?null:rlo; cr.reviewMax=isNaN(rhi)?null:rhi; cr.failMax=isNaN(rlo)?null:rlo-0.01; }
+      else   { cr.passMax=isNaN(pv)?null:pv; cr.reviewMin=isNaN(rlo)?null:rlo; cr.reviewMax=isNaN(rhi)?null:rhi; cr.failMin=isNaN(rhi)?null:rhi+1; }
+    } else {
+      const pd=document.getElementById('spd-'+cr.id), fd=document.getElementById('sfd-'+cr.id);
+      if(pd) cr.passLabel=pd.value; if(fd) cr.failLabel=fd.value;
+    }
+  });
+  // Re-run auto-suggest on all deals
+  deals.forEach(deal => {
+    CRITERIA.forEach(cr => {
+      if(cr.type==='quantitative' && !deal.criteria[cr.id]?.overridden) {
+        const s=autoSuggest(cr, deal.criteria[cr.id]?.value||'');
+        if(s) deal.criteria[cr.id].result=s;
+      }
+    });
+    deal.status=computeOutcome(deal);
+  });
+  closeSettings(); renderList();
+  if(selectedId) renderForm(deals.find(d=>d.id===selectedId));
+  showToast('Criteria settings saved. All screens updated.');
+}
+
+function resetDefaults() {
+  CRITERIA=JSON.parse(JSON.stringify(DEFAULTS));
+  renderSettingsBody();
+  showToast('Criteria reset to defaults.');
+}
+
+function showToast(msg,err=false) {
+  document.getElementById('tdot').style.background=err?'var(--red)':'var(--green)';
+  document.getElementById('tmsg').textContent=msg;
+  const t=document.getElementById('toast'); t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+renderList();
+if(deals.length) selectDeal(deals[0].id);
+</script>
+</body>
+</html>

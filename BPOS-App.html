@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Business Plan OS — PGM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;
+  --purple:#9b7aff;--teal:#2ec4b6;--coral:#f07052;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);}
+body{display:flex;flex-direction:column;min-height:100vh;}
+
+/* AUTH */
+#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.auth-card{width:400px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:44px 40px;display:flex;flex-direction:column;gap:24px;}
+.eyebrow{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+.auth-card h1{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);line-height:1.2;}
+.auth-card p{font-size:13px;color:var(--text2);margin-top:3px;}
+.auth-divider{height:1px;background:var(--border);}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-size:12px;font-weight:500;color:var(--text2);}
+.fg input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.fg input:focus{border-color:var(--accent);}
+.fg input::placeholder{color:var(--text3);}
+#auth-err{font-size:12px;color:var(--red);background:rgba(232,80,74,.08);border:1px solid rgba(232,80,74,.2);border-radius:6px;padding:8px 12px;display:none;}
+.btn-signin{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-signin:hover{background:var(--accent2);}
+.auth-hint{font-size:11px;color:var(--text3);text-align:center;}
+
+/* APP */
+#app{display:none;flex-direction:column;flex:1;}
+
+/* TOP NAV */
+.topnav{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;flex-shrink:0;}
+.topnav-logo{font-family:var(--display);font-size:15px;color:var(--accent);margin-right:4px;}
+.topnav-title{font-size:14px;font-weight:500;color:var(--text);}
+.topnav-spacer{flex:1;}
+.topnav-user{display:flex;align-items:center;gap:10px;}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;}
+.username{font-size:13px;color:var(--text2);}
+.btn-logout{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:5px 12px;font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-logout:hover{color:var(--red);border-color:rgba(232,80,74,.3);}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:36px 40px 60px;}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:32px;}
+.page-header h1{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.page-header p{font-size:13px;color:var(--text2);line-height:1.6;max-width:600px;}
+
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;gap:0;margin-bottom:40px;overflow-x:auto;padding-bottom:4px;}
+.pipe-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.pipe-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border:2px solid;flex-shrink:0;}
+.pipe-dot.c-purple{background:rgba(155,122,255,.12);border-color:var(--purple);color:var(--purple);}
+.pipe-dot.c-amber {background:rgba(245,166,35,.12); border-color:var(--amber); color:var(--amber);}
+.pipe-dot.c-teal  {background:rgba(46,196,182,.12); border-color:var(--teal);  color:var(--teal);}
+.pipe-dot.c-blue  {background:rgba(61,127,255,.12); border-color:var(--accent);color:var(--accent);}
+.pipe-dot.c-coral {background:rgba(240,112,82,.12); border-color:var(--coral); color:var(--coral);}
+.pipe-dot.c-green {background:rgba(34,201,122,.12); border-color:var(--green); color:var(--green);}
+.pipe-label{font-size:10px;font-weight:500;color:var(--text3);text-align:center;white-space:nowrap;line-height:1.4;}
+.pipe-arrow{font-size:18px;color:var(--text3);margin:0 6px;padding-bottom:20px;flex-shrink:0;}
+
+/* PHASE SECTIONS */
+.phase-section{margin-bottom:32px;}
+.phase-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.phase-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* MODULE CARDS */
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.module-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+.module-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mc-purple::before{background:var(--purple);}
+.mc-amber::before {background:var(--amber);}
+.mc-teal::before  {background:var(--teal);}
+.mc-blue::before  {background:var(--accent);}
+.mc-coral::before {background:var(--coral);}
+.mc-green::before {background:var(--green);}
+
+.mc-body{padding:18px 20px;flex:1;display:flex;flex-direction:column;gap:8px;}
+.mc-top{display:flex;align-items:center;justify-content:space-between;}
+.mc-num{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--text3);}
+.mc-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 8px;border-radius:10px;}
+.mb-purple{background:rgba(155,122,255,.12);color:var(--purple);}
+.mb-amber {background:rgba(245,166,35,.12); color:var(--amber);}
+.mb-teal  {background:rgba(46,196,182,.12); color:var(--teal);}
+.mb-blue  {background:rgba(61,127,255,.12); color:var(--accent);}
+.mb-coral {background:rgba(240,112,82,.12); color:var(--coral);}
+.mb-green {background:rgba(34,201,122,.12); color:var(--green);}
+.mc-title{font-size:15px;font-weight:600;color:var(--text);}
+.mc-desc{font-size:12px;color:var(--text3);line-height:1.6;flex:1;}
+.mc-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--bg3);border-top:1px solid var(--border);}
+.mc-open{font-size:12px;font-weight:500;color:var(--accent);}
+.mc-features{display:flex;gap:5px;flex-wrap:wrap;}
+.mc-feat{font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 6px;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.stat-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;}
+.stat-value{font-size:22px;font-weight:300;font-family:var(--mono);color:var(--text);margin-bottom:3px;}
+.stat-sub{font-size:11px;color:var(--text3);}
+
+/* INSTRUCTION BOX */
+.instruction-box{background:rgba(61,127,255,.06);border:1px solid rgba(61,127,255,.18);border-radius:10px;padding:16px 20px;margin-bottom:28px;display:flex;gap:14px;align-items:flex-start;}
+.ib-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.ib-text{font-size:13px;color:var(--text2);line-height:1.7;}
+.ib-text strong{color:var(--text);}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-card">
+    <div>
+      <div class="eyebrow">Point Guard Management</div>
+      <h1>Business Plan OS</h1>
+      <p>Property lifecycle management platform</p>
+    </div>
+    <div class="auth-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="fg"><label>Email address</label><input type="email" id="email" placeholder="you@pgmteam.com" autocomplete="off"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="pw" placeholder="••••••••"/></div>
+      <div id="auth-err">Invalid email or password.</div>
+      <button class="btn-signin" onclick="login()">Sign in</button>
+    </div>
+    <div class="auth-hint">john@pgmteam.com &nbsp;·&nbsp; pgm2026</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topnav">
+    <span class="topnav-logo">BPOS</span>
+    <span class="topnav-title">Business Plan OS</span>
+    <div class="topnav-spacer"></div>
+    <div class="topnav-user">
+      <div class="avatar" id="av">JF</div>
+      <span class="username" id="uname">John</span>
+      <button class="btn-logout" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="page-header">
+      <h1>Business Plan OS</h1>
+      <p>All seven modules are ready. Click any module card to open it. Each module opens as a full standalone page — use your browser's back button to return to this dashboard.</p>
+    </div>
+
+    <!-- INSTRUCTION BOX -->
+    <div class="instruction-box">
+      <span class="ib-icon">💡</span>
+      <div class="ib-text">
+        <strong>How to navigate:</strong> Click any module card below to open it in full. Each module is self-contained with demo data preloaded so you can explore every feature. Use your browser's <strong>Back button</strong> (or ← ) to return here and switch to a different module. All modules work independently and can also be bookmarked directly.
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total modules</div><div class="stat-value">7</div><div class="stat-sub">Full lifecycle coverage</div></div>
+      <div class="stat-card"><div class="stat-label">Portfolio</div><div class="stat-value">3,500+</div><div class="stat-sub">Units · DFW, Wichita, Omaha</div></div>
+      <div class="stat-card"><div class="stat-label">API status</div><div class="stat-value" style="font-size:14px;color:var(--amber);padding-top:4px;">Pending</div><div class="stat-sub">Looker Studio · Tech team</div></div>
+      <div class="stat-card"><div class="stat-label">Version</div><div class="stat-value" style="font-size:14px;padding-top:4px;">v1.0</div><div class="stat-sub">Initial build · Pre-team review</div></div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="phase-label" style="margin-bottom:18px;">Property lifecycle</div>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-dot c-purple">1</div><div class="pipe-label">Deal<br/>Screening</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-purple">2</div><div class="pipe-label">Under-<br/>writing</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-amber">3</div><div class="pipe-label">CapEx<br/>Sign-off</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-teal">4</div><div class="pipe-label">Due<br/>Diligence</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-blue">5</div><div class="pipe-label">PM<br/>Onboarding</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-coral">6</div><div class="pipe-label">Plan<br/>Lock</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-dot c-green">7</div><div class="pipe-label">Budget<br/>Tracking</div></div>
+    </div>
+
+    <!-- ACQUISITION -->
+    <div class="phase-section">
+      <div class="phase-label">Acquisition</div>
+      <div class="modules-grid">
+
+        <div class="module-card mc-purple" onclick="openModule('bpos-screening.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 01</span><span class="mc-badge mb-purple">Acquisition</span></div>
+            <div class="mc-title">Deal Screening</div>
+            <div class="mc-desc">Validate deals against PGM acquisition criteria before underwriting begins. Auto-suggest Pass/Flag/Fail based on admin-configured thresholds. Notes per criterion, document upload, and advance gate.</div>
+            <div class="mc-features">
+              <span class="mc-feat">8 criteria</span>
+              <span class="mc-feat">Auto-suggest</span>
+              <span class="mc-feat">Admin settings</span>
+              <span class="mc-feat">Doc upload</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">3 demo deals loaded</span></div>
+        </div>
+
+        <div class="module-card mc-purple" onclick="openModule('bpos-underwriting.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 02</span><span class="mc-badge mb-purple">Acquisition</span></div>
+            <div class="mc-title">Underwriting</div>
+            <div class="mc-desc">Full pro forma with T-12 upload, rent roll analysis, market rent comparison by bed type, 3 loan scenarios with DSCR/LTV, 5-year projections, CapEx budget, and cash flow waterfall. IRR method settings for admin.</div>
+            <div class="mc-features">
+              <span class="mc-feat">Pro forma</span>
+              <span class="mc-feat">3 loan scenarios</span>
+              <span class="mc-feat">Market rents</span>
+              <span class="mc-feat">IRR settings</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">Maple Ridge loaded</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DILIGENCE -->
+    <div class="phase-section">
+      <div class="phase-label">Diligence</div>
+      <div class="modules-grid">
+
+        <div class="module-card mc-amber" onclick="openModule('bpos-capex.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 03</span><span class="mc-badge mb-amber">Diligence</span></div>
+            <div class="mc-title">CapEx &amp; Construction</div>
+            <div class="mc-desc">Unit turn cost approval (labor + materials) by unit type with PM sign-off per type. Exterior scope planned across a rolling 4-quarter window from acquisition date. Budget vs. actual tracking with variance. Photo upload.</div>
+            <div class="mc-features">
+              <span class="mc-feat">Unit turns</span>
+              <span class="mc-feat">4-quarter roadmap</span>
+              <span class="mc-feat">PM sign-off</span>
+              <span class="mc-feat">Budget vs. actual</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">2 properties loaded</span></div>
+        </div>
+
+        <div class="module-card mc-teal" onclick="openModule('bpos-diligence.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 04</span><span class="mc-badge mb-teal">Diligence</span></div>
+            <div class="mc-title">Due Diligence</div>
+            <div class="mc-desc">Master checklist across 8 categories — physical, financial, legal, environmental, utilities, market, insurance, and operations. Critical item flagging, risk panel, per-item notes, and admin-editable master template.</div>
+            <div class="mc-features">
+              <span class="mc-feat">50+ items</span>
+              <span class="mc-feat">Critical flags</span>
+              <span class="mc-feat">Risk panel</span>
+              <span class="mc-feat">Admin template</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">2 properties loaded</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div class="phase-section">
+      <div class="phase-label">Onboarding</div>
+      <div class="modules-grid">
+
+        <div class="module-card mc-blue" onclick="openModule('bpos-onboarding.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 05</span><span class="mc-badge mb-blue">Onboarding</span></div>
+            <div class="mc-title">PM Onboarding</div>
+            <div class="mc-desc">Data transfer checklist for Buildium and AppFolio. Every item shows the exact navigation path in the selected PM software, data source, notes field, document upload with download, and blocked status tracking. Go-live countdown.</div>
+            <div class="mc-features">
+              <span class="mc-feat">Buildium + AppFolio</span>
+              <span class="mc-feat">Nav paths</span>
+              <span class="mc-feat">Doc upload</span>
+              <span class="mc-feat">Go-live tracker</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">Maple Ridge in progress</span></div>
+        </div>
+
+        <div class="module-card mc-coral" onclick="openModule('bpos-planlock.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 06</span><span class="mc-badge mb-coral">Onboarding</span></div>
+            <div class="mc-title">Plan Lock &amp; Approval</div>
+            <div class="mc-desc">Department sign-offs (Acquisitions, Finance, PM, AM), pre-lock gates, investment thesis, locked metrics snapshot, module summaries, annual budget layers by year, API actuals panel, and a permanent amendment log.</div>
+            <div class="mc-features">
+              <span class="mc-feat">Dept approvals</span>
+              <span class="mc-feat">Multi-year budgets</span>
+              <span class="mc-feat">Amendment log</span>
+              <span class="mc-feat">API panel</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">Maple Ridge pending lock</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- OPERATIONS -->
+    <div class="phase-section">
+      <div class="phase-label">Operations</div>
+      <div class="modules-grid">
+
+        <div class="module-card mc-green" onclick="openModule('bpos-tracking.html')">
+          <div class="mc-body">
+            <div class="mc-top"><span class="mc-num">MODULE 07</span><span class="mc-badge mb-green">Operations</span></div>
+            <div class="mc-title">Budget Tracking</div>
+            <div class="mc-desc">Portfolio-level and property-level budget vs. actuals with real-time alerts. Mid-month expense pace warnings, unit rent monitoring, CapEx tracking, collections alerts. Budget upload from CSV/Excel with auto-detect and mapping. Multi-year budget history per property.</div>
+            <div class="mc-features">
+              <span class="mc-feat">Real-time alerts</span>
+              <span class="mc-feat">Budget upload</span>
+              <span class="mc-feat">Multi-year history</span>
+              <span class="mc-feat">API actuals</span>
+            </div>
+          </div>
+          <div class="mc-footer"><span class="mc-open">Open module →</span><span style="font-size:11px;color:var(--text3);">4 properties · 2 alerts active</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER NOTE -->
+    <div style="margin-top:20px;padding:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text3);line-height:1.7;">
+      <strong style="color:var(--text2);">v1.0 · Pre-team review build</strong> — All modules contain demo data. Pending: team feedback, API wiring to Looker Studio, backend database for persistence, and user authentication integration. Built for PGM / LeavenWealth by Claude · March 2026.
+    </div>
+
+  </div>
+</div>
+
+<script>
+const USERS = [
+  {email:'john@pgmteam.com',  pw:'pgm2026', name:'John F.',  initials:'JF'},
+  {email:'tim@pgmteam.com',   pw:'pgm2026', name:'Tim F.',   initials:'TF'},
+  {email:'danny@pgmteam.com', pw:'pgm2026', name:'Danny H.', initials:'DH'},
+  {email:'nathan@pgmteam.com',pw:'pgm2026', name:'Nathan F.',initials:'NF'},
+];
+
+document.getElementById('pw').addEventListener('keydown', e=>{if(e.key==='Enter')login();});
+
+function login() {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const pw    = document.getElementById('pw').value;
+  const user  = USERS.find(u=>u.email===email && u.pw===pw);
+  if (!user) { document.getElementById('auth-err').style.display='block'; return; }
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('av').textContent   = user.initials;
+  document.getElementById('uname').textContent = user.name;
+}
+
+function logout() {
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth').style.display='flex';
+  document.getElementById('email').value='';
+  document.getElementById('pw').value='';
+  document.getElementById('auth-err').style.display='none';
+}
+
+function openModule(file) {
+  window.open(file, '_blank');
+}
+</script>
+</body>
+</html>

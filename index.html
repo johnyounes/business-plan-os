@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Business Plan OS — PGM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;
+  --purple:#9b7aff;--teal:#2ec4b6;--coral:#f07052;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+  --sidebar:248px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
+
+/* ── AUTH ── */
+#auth{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.auth-card{width:400px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:44px 40px;display:flex;flex-direction:column;gap:24px;}
+.eyebrow{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+.auth-card h1{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);line-height:1.2;}
+.auth-card .sub{font-size:13px;color:var(--text2);margin-top:3px;}
+.divider{height:1px;background:var(--border);}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-size:12px;font-weight:500;color:var(--text2);}
+.fg input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.fg input:focus{border-color:var(--accent);}
+.fg input::placeholder{color:var(--text3);}
+#auth-err{font-size:12px;color:var(--red);background:rgba(232,80,74,.08);border:1px solid rgba(232,80,74,.2);border-radius:6px;padding:8px 12px;display:none;}
+.btn-signin{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-signin:hover{background:var(--accent2);}
+.auth-hint{font-size:11px;color:var(--text3);text-align:center;}
+
+/* ── APP SHELL ── */
+#app{display:none;height:100vh;width:100vw;flex-direction:row;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100vh;
+  overflow:hidden;
+}
+.sb-header{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.sb-header .ey{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
+.sb-header .brand{font-family:var(--display);font-size:16px;font-weight:600;color:var(--text);line-height:1.2;}
+.sb-header .ver{font-size:10px;color:var(--text3);margin-top:3px;}
+
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0;}
+
+.nav-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:10px 18px 4px;}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;cursor:pointer;
+  font-size:13px;color:var(--text2);
+  transition:color .12s,background .12s;
+  border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:var(--bg3);}
+.nav-item.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);}
+.ni-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.ni-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ni-badge{font-size:10px;font-weight:600;border-radius:10px;padding:1px 7px;font-family:var(--mono);flex-shrink:0;}
+.nb-purple{background:rgba(155,122,255,.15);color:var(--purple);}
+.nb-amber {background:rgba(245,166,35,.15); color:var(--amber);}
+.nb-teal  {background:rgba(46,196,182,.15); color:var(--teal);}
+.nb-blue  {background:rgba(61,127,255,.15); color:var(--accent);}
+.nb-coral {background:rgba(240,112,82,.15); color:var(--coral);}
+.nb-green {background:rgba(34,201,122,.15); color:var(--green);}
+
+.sb-divider{height:1px;background:var(--border);margin:6px 18px;}
+
+.sb-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.uname{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.urole{font-size:10px;color:var(--text3);}
+.btn-logout{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px;transition:color .15s;flex-shrink:0;}
+.btn-logout:hover{color:var(--red);}
+
+/* ── CONTENT AREA ── */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh;position:relative;}
+
+/* ── LOADING OVERLAY ── */
+.loading-overlay{
+  position:absolute;inset:0;z-index:10;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;transition:opacity .3s;
+}
+.loading-overlay.hidden{opacity:0;pointer-events:none;}
+.loading-spinner{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid var(--border2);
+  border-top-color:var(--accent);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--text3);}
+
+/* ── IFRAME ── */
+.module-iframe{
+  flex:1;border:none;width:100%;height:100%;
+  display:block;opacity:0;transition:opacity .3s;
+}
+.module-iframe.loaded{opacity:1;}
+
+/* ── HOME VIEW ── */
+#home-view{
+  flex:1;overflow-y:auto;padding:36px 40px 60px;
+  display:none;
+}
+#home-view.active{display:block;}
+
+.home-header{margin-bottom:28px;}
+.home-header h1{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.home-header p{font-size:13px;color:var(--text2);line-height:1.6;max-width:580px;}
+
+.pipeline-row{display:flex;align-items:center;gap:0;margin-bottom:36px;overflow-x:auto;padding-bottom:2px;}
+.ps{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
+.ps-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border:2px solid;flex-shrink:0;}
+.ps-dot.c-p{background:rgba(155,122,255,.12);border-color:var(--purple);color:var(--purple);}
+.ps-dot.c-a{background:rgba(245,166,35,.12);border-color:var(--amber);color:var(--amber);}
+.ps-dot.c-t{background:rgba(46,196,182,.12);border-color:var(--teal);color:var(--teal);}
+.ps-dot.c-b{background:rgba(61,127,255,.12);border-color:var(--accent);color:var(--accent);}
+.ps-dot.c-c{background:rgba(240,112,82,.12);border-color:var(--coral);color:var(--coral);}
+.ps-dot.c-g{background:rgba(34,201,122,.12);border-color:var(--green);color:var(--green);}
+.ps-lbl{font-size:10px;color:var(--text3);text-align:center;line-height:1.4;white-space:nowrap;}
+.ps-arr{font-size:16px;color:var(--text3);margin:0 5px;padding-bottom:18px;flex-shrink:0;}
+
+.phase-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.phase-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:28px;}
+
+.hcard{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;cursor:pointer;
+  transition:border-color .18s,transform .15s;
+  position:relative;
+}
+.hcard:hover{border-color:var(--border2);transform:translateY(-2px);}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.hc-p::before{background:var(--purple);}
+.hc-a::before{background:var(--amber);}
+.hc-t::before{background:var(--teal);}
+.hc-b::before{background:var(--accent);}
+.hc-c::before{background:var(--coral);}
+.hc-g::before{background:var(--green);}
+.hcard-body{padding:16px 18px;}
+.hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hc-num{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--text3);}
+.hc-phase-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:10px;}
+.hc-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.hc-desc{font-size:12px;color:var(--text3);line-height:1.6;}
+.hcard-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--bg3);border-top:1px solid var(--border);}
+.hcf-open{font-size:12px;font-weight:500;color:var(--accent);}
+.hcf-note{font-size:10px;color:var(--text3);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-card">
+    <div>
+      <div class="eyebrow">Point Guard Management</div>
+      <h1>Business Plan OS</h1>
+      <p class="sub">Property lifecycle management platform</p>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="you@pgmteam.com" autocomplete="off"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="a-pw" placeholder="••••••••"/></div>
+      <div id="auth-err">Invalid email or password. Please try again.</div>
+      <button class="btn-signin" onclick="login()">Sign in</button>
+    </div>
+    <div class="auth-hint">john@pgmteam.com &nbsp;·&nbsp; pgm2026</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sb-header">
+      <div class="ey">PGM</div>
+      <div class="brand">Business Plan OS</div>
+      <div class="ver">v1.0 · Internal</div>
+    </div>
+
+    <div class="sb-nav">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" data-module="home" onclick="navigate('home',this)">
+        <span class="ni-icon">⬡</span>
+        <span class="ni-label">Dashboard</span>
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="nav-section">Acquisition</div>
+      <div class="nav-item" data-module="screening" onclick="navigate('screening',this)">
+        <span class="ni-icon">◎</span>
+        <span class="ni-label">Deal Screening</span>
+        <span class="ni-badge nb-purple">M1</span>
+      </div>
+      <div class="nav-item" data-module="underwriting" onclick="navigate('underwriting',this)">
+        <span class="ni-icon">◑</span>
+        <span class="ni-label">Underwriting</span>
+        <span class="ni-badge nb-purple">M2</span>
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="nav-section">Diligence</div>
+      <div class="nav-item" data-module="capex" onclick="navigate('capex',this)">
+        <span class="ni-icon">◐</span>
+        <span class="ni-label">CapEx &amp; Construction</span>
+        <span class="ni-badge nb-amber">M3</span>
+      </div>
+      <div class="nav-item" data-module="diligence" onclick="navigate('diligence',this)">
+        <span class="ni-icon">◉</span>
+        <span class="ni-label">Due Diligence</span>
+        <span class="ni-badge nb-teal">M4</span>
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="nav-section">Onboarding</div>
+      <div class="nav-item" data-module="onboarding" onclick="navigate('onboarding',this)">
+        <span class="ni-icon">▷</span>
+        <span class="ni-label">PM Onboarding</span>
+        <span class="ni-badge nb-blue">M5</span>
+      </div>
+      <div class="nav-item" data-module="planlock" onclick="navigate('planlock',this)">
+        <span class="ni-icon">🔒</span>
+        <span class="ni-label">Plan Lock</span>
+        <span class="ni-badge nb-coral">M6</span>
+      </div>
+
+      <div class="sb-divider"></div>
+      <div class="nav-section">Operations</div>
+      <div class="nav-item" data-module="tracking" onclick="navigate('tracking',this)">
+        <span class="ni-icon">◬</span>
+        <span class="ni-label">Budget Tracking</span>
+        <span class="ni-badge nb-green">M7</span>
+      </div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="avatar" id="sb-av">JF</div>
+      <div class="user-info">
+        <div class="uname" id="sb-name">John</div>
+        <div class="urole">Director of PM · Admin</div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Sign out">⇥</button>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- HOME -->
+    <div id="home-view" class="active">
+      <div class="home-header">
+        <h1>Business Plan OS</h1>
+        <p>Point Guard Management · Full property lifecycle from acquisition screening through ongoing performance tracking. Select any module from the sidebar or click a card below.</p>
+      </div>
+
+      <div class="pipeline-row">
+        <div class="ps"><div class="ps-dot c-p">1</div><div class="ps-lbl">Deal<br/>Screening</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-p">2</div><div class="ps-lbl">Under-<br/>writing</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-a">3</div><div class="ps-lbl">CapEx<br/>Sign-off</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-t">4</div><div class="ps-lbl">Due<br/>Diligence</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-b">5</div><div class="ps-lbl">PM<br/>Onboarding</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-c">6</div><div class="ps-lbl">Plan<br/>Lock</div></div>
+        <div class="ps-arr">→</div>
+        <div class="ps"><div class="ps-dot c-g">7</div><div class="ps-lbl">Budget<br/>Tracking</div></div>
+      </div>
+
+      <div class="phase-title">Acquisition</div>
+      <div class="modules-grid">
+        <div class="hcard hc-p" onclick="navigate('screening',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 01</span><span class="hc-phase-badge nb-purple">Acquisition</span></div>
+            <div class="hc-title">Deal Screening</div>
+            <div class="hc-desc">Validate deals against PGM criteria. Auto-suggest Pass/Flag/Fail with admin-configurable thresholds. Notes, document upload, and advance gate.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">3 demo deals</span></div>
+        </div>
+        <div class="hcard hc-p" onclick="navigate('underwriting',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 02</span><span class="hc-phase-badge nb-purple">Acquisition</span></div>
+            <div class="hc-title">Underwriting</div>
+            <div class="hc-desc">Full pro forma, T-12 upload, market rent comparison, 3 loan scenarios, 5-year projections, CapEx budget, cash flow waterfall, IRR settings.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Maple Ridge loaded</span></div>
+        </div>
+      </div>
+
+      <div class="phase-title">Diligence</div>
+      <div class="modules-grid">
+        <div class="hcard hc-a" onclick="navigate('capex',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 03</span><span class="hc-phase-badge nb-amber">Diligence</span></div>
+            <div class="hc-title">CapEx &amp; Construction</div>
+            <div class="hc-desc">Unit turn cost approval by type. Exterior scope on rolling 4-quarter roadmap. PM sign-off per category. Budget vs. actual tracking. Photo upload.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">2 properties</span></div>
+        </div>
+        <div class="hcard hc-t" onclick="navigate('diligence',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 04</span><span class="hc-phase-badge nb-teal">Diligence</span></div>
+            <div class="hc-title">Due Diligence</div>
+            <div class="hc-desc">50+ item checklist across 8 categories. Critical item flagging, risk panel, per-item notes. Admin-editable master template. Advance gate on completion.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">2 properties</span></div>
+        </div>
+      </div>
+
+      <div class="phase-title">Onboarding</div>
+      <div class="modules-grid">
+        <div class="hcard hc-b" onclick="navigate('onboarding',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 05</span><span class="hc-phase-badge nb-blue">Onboarding</span></div>
+            <div class="hc-title">PM Onboarding</div>
+            <div class="hc-desc">Data transfer checklist for Buildium and AppFolio. Exact navigation paths per item, document upload with download, blocked status, go-live countdown.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Maple Ridge in progress</span></div>
+        </div>
+        <div class="hcard hc-c" onclick="navigate('planlock',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 06</span><span class="hc-phase-badge nb-coral">Onboarding</span></div>
+            <div class="hc-title">Plan Lock &amp; Approval</div>
+            <div class="hc-desc">Dept sign-offs, pre-lock gates, investment thesis, metrics snapshot, annual budget layers, API actuals panel, permanent amendment log.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Pending lock</span></div>
+        </div>
+      </div>
+
+      <div class="phase-title">Operations</div>
+      <div class="modules-grid">
+        <div class="hcard hc-g" onclick="navigate('tracking',null)">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE 07</span><span class="hc-phase-badge nb-green">Operations</span></div>
+            <div class="hc-title">Budget Tracking</div>
+            <div class="hc-desc">Portfolio and property budget vs. actuals. Real-time mid-month alerts for expenses, occupancy, collections, unit rents, CapEx. Budget upload from CSV/Excel with multi-year history.</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">4 properties · 2 alerts</span></div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text3);line-height:1.7;">
+        <strong style="color:var(--text2);">v1.0 · Pre-team review</strong> — All modules contain demo data preloaded. Pending: team feedback, Looker Studio API wiring, backend database for persistence. Built for PGM / LeavenWealth · March 2026.
+      </div>
+    </div>
+
+    <!-- MODULE CONTAINER (iframe + loading overlay) -->
+    <div id="module-container" style="flex:1;display:none;position:relative;flex-direction:column;">
+      <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">Loading module…</div>
+      </div>
+      <iframe
+        id="module-frame"
+        class="module-iframe"
+        src=""
+        title="Module"
+        onload="onFrameLoad()"
+      ></iframe>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const USERS = [
+  {email:'john@pgmteam.com',  pw:'pgm2026', name:'John F.',   initials:'JF'},
+  {email:'tim@pgmteam.com',   pw:'pgm2026', name:'Tim F.',    initials:'TF'},
+  {email:'danny@pgmteam.com', pw:'pgm2026', name:'Danny H.',  initials:'DH'},
+  {email:'nathan@pgmteam.com',pw:'pgm2026', name:'Nathan F.', initials:'NF'},
+];
+
+const MODULES = {
+  screening:    {file:'bpos-screening.html',    label:'Deal Screening'},
+  underwriting: {file:'bpos-underwriting.html', label:'Underwriting'},
+  capex:        {file:'bpos-capex.html',         label:'CapEx & Construction'},
+  diligence:    {file:'bpos-diligence.html',     label:'Due Diligence'},
+  onboarding:   {file:'bpos-onboarding.html',    label:'PM Onboarding'},
+  planlock:     {file:'bpos-planlock.html',       label:'Plan Lock'},
+  tracking:     {file:'bpos-tracking.html',       label:'Budget Tracking'},
+};
+
+let currentModule = 'home';
+
+// ── AUTH ──
+document.getElementById('a-pw').addEventListener('keydown', e=>{if(e.key==='Enter')login();});
+
+function login() {
+  const email = document.getElementById('a-email').value.trim().toLowerCase();
+  const pw    = document.getElementById('a-pw').value;
+  const user  = USERS.find(u=>u.email===email && u.pw===pw);
+  if (!user) { document.getElementById('auth-err').style.display='block'; return; }
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('sb-av').textContent   = user.initials;
+  document.getElementById('sb-name').textContent = user.name;
+}
+
+function logout() {
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth').style.display='flex';
+  document.getElementById('a-email').value='';
+  document.getElementById('a-pw').value='';
+  document.getElementById('auth-err').style.display='none';
+  navigate('home', document.querySelector('[data-module="home"]'));
+}
+
+// ── NAVIGATION ──
+function navigate(module, clickedEl) {
+  // Update active nav item
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  if (clickedEl) {
+    clickedEl.classList.add('active');
+  } else {
+    // Find and activate the matching nav item
+    const match = document.querySelector('[data-module="'+module+'"]');
+    if (match) match.classList.add('active');
+  }
+
+  currentModule = module;
+  const homeView  = document.getElementById('home-view');
+  const modContainer = document.getElementById('module-container');
+  const frame     = document.getElementById('module-frame');
+  const loading   = document.getElementById('loading');
+  const loadingTxt= document.getElementById('loading-text');
+
+  if (module === 'home') {
+    homeView.style.display = 'block';
+    homeView.classList.add('active');
+    modContainer.style.display = 'none';
+    frame.src = '';
+    return;
+  }
+
+  const mod = MODULES[module];
+  if (!mod) return;
+
+  // Show module container, hide home
+  homeView.style.display = 'none';
+  homeView.classList.remove('active');
+  modContainer.style.display = 'flex';
+
+  // Show loading, hide iframe
+  loading.classList.remove('hidden');
+  frame.classList.remove('loaded');
+  loadingTxt.textContent = 'Loading ' + mod.label + '…';
+
+  // Load the module
+  frame.src = mod.file;
+}
+
+function onFrameLoad() {
+  const loading = document.getElementById('loading');
+  const frame   = document.getElementById('module-frame');
+  loading.classList.add('hidden');
+  frame.classList.add('loaded');
+}
+
+// Init — activate home nav item on load
+window.addEventListener('load', ()=>{
+  const homeNav = document.querySelector('[data-module="home"]');
+  if (homeNav) homeNav.classList.add('active');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Budget Tracking — PGM Business Plan OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+.topnav{height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.nav-brand .sep{color:var(--text3);}
+.nav-brand .current{color:var(--text);font-weight:500;}
+.nav-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
+.topnav-spacer{flex:1;}
+.module-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);background:rgba(34,201,122,.1);border:1px solid rgba(34,201,122,.2);border-radius:20px;padding:3px 10px;}
+.settings-btn{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:6px 14px;font-size:12px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;}
+.settings-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(61,127,255,.06);}
+
+/* LAYOUT — full width scroll */
+.page{flex:1;overflow-y:auto;padding:24px 28px 48px;}
+
+/* PORTFOLIO HEADER */
+.portfolio-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.ph-left h1{font-family:var(--display);font-size:22px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.ph-left p{font-size:12px;color:var(--text3);}
+.ph-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.api-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.api-dot.off{background:var(--text3);box-shadow:none;}
+.month-select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+.btn-add-prop{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-add-prop:hover{background:var(--accent2);}
+
+/* PORTFOLIO KPI ROW */
+.portfolio-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.pkpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.pkpi-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:5px;}
+.pkpi-value{font-size:20px;font-weight:400;font-family:var(--mono);color:var(--text);margin-bottom:2px;}
+.pkpi-sub{font-size:11px;color:var(--text3);}
+.pkpi-value.good{color:var(--green);}
+.pkpi-value.warn{color:var(--amber);}
+.pkpi-value.bad{color:var(--red);}
+
+/* AT-RISK PANEL */
+.at-risk-panel{background:var(--bg2);border:1px solid rgba(232,80,74,.25);border-radius:12px;margin-bottom:24px;overflow:hidden;}
+.arp-head{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s;}
+.arp-head:hover{background:rgba(232,80,74,.04);}
+.arp-icon{font-size:16px;}
+.arp-title{font-size:14px;font-weight:600;color:var(--red);flex:1;}
+.arp-count{font-size:12px;font-weight:600;background:rgba(232,80,74,.12);color:var(--red);border:1px solid rgba(232,80,74,.2);border-radius:10px;padding:2px 10px;}
+.arp-chev{font-size:12px;color:var(--text3);transition:transform .2s;}
+.arp-chev.open{transform:rotate(180deg);}
+.arp-body{display:none;padding:0 20px 16px;}
+.arp-body.open{display:block;}
+.risk-prop-list{display:flex;flex-direction:column;gap:8px;}
+.risk-prop-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:border-color .15s;}
+.risk-prop-card:hover{border-color:var(--border2);}
+.rpc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.rpc-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.rpc-alert-count{font-size:10px;font-weight:700;background:rgba(232,80,74,.12);color:var(--red);border-radius:10px;padding:2px 8px;}
+.rpc-alerts{display:flex;flex-direction:column;gap:4px;}
+.alert-chip{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:7px;font-size:11px;line-height:1.4;}
+.alert-chip.red{background:rgba(232,80,74,.08);border:1px solid rgba(232,80,74,.15);color:var(--red);}
+.alert-chip.amber{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.15);color:var(--amber);}
+.alert-chip .chip-icon{flex-shrink:0;font-size:12px;}
+.alert-chip .chip-text{color:var(--text2);}
+.alert-chip .chip-text strong{color:var(--red);}
+.alert-chip.amber .chip-text strong{color:var(--amber);}
+
+/* PROPERTY SELECTOR */
+.prop-selector-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.prop-selector-label{font-size:13px;font-weight:500;color:var(--text2);}
+.prop-select{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;min-width:260px;transition:border-color .15s;}
+.prop-select:focus{border-color:var(--accent);}
+.prop-type-badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:10px;}
+.ptb-new{background:rgba(61,127,255,.12);color:var(--accent);}
+.ptb-existing{background:rgba(155,122,255,.12);color:var(--purple);}
+
+/* PROPERTY DETAIL */
+.prop-detail{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.pd-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.pdh-left h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.pdh-left p{font-size:12px;color:var(--text3);}
+.pdh-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pd-refresh-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border2);color:var(--text2);border-radius:7px;padding:6px 12px;font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.pd-refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+.day-progress{font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:5px 12px;}
+
+/* MONTH PROGRESS BAR */
+.month-progress-wrap{padding:14px 22px;border-bottom:1px solid var(--border);background:var(--bg3);}
+.mp-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:6px;}
+.mp-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:visible;position:relative;}
+.mp-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s;}
+.mp-marker{position:absolute;top:-4px;width:2px;height:14px;background:var(--text3);border-radius:1px;}
+.mp-marker-label{position:absolute;top:16px;font-size:9px;color:var(--text3);transform:translateX(-50%);white-space:nowrap;}
+
+/* METRICS GRID */
+.metrics-section{padding:20px 22px;border-bottom:1px solid var(--border);}
+.ms-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:14px;}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.metric-card.alert-red{border-color:rgba(232,80,74,.3);background:rgba(232,80,74,.04);}
+.metric-card.alert-amber{border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.03);}
+.mc-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;}
+.mc-budget{font-size:11px;color:var(--text3);margin-bottom:2px;}
+.mc-actual{font-size:20px;font-weight:500;font-family:var(--mono);color:var(--text);margin-bottom:4px;}
+.mc-actual.on-track{color:var(--green);}
+.mc-actual.warn{color:var(--amber);}
+.mc-actual.bad{color:var(--red);}
+.mc-bar{height:4px;background:var(--bg4);border-radius:2px;margin-bottom:6px;overflow:hidden;}
+.mc-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+.mc-variance{font-size:11px;font-weight:600;}
+.mc-variance.pos{color:var(--green);}
+.mc-variance.neg{color:var(--red);}
+.mc-variance.warn{color:var(--amber);}
+.mc-variance.neu{color:var(--text3);}
+.mc-alert-flag{position:absolute;top:10px;right:10px;font-size:12px;}
+.mc-mid-month-note{font-size:10px;color:var(--amber);margin-top:3px;}
+
+/* LINE ITEM TABLE */
+.line-section{padding:20px 22px;border-bottom:1px solid var(--border);}
+.ls-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ls-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.li-table{width:100%;border-collapse:collapse;font-size:12px;}
+.li-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border2);}
+.li-table th.r{text-align:right;}
+.li-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.li-table tr:last-child td{border-bottom:none;}
+.li-table tr:hover td{background:rgba(255,255,255,.012);}
+.li-table td.lbl{color:var(--text2);}
+.li-table td.r{text-align:right;font-family:var(--mono);}
+.li-table td.good{color:var(--green);font-family:var(--mono);text-align:right;}
+.li-table td.bad{color:var(--red);font-family:var(--mono);text-align:right;}
+.li-table td.warn-col{color:var(--amber);font-family:var(--mono);text-align:right;}
+.li-table td.neu{color:var(--text3);font-family:var(--mono);text-align:right;}
+.li-bar-cell{width:120px;}
+.li-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.li-bar-fill{height:100%;border-radius:2px;}
+.tot-row td{font-weight:600;border-top:1px solid var(--border2);color:var(--text);}
+.alert-row td{background:rgba(232,80,74,.04);}
+.alert-row-amber td{background:rgba(245,166,35,.04);}
+.inline-alert{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:6px;}
+.ia-red{background:rgba(232,80,74,.12);color:var(--red);}
+.ia-amber{background:rgba(245,166,35,.12);color:var(--amber);}
+
+/* UNIT RENT TABLE */
+.unit-rent-section{padding:20px 22px;border-bottom:1px solid var(--border);}
+
+/* CAPEX TRACKING */
+.capex-section{padding:20px 22px;border-bottom:1px solid var(--border);}
+
+/* MONTHLY TREND */
+.trend-section{padding:20px 22px;}
+.trend-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:80px;margin-top:12px;}
+.trend-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s;min-height:3px;}
+.trend-month-label{font-size:9px;color:var(--text3);text-align:center;}
+.trend-value{font-size:9px;color:var(--text3);font-family:var(--mono);}
+
+/* BUDGET INPUT MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:620px;max-width:100%;}
+.modal-header{padding:20px 26px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
+.modal-header-left h2{font-size:15px;font-weight:600;margin-bottom:4px;}
+.modal-header-left p{font-size:12px;color:var(--text3);line-height:1.5;}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:22px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px 26px;max-height:65vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.modal-footer{padding:16px 26px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.mf{display:flex;flex-direction:column;gap:5px;}
+.mf label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);}
+.mf input,.mf select{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.mf input:focus,.mf select:focus{border-color:var(--accent);}
+.mf select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-color:var(--bg3);}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.bline-row{display:grid;grid-template-columns:1fr 120px 24px;gap:8px;align-items:center;}
+.bline-input{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:100%;transition:border-color .15s;}
+.bline-input:focus{border-color:var(--accent);}
+.bline-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);grid-column:1/-1;margin-top:8px;}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;}
+.del-btn:hover{color:var(--red);}
+.add-line-btn{background:none;border:1px dashed var(--border2);color:var(--text3);border-radius:6px;padding:6px 12px;font-size:11px;font-family:var(--font);cursor:pointer;transition:all .15s;grid-column:1/-1;}
+.add-line-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ALERT SETTINGS MODAL */
+.thresh-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.thresh-row:last-child{border-bottom:none;}
+.thresh-label{flex:1;font-size:13px;color:var(--text2);}
+.thresh-input{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;width:90px;text-align:right;transition:border-color .15s;}
+.thresh-input:focus{border-color:var(--accent);}
+.thresh-unit{font-size:12px;color:var(--text3);min-width:30px;}
+.thresh-toggle{display:flex;align-items:center;gap:8px;}
+.tog-sw{position:relative;width:36px;height:20px;flex-shrink:0;display:inline-block;}
+.tog-sw input{opacity:0;width:0;height:0;position:absolute;}
+.tog-track{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all .2s;}
+.tog-sw input:checked+.tog-track{background:var(--accent);border-color:var(--accent);}
+.tog-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.tog-sw input:checked~.tog-knob{transform:translateX(16px);}
+
+/* BUTTONS */
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-ghost:hover{color:var(--text);background:var(--bg3);}
+.admin-badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:rgba(61,127,255,.1);border:1px solid rgba(61,127,255,.2);border-radius:10px;padding:2px 8px;margin-left:8px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{display:flex;}
+.toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+/* UPLOAD MODAL */
+.upload-drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.upload-drop-zone:hover,.upload-drop-zone.drag-over{border-color:var(--accent);background:rgba(61,127,255,.05);}
+.upload-drop-zone input{display:none;}
+.udz-icon{font-size:36px;opacity:.3;margin-bottom:12px;}
+.udz-title{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:6px;}
+.udz-sub{font-size:12px;color:var(--text3);}
+.udz-formats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+.fmt-badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:6px;background:var(--bg4);color:var(--text3);border:1px solid var(--border2);}
+.upload-steps{display:flex;align-items:center;gap:0;margin-bottom:20px;}
+.upload-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);}
+.upload-step.active{color:var(--accent);}
+.upload-step.done{color:var(--green);}
+.us-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;}
+.upload-step.active .us-num{background:rgba(61,127,255,.15);border-color:var(--accent);color:var(--accent);}
+.upload-step.done .us-num{background:rgba(34,201,122,.15);border-color:var(--green);color:var(--green);}
+.us-sep{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:20px;}
+.parsed-preview{background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.pp-head{padding:10px 14px;background:var(--bg4);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;justify-content:space-between;}
+.pp-table{width:100%;border-collapse:collapse;font-size:12px;}
+.pp-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.pp-table th.r{text-align:right;}
+.pp-table td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text2);}
+.pp-table td.r{text-align:right;font-family:var(--mono);}
+.pp-table tr:last-child td{border-bottom:none;}
+.pp-table tr.income-row td{color:var(--green);}
+.pp-table tr.expense-row td{color:var(--text2);}
+.pp-table tr.sec-head td{background:var(--bg4);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:5px 12px;}
+.map-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.map-row:last-child{border-bottom:none;}
+.map-detected{font-size:12px;color:var(--text2);}
+.map-arrow{color:var(--text3);font-size:14px;}
+.map-select{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:100%;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-color:var(--bg4);}
+.map-select:focus{border-color:var(--accent);}
+.match-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
+.match-card:hover{border-color:var(--accent);}
+.match-card.selected{border-color:var(--accent);background:rgba(61,127,255,.06);}
+.match-card.new-prop{border-style:dashed;}
+.mc-icon{font-size:18px;flex-shrink:0;}
+.mc-info{flex:1;}
+.mc-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.mc-sub{font-size:11px;color:var(--text3);}
+.mc-score{font-size:11px;font-weight:600;color:var(--green);}
+.detect-badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:10px;}
+.db-annual{background:rgba(61,127,255,.12);color:var(--accent);}
+.db-monthly{background:rgba(34,201,122,.12);color:var(--green);}
+.db-unknown{background:rgba(140,147,158,.1);color:var(--text3);}
+.year-tabs-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.year-tab-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 14px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;font-family:var(--font);}
+.year-tab-btn:hover{color:var(--text);}
+.year-tab-btn.active{background:rgba(61,127,255,.12);border-color:var(--accent);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="nav-brand">
+    <span class="logo">BPOS</span>
+    <span class="sep">›</span><span class="current">Budget Tracking</span>
+  </div>
+  <div class="topnav-spacer"></div>
+  <button class="settings-btn" onclick="openUploadModal()">⤒ Upload budget</button>
+  <button class="settings-btn" onclick="openAlertSettings()">⚙ Alert thresholds</button>
+  <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
+</div>
+
+<div class="page" id="main-page">
+  <!-- injected by JS -->
+</div>
+
+<!-- BUDGET INPUT MODAL -->
+<div class="modal-overlay" id="budget-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Enter annual budget</h2>
+        <p>For existing properties not underwritten in BPOS. Budget will be used as the tracking baseline for all actuals comparisons.</p>
+      </div>
+      <button class="modal-close" onclick="closeBudgetModal()">×</button>
+    </div>
+    <div class="modal-body" id="budget-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeBudgetModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBudget()">Save budget</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT SETTINGS MODAL -->
+<div class="modal-overlay" id="alert-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Alert thresholds <span class="admin-badge">Admin</span></h2>
+        <p>Set the thresholds that trigger real-time warnings. Alerts fire as soon as a deviation is detected — mid-month or otherwise.</p>
+      </div>
+      <button class="modal-close" onclick="closeAlertSettings()">×</button>
+    </div>
+    <div class="modal-body" id="alert-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="resetThresholds()">Reset defaults</button>
+      <button class="btn-primary" onclick="saveThresholds()">Save thresholds</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROPERTY MODAL -->
+<div class="modal-overlay" id="add-prop-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Add property to tracking</h2>
+        <p>Add an existing property that wasn't underwritten in BPOS. You'll enter its annual budget manually.</p>
+      </div>
+      <button class="modal-close" onclick="closeAddProp()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="mf"><label>Property name</label><input type="text" id="new-prop-name" placeholder="e.g. Cedar Haven Duplexes"/></div>
+        <div class="mf"><label>Address</label><input type="text" id="new-prop-addr" placeholder="City, ST"/></div>
+        <div class="mf"><label>Total units</label><input type="number" id="new-prop-units" placeholder="e.g. 22"/></div>
+        <div class="mf"><label>PM software</label>
+          <select id="new-prop-pm"><option>AppFolio</option><option>Buildium</option></select></div>
+        <div class="mf"><label>Market</label>
+          <select id="new-prop-market"><option>Dallas-Fort Worth (DFW)</option><option>Wichita, KS</option><option>Omaha, NE</option><option>Other</option></select></div>
+        <div class="mf"><label>Budget year</label><input type="number" id="new-prop-year" value="2026"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeAddProp()">Cancel</button>
+      <button class="btn-primary" onclick="saveNewProp()">Add property</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD BUDGET MODAL -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal" style="width:700px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Upload budget file</h2>
+        <p id="upload-modal-sub">Upload a CSV, Excel, or Google Sheets export. The app will auto-detect property name, income, and expense lines.</p>
+      </div>
+      <button class="modal-close" onclick="closeUploadModal()">×</button>
+    </div>
+    <div class="modal-body" id="upload-modal-body" style="min-height:300px;"></div>
+    <div class="modal-footer" id="upload-modal-footer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+const fd  = v=>'$'+Math.round(v||0).toLocaleString();
+const pd  = v=>parseFloat(String(v).replace(/[$,\s%]/g,''))||0;
+const fp  = v=>(v||0).toFixed(1)+'%';
+const now = new Date();
+const DAY_OF_MONTH   = now.getDate();
+const DAYS_IN_MONTH  = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+const MONTH_PCT      = DAY_OF_MONTH / DAYS_IN_MONTH; // e.g. 0.65 = 65% through month
+const MONTH_LABEL    = now.toLocaleString('default',{month:'long',year:'numeric'});
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ══════════════════════════════════════
+// ALERT THRESHOLDS (admin editable)
+// ══════════════════════════════════════
+let THRESHOLDS = {
+  noiMissPct:      {enabled:true,  value:5,   label:'NOI misses budget by more than',  unit:'%'},
+  occupancyMin:    {enabled:true,  value:88,  label:'Occupancy drops below',           unit:'%'},
+  expensePacePct:  {enabled:true,  value:80,  label:'Expenses exceed X% of budget before month end', unit:'%'},
+  capexHit:        {enabled:true,  value:100, label:'CapEx budget reached or exceeded',unit:'%'},
+  unitRentBelowPct:{enabled:true,  value:5,   label:'Unit rented below budget rate by more than',unit:'%'},
+  collectionsMin:  {enabled:true,  value:95,  label:'Collections rate drops below',    unit:'%'},
+  cfNegative:      {enabled:true,  value:0,   label:'Cash flow goes negative',         unit:'$'},
+};
+const THRESH_DEFAULTS = JSON.parse(JSON.stringify(THRESHOLDS));
+
+// ══════════════════════════════════════
+// PROPERTY DATA
+// ══════════════════════════════════════
+let properties = [
+  {
+    id:1, name:'Estrella at Kiest', address:'Dallas, TX', units:84,
+    pm:'AppFolio', market:'DFW', type:'existing', budgetYear:2026,
+    budgetHistory:{},
+    budget:{
+      income:[
+        {label:'Gross Potential Rent', monthly:73080},
+        {label:'Vacancy Loss',         monthly:-4385},
+        {label:'Other Income',         monthly:2100},
+      ],
+      expenses:[
+        {label:'Property Management',   monthly:4157},
+        {label:'Repairs & Maintenance', monthly:4200},
+        {label:'Insurance',             monthly:2100},
+        {label:'Property Taxes',        monthly:4650},
+        {label:'Utilities (Common)',    monthly:1200},
+        {label:'Admin & Legal',         monthly:520},
+        {label:'Reserves',              monthly:1680},
+      ],
+      capexBudget: 48000,
+    },
+    actuals:{
+      occupancy:91.7,
+      collections:96.2,
+      income:[70840, -4800, 1950],
+      expenses:[4157, 5100, 2100, 4650, 1340, 520, 1680], // maintenance over budget
+      capexSpent: 31200,
+      unitRents:[
+        {type:'1BD/1BA', budgetRate:870, actualRate:855, count:24},
+        {type:'2BD/1BA', budgetRate:1045,actualRate:1045,count:36},
+        {type:'2BD/2BA', budgetRate:1140,actualRate:1095,count:24},
+      ],
+      monthlyNOI:[18200,19400,21100,20300,19800,22100,21400,20900,22800,23100,22400,null],
+    },
+    apiConnected:true,
+  },
+  {
+    id:2, name:'Sierra Gardens', address:'Wichita, KS', units:62,
+    pm:'Buildium', market:'Wichita', type:'existing', budgetYear:2026,
+    budget:{
+      income:[
+        {label:'Gross Potential Rent', monthly:52700},
+        {label:'Vacancy Loss',         monthly:-3162},
+        {label:'Other Income',         monthly:1400},
+      ],
+      expenses:[
+        {label:'Property Management',   monthly:2980},
+        {label:'Repairs & Maintenance', monthly:3100},
+        {label:'Insurance',             monthly:1550},
+        {label:'Property Taxes',        monthly:3400},
+        {label:'Utilities (Common)',    monthly:900},
+        {label:'Reserves',              monthly:1240},
+      ],
+      capexBudget: 32000,
+    },
+    actuals:{
+      occupancy:87.1, // ALERT: below 88%
+      collections:94.3, // ALERT: below 95%
+      income:[50100,-3800,1200],
+      expenses:[2980,3100,1550,3400,900,1240],
+      capexSpent:33500, // ALERT: over budget
+      unitRents:[
+        {type:'1BD/1BA', budgetRate:820,  actualRate:800, count:20},
+        {type:'2BD/1BA', budgetRate:985,  actualRate:960, count:30},
+        {type:'2BD/2BA', budgetRate:1080, actualRate:1080,count:12},
+      ],
+      monthlyNOI:[14200,15100,16800,15400,14900,17200,16100,15800,17400,17900,null,null],
+    },
+    apiConnected:true,
+  },
+  {
+    id:3, name:'Central Heights', address:'Wichita, KS', units:48,
+    pm:'Buildium', market:'Wichita', type:'new', budgetYear:2026,
+    budget:{
+      income:[
+        {label:'Gross Potential Rent', monthly:43200},
+        {label:'Vacancy Loss',         monthly:-2592},
+        {label:'Other Income',         monthly:960},
+      ],
+      expenses:[
+        {label:'Property Management',   monthly:2462},
+        {label:'Repairs & Maintenance', monthly:2400},
+        {label:'Insurance',             monthly:1200},
+        {label:'Property Taxes',        monthly:2640},
+        {label:'Utilities (Common)',    monthly:720},
+        {label:'Reserves',             monthly:960},
+      ],
+      capexBudget:85000,
+    },
+    actuals:{
+      occupancy:89.6,
+      collections:97.1,
+      income:[43200,-2160,960],
+      expenses:[2462,1800,1200,2640,720,960],
+      capexSpent:41200,
+      unitRents:[
+        {type:'1BD/1BA', budgetRate:850,  actualRate:850, count:16},
+        {type:'2BD/1BA', budgetRate:950,  actualRate:935, count:20},
+        {type:'2BD/2BA', budgetRate:1050, actualRate:1050,count:12},
+      ],
+      monthlyNOI:[null,null,17400,18200,17800,19100,18600,18200,19800,20100,19700,null],
+    },
+    apiConnected:true,
+  },
+  {
+    id:4, name:'6990 Dodge St', address:'Omaha, NE', units:16,
+    pm:'AppFolio', market:'Omaha', type:'existing', budgetYear:2026,
+    budget:{
+      income:[
+        {label:'Gross Potential Rent', monthly:14400},
+        {label:'Vacancy Loss',         monthly:-432},
+        {label:'Other Income',         monthly:320},
+      ],
+      expenses:[
+        {label:'Property Management',   monthly:849},
+        {label:'Repairs & Maintenance', monthly:800},
+        {label:'Insurance',             monthly:480},
+        {label:'Property Taxes',        monthly:960},
+        {label:'Utilities (Common)',    monthly:320},
+        {label:'Reserves',             monthly:320},
+      ],
+      capexBudget:12000,
+    },
+    actuals:{
+      occupancy:100,
+      collections:100,
+      income:[14400,-0,320],
+      expenses:[849,800,480,960,320,320],
+      capexSpent:4200,
+      unitRents:[
+        {type:'Studio/1BA', budgetRate:900, actualRate:900, count:16},
+      ],
+      monthlyNOI:[9600,9800,10100,9900,10200,10500,10300,10100,10600,10800,null,null],
+    },
+    apiConnected:true,
+  },
+];
+
+let selectedPropId = null;
+let budgetModalPropId = null;
+let arpOpen = true;
+
+// ══════════════════════════════════════
+// ALERT ENGINE
+// ══════════════════════════════════════
+function getAlerts(prop) {
+  const alerts = [];
+  const a = prop.actuals;
+  const b = prop.budget;
+  const T = THRESHOLDS;
+
+  // Budget NOI vs actual
+  const budgetNOI = (b.income.reduce((s,r)=>s+r.monthly,0) - b.expenses.reduce((s,r)=>s+r.monthly,0));
+  const actualNOI = (a.income.reduce((s,r)=>s+r,0) - a.expenses.reduce((s,r)=>s+r,0));
+  const noiPct = budgetNOI>0?((budgetNOI-actualNOI)/budgetNOI*100):0;
+  if (T.noiMissPct.enabled && noiPct > T.noiMissPct.value)
+    alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiPct.toFixed(1)}%`});
+
+  // Occupancy
+  if (T.occupancyMin.enabled && a.occupancy < T.occupancyMin.value)
+    alerts.push({sev:'red', icon:'◎', text:`Occupancy at <strong>${fp(a.occupancy)}</strong> — below ${T.occupancyMin.value}% threshold`});
+
+  // Expense pace mid-month
+  const budgetExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
+  const actualExp = a.expenses.reduce((s,r)=>s+r,0);
+  const expPace   = budgetExp>0?(actualExp/budgetExp*100):0;
+  const expectedExpPct = MONTH_PCT*100;
+  if (T.expensePacePct.enabled && expPace > T.expensePacePct.value && expPace > expectedExpPct+15)
+    alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
+
+  // CapEx
+  if (T.capexHit.enabled && a.capexSpent >= b.capexBudget)
+    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
+  else if (a.capexSpent > b.capexBudget*0.85)
+    alerts.push({sev:'amber', icon:'▣', text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — approaching limit`});
+
+  // Unit rents below budget
+  if (T.unitRentBelowPct.enabled) {
+    a.unitRents.forEach(u=>{
+      const miss = u.budgetRate>0?((u.budgetRate-u.actualRate)/u.budgetRate*100):0;
+      if (miss > T.unitRentBelowPct.value)
+        alerts.push({sev:'amber', icon:'◑', text:`${u.type}: renting at <strong>${fd(u.actualRate)}</strong> vs. budget rate ${fd(u.budgetRate)} — ${miss.toFixed(1)}% below`});
+    });
+  }
+
+  // Collections
+  if (T.collectionsMin.enabled && a.collections < T.collectionsMin.value)
+    alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
+
+  // Cash flow negative
+  const cf = actualNOI; // simplified — full model would subtract debt service
+  if (T.cfNegative.enabled && cf < 0)
+    alerts.push({sev:'red', icon:'◐', text:`Cash flow is <strong>negative (${fd(cf)}/mo)</strong> — immediate attention required`});
+
+  return alerts;
+}
+
+function getPortfolioStats() {
+  const totalUnits  = properties.reduce((s,p)=>s+p.units,0);
+  const totalBudNOI = properties.reduce((s,p)=>{
+    const b=p.budget;
+    return s+(b.income.reduce((si,r)=>si+r.monthly,0)-b.expenses.reduce((si,r)=>si+r.monthly,0));
+  },0);
+  const totalActNOI = properties.reduce((s,p)=>{
+    const a=p.actuals;
+    return s+(a.income.reduce((si,r)=>si+r,0)-a.expenses.reduce((si,r)=>si+r,0));
+  },0);
+  const avgOcc = properties.reduce((s,p)=>s+p.actuals.occupancy,0)/properties.length;
+  const atRisk = properties.filter(p=>getAlerts(p).some(a=>a.sev==='red')).length;
+  return {totalUnits,totalBudNOI,totalActNOI,avgOcc,atRisk};
+}
+
+// ══════════════════════════════════════
+// RENDER MAIN PAGE
+// ══════════════════════════════════════
+function renderPage() {
+  const stats = getPortfolioStats();
+  const riskProps = properties.filter(p=>getAlerts(p).length>0).sort((a,b)=>getAlerts(b).filter(x=>x.sev==='red').length-getAlerts(a).filter(x=>x.sev==='red').length);
+  const noiVar = stats.totalActNOI - stats.totalBudNOI;
+  const noiPct = stats.totalBudNOI>0?(noiVar/stats.totalBudNOI*100):0;
+
+  document.getElementById('main-page').innerHTML = `
+    <!-- PORTFOLIO HEADER -->
+    <div class="portfolio-header">
+      <div class="ph-left">
+        <h1>Portfolio Tracking</h1>
+        <p>${MONTH_LABEL} · ${properties.length} properties · ${stats.totalUnits} units · API connected</p>
+      </div>
+      <div class="ph-right">
+        <div class="api-status"><div class="api-dot"></div>Looker Studio connected</div>
+        <button class="btn-ghost" style="font-size:12px;" onclick="showToast('Refreshing all actuals from API…');setTimeout(()=>showToast('All actuals updated.'),1200)">⟳ Refresh all</button>
+        <button class="btn-add-prop" onclick="openAddProp()">+ Add property</button>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO KPIS -->
+    <div class="portfolio-kpis">
+      <div class="pkpi">
+        <div class="pkpi-label">Portfolio NOI / mo</div>
+        <div class="pkpi-value ${noiPct>=-5?'good':'bad'}">${fd(stats.totalActNOI)}</div>
+        <div class="pkpi-sub">Budget ${fd(stats.totalBudNOI)} · ${noiPct>=0?'+':''}${noiPct.toFixed(1)}% vs. plan</div>
+      </div>
+      <div class="pkpi">
+        <div class="pkpi-label">Avg occupancy</div>
+        <div class="pkpi-value ${stats.avgOcc>=88?'good':'bad'}">${stats.avgOcc.toFixed(1)}%</div>
+        <div class="pkpi-sub">Threshold: ${THRESHOLDS.occupancyMin.value}%</div>
+      </div>
+      <div class="pkpi">
+        <div class="pkpi-label">Properties at risk</div>
+        <div class="pkpi-value ${stats.atRisk===0?'good':'bad'}">${stats.atRisk}</div>
+        <div class="pkpi-sub">Active red alerts</div>
+      </div>
+      <div class="pkpi">
+        <div class="pkpi-label">Total units</div>
+        <div class="pkpi-value neu">${stats.totalUnits}</div>
+        <div class="pkpi-sub">${properties.length} properties tracked</div>
+      </div>
+      <div class="pkpi">
+        <div class="pkpi-label">NOI variance</div>
+        <div class="pkpi-value ${noiVar>=0?'good':'bad'}">${noiVar>=0?'+':''}${fd(noiVar)}</div>
+        <div class="pkpi-sub">${noiVar>=0?'Ahead of':'Behind'} budget this month</div>
+      </div>
+    </div>
+
+    <!-- AT-RISK PANEL -->
+    <div class="at-risk-panel">
+      <div class="arp-head" onclick="toggleArp()">
+        <span class="arp-icon">⚑</span>
+        <span class="arp-title">Properties with active alerts</span>
+        <span class="arp-count">${riskProps.length} propert${riskProps.length!==1?'ies':'y'} · ${riskProps.reduce((s,p)=>s+getAlerts(p).filter(a=>a.sev==='red').length,0)} critical</span>
+        <span class="arp-chev ${arpOpen?'open':''}" id="arp-chev">▾</span>
+      </div>
+      <div class="arp-body ${arpOpen?'open':''}" id="arp-body">
+        ${riskProps.length===0
+          ? `<div style="padding:16px 0;font-size:13px;color:var(--text3);text-align:center;">All properties tracking to budget. No active alerts.</div>`
+          : `<div class="risk-prop-list">
+              ${riskProps.map(p=>{
+                const als=getAlerts(p);
+                return `<div class="risk-prop-card" onclick="selectProp(${p.id})">
+                  <div class="rpc-head">
+                    <span class="rpc-name">${p.name}</span>
+                    <span style="font-size:11px;color:var(--text3);">${p.address} · ${p.units} units</span>
+                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                  </div>
+                  <div class="rpc-alerts">
+                    ${als.slice(0,3).map(al=>`
+                      <div class="alert-chip ${al.sev}">
+                        <span class="chip-icon">${al.icon}</span>
+                        <span class="chip-text">${al.text}</span>
+                      </div>`).join('')}
+                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts — click to view all</div>`:''}
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>`}
+      </div>
+    </div>
+
+    <!-- PROPERTY DETAIL SELECTOR -->
+    <div class="prop-selector-row">
+      <span class="prop-selector-label">View property:</span>
+      <select class="prop-select" onchange="selectProp(+this.value)">
+        <option value="">— Select a property —</option>
+        ${properties.map(p=>`<option value="${p.id}" ${selectedPropId===p.id?'selected':''}>${p.name} (${p.address})</option>`).join('')}
+      </select>
+      ${selectedPropId?`
+        <span class="prop-type-badge ${properties.find(p=>p.id===selectedPropId)?.type==='new'?'ptb-new':'ptb-existing'}">
+          ${properties.find(p=>p.id===selectedPropId)?.type==='new'?'New acquisition':'Existing property'}
+        </span>`:''}
+    </div>
+
+    <!-- PROPERTY DETAIL -->
+    <div id="prop-detail-wrap">
+      ${selectedPropId?renderPropDetail(properties.find(p=>p.id===selectedPropId)):'<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Select a property above to view its budget vs. actuals detail.</div>'}
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// RENDER PROPERTY DETAIL
+// ══════════════════════════════════════
+function renderPropDetail(prop) {
+  if (!prop) return '';
+  const a = prop.actuals;
+  const b = prop.budget;
+  const alerts = getAlerts(prop);
+
+  // Totals
+  const budIncome = b.income.reduce((s,r)=>s+r.monthly,0);
+  const actIncome = a.income.reduce((s,r)=>s+r,0);
+  const budExp    = b.expenses.reduce((s,r)=>s+r.monthly,0);
+  const actExp    = a.expenses.reduce((s,r)=>s+r,0);
+  const budNOI    = budIncome - budExp;
+  const actNOI    = actIncome - actExp;
+  const noiVar    = actNOI - budNOI;
+  const expPace   = budExp>0?(actExp/budExp*100):0;
+
+  // Expected pace
+  const expPaceExpected = MONTH_PCT * 100;
+
+  // Month progress
+  const monthProgressHtml = `
+    <div class="month-progress-wrap">
+      <div class="mp-label">
+        <span>${MONTH_LABEL} — Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH}</span>
+        <span>${(MONTH_PCT*100).toFixed(0)}% through month</span>
+      </div>
+      <div class="mp-bar">
+        <div class="mp-bar-fill" style="width:${MONTH_PCT*100}%;"></div>
+        <div class="mp-marker" style="left:${MONTH_PCT*100}%;"></div>
+        <div class="mp-marker-label" style="left:${MONTH_PCT*100}%;">Today</div>
+      </div>
+    </div>`;
+
+  // KEY METRICS
+  const keyMetrics = [
+    {
+      label:'NOI this month', budget:fd(budNOI), actual:fd(actNOI),
+      cls:noiVar>=0?'on-track':Math.abs(noiVar/budNOI*100)>5?'bad':'warn',
+      barPct:budNOI>0?Math.min(actNOI/budNOI*100,130):0,
+      barColor:actNOI>=budNOI?'var(--green)':actNOI>=budNOI*0.95?'var(--amber)':'var(--red)',
+      variance:fd(Math.abs(noiVar))+(noiVar>=0?' ahead':' behind'),
+      varCls:noiVar>=0?'pos':'neg',
+      alert:alerts.find(al=>al.text.includes('NOI')),
+    },
+    {
+      label:'Occupancy', budget:fp(THRESHOLDS.occupancyMin.value), actual:fp(a.occupancy),
+      cls:a.occupancy>=88?'on-track':a.occupancy>=85?'warn':'bad',
+      barPct:Math.min(a.occupancy,100),
+      barColor:a.occupancy>=88?'var(--green)':a.occupancy>=85?'var(--amber)':'var(--red)',
+      variance:a.occupancy>=88?'On target':`${(88-a.occupancy).toFixed(1)}% below threshold`,
+      varCls:a.occupancy>=88?'pos':'neg',
+      alert:alerts.find(al=>al.text.includes('Occupancy')),
+      midMonth: a.occupancy<88?`Triggered — currently ${(MONTH_PCT*100).toFixed(0)}% into month`:null,
+    },
+    {
+      label:'Collections rate', budget:fp(THRESHOLDS.collectionsMin.value), actual:fp(a.collections),
+      cls:a.collections>=95?'on-track':a.collections>=90?'warn':'bad',
+      barPct:Math.min(a.collections,100),
+      barColor:a.collections>=95?'var(--green)':a.collections>=90?'var(--amber)':'var(--red)',
+      variance:a.collections>=95?'On target':`${(THRESHOLDS.collectionsMin.value-a.collections).toFixed(1)}% below threshold`,
+      varCls:a.collections>=95?'pos':'neg',
+      alert:alerts.find(al=>al.text.includes('Collections')),
+    },
+    {
+      label:'Expense pace', budget:`${expPaceExpected.toFixed(0)}% expected`, actual:`${expPace.toFixed(0)}% of budget`,
+      cls:expPace<=expPaceExpected+10?'on-track':expPace<=expPaceExpected+20?'warn':'bad',
+      barPct:Math.min(expPace,130),
+      barColor:expPace<=expPaceExpected+10?'var(--green)':expPace<=expPaceExpected+20?'var(--amber)':'var(--red)',
+      variance:expPace>expPaceExpected?`${(expPace-expPaceExpected).toFixed(0)}% ahead of pace`:'On pace',
+      varCls:expPace>expPaceExpected+10?'neg':'pos',
+      alert:alerts.find(al=>al.text.includes('Expenses')),
+      midMonth:expPace>expPaceExpected+15?`${expPace.toFixed(0)}% spent with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
+    },
+    {
+      label:'CapEx spend', budget:fd(b.capexBudget)+' budget', actual:fd(a.capexSpent)+' spent',
+      cls:a.capexSpent<b.capexBudget*0.85?'on-track':a.capexSpent<b.capexBudget?'warn':'bad',
+      barPct:Math.min(a.capexSpent/b.capexBudget*100,130),
+      barColor:a.capexSpent<b.capexBudget*0.85?'var(--green)':a.capexSpent<b.capexBudget?'var(--amber)':'var(--red)',
+      variance:a.capexSpent>=b.capexBudget?fd(a.capexSpent-b.capexBudget)+' over budget':fd(b.capexBudget-a.capexSpent)+' remaining',
+      varCls:a.capexSpent>=b.capexBudget?'neg':'pos',
+      alert:alerts.find(al=>al.text.includes('CapEx')),
+    },
+  ];
+
+  const metricsHtml = `
+    <div class="metrics-section">
+      <div class="ms-title">Key metrics — ${MONTH_LABEL}</div>
+      <div class="metrics-grid">
+        ${keyMetrics.map(m=>`
+          <div class="metric-card ${m.alert?m.alert.sev==='red'?'alert-red':'alert-amber':''}">
+            ${m.alert?`<div class="mc-alert-flag">${m.alert.sev==='red'?'🔴':'🟡'}</div>`:''}
+            <div class="mc-label">${m.label}</div>
+            <div class="mc-budget">Budget: ${m.budget}</div>
+            <div class="mc-actual ${m.cls}">${m.actual}</div>
+            <div class="mc-bar"><div class="mc-bar-fill" style="width:${Math.min(m.barPct,100)}%;background:${m.barColor};"></div></div>
+            <div class="mc-variance ${m.varCls}">${m.variance}</div>
+            ${m.midMonth?`<div class="mc-mid-month-note">⚑ ${m.midMonth}</div>`:''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  // INCOME LINE ITEMS
+  const incomeRows = b.income.map((r,i)=>{
+    const act=a.income[i]||0;
+    const vari=act-r.monthly;
+    const pct=r.monthly!==0?Math.abs(act/r.monthly*100):0;
+    const barColor=vari>=0?'var(--green)':'var(--red)';
+    return `<tr>
+      <td class="lbl">${r.label}</td>
+      <td class="r">${fd(r.monthly)}</td>
+      <td class="r">${fd(act)}</td>
+      <td class="li-bar-cell"><div class="li-bar"><div class="li-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div></div></td>
+      <td class="${vari>=0?'good':'bad'}">${vari>=0?'+':''}${fd(vari)}</td>
+    </tr>`;
+  }).join('');
+
+  // EXPENSE LINE ITEMS
+  const expenseRows = b.expenses.map((r,i)=>{
+    const act=a.expenses[i]||0;
+    const vari=act-r.monthly; // positive = over budget = bad for expenses
+    const pct=r.monthly>0?(act/r.monthly*100):0;
+    const isAlert=vari>r.monthly*0.1;
+    const barColor=pct<=100?'var(--green)':pct<=115?'var(--amber)':'var(--red)';
+    return `<tr class="${isAlert?'alert-row':''}">
+      <td class="lbl">${r.label}${isAlert?`<span class="inline-alert ia-red">Over budget</span>`:''}</td>
+      <td class="r">${fd(r.monthly)}</td>
+      <td class="r">${fd(act)}</td>
+      <td class="li-bar-cell"><div class="li-bar"><div class="li-bar-fill" style="width:${Math.min(pct,130)}%;background:${barColor};"></div></div></td>
+      <td class="${vari>0?'bad':vari<0?'good':'neu'}">${vari>0?'+':''}${fd(vari)}</td>
+    </tr>`;
+  }).join('');
+
+  const lineItemsHtml = `
+    <div class="line-section">
+      <div class="ls-head"><span class="ls-title">Income line items</span></div>
+      <table class="li-table">
+        <thead><tr><th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th></tr></thead>
+        <tbody>
+          ${incomeRows}
+          <tr class="tot-row"><td>EGI total</td><td class="r">${fd(budIncome)}</td><td class="r">${fd(actIncome)}</td><td></td><td class="${actIncome>=budIncome?'good':'bad'}">${actIncome>=budIncome?'+':''}${fd(actIncome-budIncome)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="line-section">
+      <div class="ls-head"><span class="ls-title">Expense line items</span></div>
+      <table class="li-table">
+        <thead><tr><th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>vs. budget</th><th class="r">Variance</th></tr></thead>
+        <tbody>
+          ${expenseRows}
+          <tr class="tot-row"><td>Total expenses</td><td class="r">${fd(budExp)}</td><td class="r">${fd(actExp)}</td><td></td><td class="${actExp<=budExp?'good':'bad'}">${actExp>budExp?'+':''}${fd(actExp-budExp)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="line-section" style="border-bottom:none;">
+      <table class="li-table">
+        <tbody>
+          <tr class="tot-row" style="background:rgba(34,201,122,.04);">
+            <td style="font-size:14px;">Net operating income</td>
+            <td class="r" style="font-size:14px;">${fd(budNOI)}</td>
+            <td class="r" style="font-size:14px;color:${actNOI>=budNOI?'var(--green)':Math.abs(noiVar/budNOI*100)>5?'var(--red)':'var(--amber)'};">${fd(actNOI)}</td>
+            <td></td>
+            <td class="${noiVar>=0?'good':'bad'}" style="font-size:14px;">${noiVar>=0?'+':''}${fd(noiVar)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+
+  // UNIT RENTS
+  const unitRentRows = a.unitRents.map(u=>{
+    const diff = u.actualRate - u.budgetRate;
+    const diffPct = u.budgetRate>0?(diff/u.budgetRate*100):0;
+    const isAlert = diff < -(u.budgetRate*THRESHOLDS.unitRentBelowPct.value/100);
+    return `<tr class="${isAlert?'alert-row-amber':''}">
+      <td class="lbl">${u.type}${isAlert?`<span class="inline-alert ia-amber">Below rate</span>`:''}</td>
+      <td class="r">${u.count}</td>
+      <td class="r">${fd(u.budgetRate)}</td>
+      <td class="r ${diff>=0?'good':isAlert?'bad':'warn-col'}">${fd(u.actualRate)}</td>
+      <td class="${diff>=0?'good':isAlert?'bad':'warn-col'}">${diff>=0?'+':''}${fd(diff)} (${diffPct>=0?'+':''}${diffPct.toFixed(1)}%)</td>
+      <td class="r ${diff>=0?'good':isAlert?'bad':'warn-col'}">${fd(u.actualRate*u.count)}/mo</td>
+    </tr>`;
+  }).join('');
+
+  const unitRentHtml = `
+    <div class="unit-rent-section">
+      <div class="ls-head"><span class="ls-title">Unit rents vs. budget rates</span></div>
+      <table class="li-table">
+        <thead><tr><th>Unit type</th><th class="r">Count</th><th class="r">Budget rate</th><th class="r">Actual rate</th><th>Variance</th><th class="r">Total/mo</th></tr></thead>
+        <tbody>${unitRentRows}</tbody>
+      </table>
+    </div>`;
+
+  // TREND CHART
+  const maxNOI = Math.max(...a.monthlyNOI.filter(v=>v!==null), budNOI*1.1, 1);
+  const trendHtml = `
+    <div class="trend-section">
+      <div class="ms-title">Monthly NOI trend — ${prop.budgetYear}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Actual NOI per month vs. annual budget baseline (${fd(budNOI)}/mo)</div>
+      <div class="trend-grid">
+        ${MONTHS.map((mo,i)=>{
+          const val=a.monthlyNOI[i];
+          const isCurrent=i===now.getMonth();
+          const heightPct=val!==null?(val/maxNOI*100):0;
+          const barColor=val===null?'var(--bg4)':val>=budNOI?'var(--green)':val>=budNOI*0.95?'var(--amber)':'var(--red)';
+          return `<div class="trend-bar-wrap">
+            ${val!==null?`<div class="trend-value">${val>=1000?(val/1000).toFixed(0)+'k':val}</div>`:'<div class="trend-value" style="color:var(--bg4);">—</div>'}
+            <div class="trend-bar" style="height:${heightPct}%;background:${barColor};opacity:${isCurrent?1:val?0.7:0.3};"></div>
+            <div class="trend-month-label" style="color:${isCurrent?'var(--accent)':'var(--text3)'};">${mo}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="height:1px;background:var(--border2);margin-top:8px;position:relative;">
+        <div style="position:absolute;right:0;top:-18px;font-size:9px;color:var(--text3);">Budget baseline: ${fd(budNOI)}/mo</div>
+      </div>
+    </div>`;
+
+  const budgetBtnHtml = prop.type==='existing'?`
+    <div style="margin:16px 22px 0;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">✎ Edit ${prop.budgetYear} budget</button>
+    </div>`:'';
+
+  return `
+    <div class="prop-detail">
+      <div class="pd-header">
+        <div class="pdh-left">
+          <h2>${prop.name}</h2>
+          <p>${prop.address} · ${prop.units} units · ${prop.pm} · ${prop.budgetYear} budget</p>
+        </div>
+        <div class="pdh-right">
+          <div class="day-progress">Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH} — ${(MONTH_PCT*100).toFixed(0)}% through month</div>
+          ${prop.budgetHistory && Object.keys(prop.budgetHistory).length > 1 ? `
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:var(--text3);">Budget year:</span>
+              ${Object.keys(prop.budgetHistory).sort().map(yr=>`
+                <button class="year-tab-btn ${+yr===prop.budgetYear?'active':''}"
+                  onclick="switchBudgetYear(${prop.id},${yr})">${yr}</button>`).join('')}
+            </div>` : `<span style="font-size:11px;color:var(--text3);">Budget: ${prop.budgetYear}</span>`}
+          <button class="pd-refresh-btn" onclick="refreshPropActuals(this)">⟳ Refresh actuals</button>
+          ${prop.type==='existing'?`<button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">✎ Edit budget</button>`:''}
+        </div>
+      </div>
+      ${monthProgressHtml}
+      ${alerts.length>0?`
+        <div style="padding:12px 22px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px;">Active alerts — ${alerts.length} total</div>
+          ${alerts.map(al=>`<div class="alert-chip ${al.sev}"><span class="chip-icon">${al.icon}</span><span class="chip-text">${al.text}</span></div>`).join('')}
+        </div>`:''}
+      ${metricsHtml}
+      ${lineItemsHtml}
+      ${unitRentHtml}
+      ${trendHtml}
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════
+function selectProp(id) {
+  selectedPropId = id||null;
+  renderPage();
+  if (id) setTimeout(()=>{
+    const el=document.getElementById('prop-detail-wrap');
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+
+function toggleArp() {
+  arpOpen=!arpOpen;
+  const body=document.getElementById('arp-body');
+  const chev=document.getElementById('arp-chev');
+  if(body){body.classList.toggle('open',arpOpen);}
+  if(chev){chev.classList.toggle('open',arpOpen);}
+}
+
+// ══════════════════════════════════════
+// BUDGET MODAL (existing properties)
+// ══════════════════════════════════════
+function openBudgetModal(propId) {
+  budgetModalPropId = propId;
+  const prop = properties.find(p=>p.id===propId);
+  if (!prop) return;
+  const b = prop.budget;
+  document.getElementById('budget-modal-body').innerHTML = `
+    <div class="mf"><label>Budget year</label>
+      <input type="number" id="bm-year" value="${prop.budgetYear}"/></div>
+    <div style="font-size:11px;color:var(--text3);">Enter monthly amounts. Annual totals calculated automatically.</div>
+    <div class="bline-section-label">Income</div>
+    ${b.income.map((r,i)=>`
+      <div class="bline-row">
+        <input class="bline-input" type="text" value="${r.label}" id="bm-inc-lbl-${i}" placeholder="Line item label"/>
+        <input class="bline-input" type="text" value="${fd(r.monthly)}" id="bm-inc-val-${i}" placeholder="Monthly $"/>
+        <button class="del-btn" onclick="removeBudgetModalLine('income',${i})">×</button>
+      </div>`).join('')}
+    <button class="add-line-btn" onclick="addBudgetModalLine('income')">+ Add income line</button>
+    <div class="bline-section-label">Expenses</div>
+    ${b.expenses.map((r,i)=>`
+      <div class="bline-row">
+        <input class="bline-input" type="text" value="${r.label}" id="bm-exp-lbl-${i}" placeholder="Line item label"/>
+        <input class="bline-input" type="text" value="${fd(r.monthly)}" id="bm-exp-val-${i}" placeholder="Monthly $"/>
+        <button class="del-btn" onclick="removeBudgetModalLine('expenses',${i})">×</button>
+      </div>`).join('')}
+    <button class="add-line-btn" onclick="addBudgetModalLine('expenses')">+ Add expense line</button>
+    <div class="bline-section-label">CapEx</div>
+    <div class="bline-row">
+      <input class="bline-input" type="text" value="Annual CapEx budget" readonly style="color:var(--text3);"/>
+      <input class="bline-input" type="text" value="${fd(b.capexBudget)}" id="bm-capex"/>
+      <div></div>
+    </div>`;
+  document.getElementById('budget-modal').classList.add('open');
+}
+
+function addBudgetModalLine(type) {
+  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
+  prop.budget[type].push({label:'New line',monthly:0});
+  openBudgetModal(budgetModalPropId);
+}
+function removeBudgetModalLine(type,i) {
+  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
+  prop.budget[type].splice(i,1);
+  openBudgetModal(budgetModalPropId);
+}
+
+function saveBudget() {
+  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
+  prop.budgetYear=+document.getElementById('bm-year').value||prop.budgetYear;
+  prop.budget.income.forEach((r,i)=>{
+    const lbl=document.getElementById(`bm-inc-lbl-${i}`);
+    const val=document.getElementById(`bm-inc-val-${i}`);
+    if(lbl)r.label=lbl.value;
+    if(val)r.monthly=pd(val.value);
+  });
+  prop.budget.expenses.forEach((r,i)=>{
+    const lbl=document.getElementById(`bm-exp-lbl-${i}`);
+    const val=document.getElementById(`bm-exp-val-${i}`);
+    if(lbl)r.label=lbl.value;
+    if(val)r.monthly=pd(val.value);
+  });
+  const cx=document.getElementById('bm-capex');
+  if(cx)prop.budget.capexBudget=pd(cx.value);
+  closeBudgetModal();
+  renderPage();
+  showToast(`Budget updated for ${prop.name}.`);
+}
+function closeBudgetModal(){document.getElementById('budget-modal').classList.remove('open');budgetModalPropId=null;}
+
+// ══════════════════════════════════════
+// ALERT SETTINGS MODAL
+// ══════════════════════════════════════
+function openAlertSettings() {
+  document.getElementById('alert-modal-body').innerHTML = `
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Alerts fire immediately when a threshold is crossed — mid-month or otherwise. Toggle off to disable a specific alert type.</div>
+    ${Object.entries(THRESHOLDS).map(([key,t])=>`
+      <div class="thresh-row">
+        <span class="thresh-label">${t.label}</span>
+        ${t.unit!=='$'?`<input class="thresh-input" type="number" id="thresh-${key}" value="${t.value}" step="0.5"/>
+        <span class="thresh-unit">${t.unit}</span>`:`<span style="font-size:12px;color:var(--text3);">N/A</span><span class="thresh-unit"></span>`}
+        <div class="thresh-toggle">
+          <label class="tog-sw">
+            <input type="checkbox" id="thresh-en-${key}" ${t.enabled?'checked':''}/>
+            <span class="tog-track"></span><span class="tog-knob"></span>
+          </label>
+          <span style="font-size:11px;color:var(--text3);">On</span>
+        </div>
+      </div>`).join('')}`;
+  document.getElementById('alert-modal').classList.add('open');
+}
+function saveThresholds(){
+  Object.keys(THRESHOLDS).forEach(key=>{
+    const inp=document.getElementById('thresh-'+key);
+    const en=document.getElementById('thresh-en-'+key);
+    if(inp) THRESHOLDS[key].value=parseFloat(inp.value)||THRESHOLDS[key].value;
+    if(en)  THRESHOLDS[key].enabled=en.checked;
+  });
+  closeAlertSettings();
+  renderPage();
+  showToast('Alert thresholds saved. Monitoring updated.');
+}
+function resetThresholds(){THRESHOLDS=JSON.parse(JSON.stringify(THRESH_DEFAULTS));openAlertSettings();showToast('Thresholds reset to defaults.');}
+function closeAlertSettings(){document.getElementById('alert-modal').classList.remove('open');}
+
+// ══════════════════════════════════════
+// ADD PROPERTY MODAL
+// ══════════════════════════════════════
+function openAddProp(){document.getElementById('add-prop-modal').classList.add('open');}
+function closeAddProp(){document.getElementById('add-prop-modal').classList.remove('open');}
+function saveNewProp(){
+  const name=document.getElementById('new-prop-name').value.trim();
+  const addr=document.getElementById('new-prop-addr').value.trim();
+  const units=+document.getElementById('new-prop-units').value||0;
+  const pm=document.getElementById('new-prop-pm').value;
+  const year=+document.getElementById('new-prop-year').value||2026;
+  if(!name){showToast('Property name is required.',true);return;}
+  const id=Date.now();
+  properties.push({
+    id,name,address:addr||'—',units,pm,market:'',type:'existing',budgetYear:year,
+    budget:{income:[{label:'Gross Potential Rent',monthly:0},{label:'Vacancy Loss',monthly:0},{label:'Other Income',monthly:0}],expenses:[{label:'Property Management',monthly:0},{label:'Repairs & Maintenance',monthly:0},{label:'Insurance',monthly:0},{label:'Property Taxes',monthly:0},{label:'Utilities (Common)',monthly:0},{label:'Reserves',monthly:0}],capexBudget:0},
+    actuals:{occupancy:0,collections:0,income:[0,0,0],expenses:[0,0,0,0,0,0],capexSpent:0,unitRents:[],monthlyNOI:Array(12).fill(null)},
+    apiConnected:false,
+  });
+  closeAddProp();
+  selectedPropId=id;
+  renderPage();
+  openBudgetModal(id);
+  showToast(`${name} added. Enter the annual budget to begin tracking.`);
+}
+
+// ══════════════════════════════════════
+// BUDGET UPLOAD ENGINE
+// ══════════════════════════════════════
+let uploadState = {
+  step: 1,           // 1=upload, 2=preview/map, 3=match, 4=confirm
+  rawRows: [],       // parsed rows from file
+  detected: {},      // {propertyName, year, frequency, income:[], expenses:[], capex}
+  matchChoice: null, // propId or 'new'
+  fileName: '',
+};
+
+function openUploadModal() {
+  uploadState = {step:1, rawRows:[], detected:{}, matchChoice:null, fileName:''};
+  document.getElementById('upload-modal').classList.add('open');
+  renderUploadStep();
+}
+function closeUploadModal() {
+  document.getElementById('upload-modal').classList.remove('open');
+}
+
+function renderUploadStep() {
+  const step = uploadState.step;
+  const stepsHtml = `
+    <div class="upload-steps">
+      <div class="upload-step ${step>=1?step>1?'done':'active':''}">
+        <div class="us-num">${step>1?'✓':'1'}</div><span>Upload file</span>
+      </div>
+      <div class="us-sep"></div>
+      <div class="upload-step ${step>=2?step>2?'done':'active':''}">
+        <div class="us-num">${step>2?'✓':'2'}</div><span>Review &amp; map</span>
+      </div>
+      <div class="us-sep"></div>
+      <div class="upload-step ${step>=3?step>3?'done':'active':''}">
+        <div class="us-num">${step>3?'✓':'3'}</div><span>Match property</span>
+      </div>
+      <div class="us-sep"></div>
+      <div class="upload-step ${step>=4?'active':''}">
+        <div class="us-num">4</div><span>Confirm &amp; save</span>
+      </div>
+    </div>`;
+
+  const body = document.getElementById('upload-modal-body');
+  const footer = document.getElementById('upload-modal-footer');
+
+  if (step === 1) {
+    body.innerHTML = stepsHtml + `
+      <label class="upload-drop-zone" id="udz" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+        <div class="udz-icon">⤒</div>
+        <div class="udz-title">Drop your budget file here or click to browse</div>
+        <div class="udz-sub">Auto-detects property name, income, expenses, and whether figures are monthly or annual</div>
+        <div class="udz-formats">
+          <span class="fmt-badge">CSV</span>
+          <span class="fmt-badge">XLSX</span>
+          <span class="fmt-badge">XLS</span>
+          <span class="fmt-badge">Google Sheets</span>
+          <span class="fmt-badge">PDF (text)</span>
+        </div>
+        <input type="file" id="budget-file-input" accept=".csv,.xlsx,.xls,.pdf"
+          onchange="handleFileSelect(this.files[0])"/>
+      </label>
+      <div style="margin-top:16px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.6;">
+        <strong style="color:var(--text2);">Expected format:</strong> Your file should have a property name, a year, and rows with labels and dollar amounts. Column headers like "Category", "Monthly", "Annual", "Budget" are recognized automatically. The app handles most standard budget export formats.
+      </div>`;
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
+
+  } else if (step === 2) {
+    const d = uploadState.detected;
+    const freqBadge = d.frequency==='annual'
+      ? '<span class="detect-badge db-annual">Annual ÷12</span>'
+      : d.frequency==='monthly'
+      ? '<span class="detect-badge db-monthly">Monthly</span>'
+      : '<span class="detect-badge db-unknown">Unknown — set below</span>';
+
+    const incRows = (d.income||[]).map((r,i) => `
+      <tr class="income-row">
+        <td>${r.label}</td>
+        <td class="r">${fd(r.monthly)}/mo</td>
+        <td class="r">${fd(r.monthly*12)}/yr</td>
+        <td>
+          <select class="map-select" style="width:160px;" onchange="remapLine('income',${i},this.value)">
+            <option value="income" ${r.category==='income'?'selected':''}>Income line</option>
+            <option value="expense" ${r.category==='expense'?'selected':''}>Expense line</option>
+            <option value="capex" ${r.category==='capex'?'selected':''}>CapEx budget</option>
+            <option value="skip">Skip this row</option>
+          </select>
+        </td>
+      </tr>`).join('');
+
+    const expRows = (d.expenses||[]).map((r,i) => `
+      <tr class="expense-row">
+        <td>${r.label}</td>
+        <td class="r">${fd(r.monthly)}/mo</td>
+        <td class="r">${fd(r.monthly*12)}/yr</td>
+        <td>
+          <select class="map-select" style="width:160px;" onchange="remapLine('expense',${i},this.value)">
+            <option value="income">Income line</option>
+            <option value="expense" selected>Expense line</option>
+            <option value="capex">CapEx budget</option>
+            <option value="skip">Skip this row</option>
+          </select>
+        </td>
+      </tr>`).join('');
+
+    body.innerHTML = stepsHtml + `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">📄 ${uploadState.fileName}</div>
+          <div style="font-size:11px;color:var(--text3);">Review the detected rows below. Change the category if anything was misidentified, then click Next.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div style="font-size:11px;color:var(--text3);">Detected figures:</div>${freqBadge}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="parsed-preview">
+          <div class="pp-head"><span>Property detected</span></div>
+          <div style="padding:12px 14px;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">${d.propertyName||'Not detected'}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;">
+              <div style="font-size:11px;color:var(--text3);">Budget year:</div>
+              <input type="number" value="${d.year||new Date().getFullYear()}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;width:80px;" onchange="uploadState.detected.year=+this.value"/>
+            </div>
+          </div>
+        </div>
+        <div class="parsed-preview">
+          <div class="pp-head"><span>Budget totals</span></div>
+          <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">Total income/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">Total expenses/mo</span><span style="color:var(--text);font-family:var(--mono);">${fd((d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;border-top:1px solid var(--border);padding-top:6px;"><span style="color:var(--text3);">NOI/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0)-(d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
+            ${d.capex?`<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">CapEx budget</span><span style="color:var(--amber);font-family:var(--mono);">${fd(d.capex)}</span></div>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="parsed-preview">
+        <div class="pp-head"><span>Detected line items — correct any mismatches</span><span>${(d.income||[]).length} income · ${(d.expenses||[]).length} expense</span></div>
+        <div style="max-height:280px;overflow-y:auto;">
+          <table class="pp-table">
+            <thead><tr><th style="width:40%">Label</th><th class="r">Monthly</th><th class="r">Annual</th><th>Category</th></tr></thead>
+            <tbody>
+              ${(d.income||[]).length?`<tr class="sec-head"><td colspan="4">Income</td></tr>${incRows}`:''}
+              ${(d.expenses||[]).length?`<tr class="sec-head"><td colspan="4">Expenses</td></tr>${expRows}`:''}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="uploadState.step=1;renderUploadStep()">← Back</button>
+      <button class="btn-primary" onclick="uploadState.step=3;renderUploadStep()">Next: Match property →</button>`;
+
+  } else if (step === 3) {
+    // Find matching properties by name similarity
+    const name = (uploadState.detected.propertyName||'').toLowerCase();
+    const scored = properties.map(p => {
+      const pn = p.name.toLowerCase();
+      let score = 0;
+      if (pn === name) score = 100;
+      else if (pn.includes(name) || name.includes(pn)) score = 80;
+      else {
+        const words = name.split(/\s+/);
+        words.forEach(w => { if (w.length>3 && pn.includes(w)) score += 20; });
+      }
+      return {...p, score};
+    }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
+
+    const matchCards = scored.map(p => `
+      <div class="match-card ${uploadState.matchChoice===p.id?'selected':''}" onclick="selectMatch(${p.id})">
+        <span class="mc-icon">⬡</span>
+        <div class="mc-info">
+          <div class="mc-name">${p.name}</div>
+          <div class="mc-sub">${p.address} · ${p.units} units · ${p.pm}</div>
+          ${p.budgetHistory?`<div style="font-size:10px;color:var(--text3);margin-top:2px;">Existing budgets: ${Object.keys(p.budgetHistory).join(', ')}</div>`:''}
+        </div>
+        <span class="mc-score">${p.score}% match</span>
+      </div>`).join('');
+
+    body.innerHTML = stepsHtml + `
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+        The file was detected as <strong style="color:var(--text);">"${uploadState.detected.propertyName||'Unknown'}"</strong> · ${uploadState.detected.year} budget.
+        Select which property this budget belongs to, or create a new one.
+      </div>
+      ${scored.length ? `
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px;">Possible matches</div>
+        ${matchCards}` : `
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">No matching properties found in the system.</div>`}
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:12px 0 8px;">Or create new property</div>
+      <div class="match-card new-prop ${uploadState.matchChoice==='new'?'selected':''}" onclick="selectMatch('new')">
+        <span class="mc-icon">+</span>
+        <div class="mc-info">
+          <div class="mc-name">Create new property: "${uploadState.detected.propertyName||'Unnamed'}"</div>
+          <div class="mc-sub">Will be added to your portfolio with this budget as the baseline</div>
+        </div>
+      </div>`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
+      <button class="btn-primary" ${uploadState.matchChoice?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
+        onclick="${uploadState.matchChoice?'uploadState.step=4;renderUploadStep()':''}">Next: Confirm →</button>`;
+
+  } else if (step === 4) {
+    const d = uploadState.detected;
+    const isNew = uploadState.matchChoice === 'new';
+    const matchedProp = isNew ? null : properties.find(p=>p.id===uploadState.matchChoice);
+    const existingYears = matchedProp?.budgetHistory ? Object.keys(matchedProp.budgetHistory) : [];
+    const willOverwrite = existingYears.includes(String(d.year));
+
+    body.innerHTML = stepsHtml + `
+      <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">Ready to save</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2);">
+          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Property:</span> ${isNew?`New — "${d.propertyName}"`:matchedProp?.name}</div>
+          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Budget year:</span> ${d.year}</div>
+          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Income lines:</span> ${(d.income||[]).length} items · ${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0))}/mo</div>
+          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Expense lines:</span> ${(d.expenses||[]).length} items · ${fd((d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}/mo</div>
+          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">NOI:</span> <span style="color:var(--green);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0)-(d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}/mo</span></div>
+          ${d.capex?`<div><span style="color:var(--text3);min-width:120px;display:inline-block;">CapEx budget:</span> ${fd(d.capex)}/yr</div>`:''}
+          ${!isNew&&existingYears.length?`<div><span style="color:var(--text3);min-width:120px;display:inline-block;">Existing budgets:</span> ${existingYears.join(', ')}</div>`:''}
+        </div>
+      </div>
+      ${willOverwrite?`<div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:14px;">⚑ A ${d.year} budget already exists for this property. Saving will overwrite it.</div>`:''}
+      ${isNew?`
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">New property details — fill in before saving:</div>
+        <div class="modal-grid">
+          <div class="mf"><label>Address</label><input type="text" id="new-up-addr" placeholder="City, ST"/></div>
+          <div class="mf"><label>Total units</label><input type="number" id="new-up-units" placeholder="e.g. 48"/></div>
+          <div class="mf"><label>PM software</label><select id="new-up-pm"><option>AppFolio</option><option>Buildium</option></select></div>
+          <div class="mf"><label>Market</label><select id="new-up-market"><option>Dallas-Fort Worth (DFW)</option><option>Wichita, KS</option><option>Omaha, NE</option><option>Other</option></select></div>
+        </div>`:''}`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
+      <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save budget</button>`;
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('udz')?.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+}
+
+function handleFileSelect(file) {
+  if (!file) return;
+  uploadState.fileName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'pdf') {
+    // Read as text — works for text-based PDFs exported from Excel/Sheets
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      if (text.includes('%PDF') && !text.includes('\n')) {
+        showToast('This appears to be a scanned/image PDF. Please export as CSV or Excel instead.', true);
+        return;
+      }
+      uploadState.rawRows = text.split('\n').map(l=>l.split(',').map(c=>c.trim()));
+      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
+      uploadState.step = 2;
+      renderUploadStep();
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split('\n');
+      uploadState.rawRows = lines.map(l => {
+        // Handle quoted CSV fields
+        const cols = []; let cur='', inQ=false;
+        for (const ch of l+',') {
+          if (ch==='"') inQ=!inQ;
+          else if (ch===','&&!inQ) { cols.push(cur.trim()); cur=''; }
+          else cur+=ch;
+        }
+        return cols;
+      });
+      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
+      uploadState.step = 2;
+      renderUploadStep();
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  if (['xlsx','xls'].includes(ext)) {
+    // Use SheetJS loaded from CDN
+    if (typeof XLSX === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = () => parseExcel(file);
+      document.head.appendChild(s);
+    } else {
+      parseExcel(file);
+    }
+    return;
+  }
+
+  showToast('Unsupported file type. Please upload CSV, XLSX, or PDF.', true);
+}
+
+function parseExcel(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      // Use first sheet
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      uploadState.rawRows = rows.map(r => r.map(c => String(c).trim()));
+      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
+      uploadState.step = 2;
+      renderUploadStep();
+    } catch(err) {
+      showToast('Could not parse Excel file. Try saving as CSV and re-uploading.', true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── DETECTION ENGINE ──
+function detectBudget(rows, fileName) {
+  const result = {
+    propertyName: '', year: new Date().getFullYear(),
+    frequency: 'unknown', income: [], expenses: [], capex: 0
+  };
+
+  // Known income/expense keywords
+  const INCOME_KW = ['rent','revenue','income','rents','gpr','egi','other income','laundry','late fee','pet fee','parking','storage','concession','vacancy','loss'];
+  const EXPENSE_KW = ['management','repair','maintenance','insurance','tax','taxes','utility','utilities','admin','legal','reserve','landscaping','pest','payroll','advertising','professional','accounting','water','electric','gas','trash','sewer'];
+  const CAPEX_KW = ['capex','capital','renovation','improvement','construction'];
+  const SKIP_KW = ['total','subtotal','net','noi','cash flow','debt','mortgage','loan','dscr','cap rate'];
+
+  // Detect property name — look for a prominent text-only row near the top
+  for (let i=0;i<Math.min(10,rows.length);i++) {
+    const r = rows[i];
+    const first = (r[0]||'').trim();
+    if (first && !/^\d/.test(first) && first.length>4 && !first.toLowerCase().includes('budget') && !first.toLowerCase().includes('category')) {
+      // Check if it looks like a year
+      const yearMatch = first.match(/20\d\d/);
+      if (yearMatch) { result.year = +yearMatch[0]; continue; }
+      if (!result.propertyName && !/income|expense|revenue|month/i.test(first)) {
+        result.propertyName = first;
+      }
+    }
+    // Also check for year in any cell
+    for (const cell of r) {
+      const ym = String(cell).match(/^(202\d|203\d)$/);
+      if (ym) result.year = +ym[0];
+    }
+  }
+
+  // Try to detect year from filename
+  const fnYear = fileName.match(/20\d\d/);
+  if (fnYear && result.year === new Date().getFullYear()) result.year = +fnYear[0];
+
+  // Try to detect from filename if no property name found
+  if (!result.propertyName) {
+    const cleaned = fileName.replace(/\.(csv|xlsx|xls|pdf)/i,'').replace(/[-_]/g,' ').replace(/budget|20\d\d/gi,'').trim();
+    if (cleaned.length > 2) result.propertyName = cleaned.replace(/\b\w/g, c=>c.toUpperCase());
+  }
+
+  // Find value columns — look for headers like Monthly, Annual, Budget, Jan, Feb etc
+  let monthlyCol = -1, annualCol = -1;
+  for (let i=0;i<Math.min(15,rows.length);i++) {
+    const r = rows[i].map(c=>c.toLowerCase());
+    r.forEach((cell,ci) => {
+      if (/monthly|month/.test(cell) && monthlyCol===-1) monthlyCol=ci;
+      if (/annual|yearly|year|total/.test(cell) && annualCol===-1) annualCol=ci;
+    });
+    if (monthlyCol>-1||annualCol>-1) break;
+  }
+
+  // If no labeled columns found, guess: col 0 = label, col 1 = first number
+  let valueCol = monthlyCol>-1 ? monthlyCol : annualCol>-1 ? annualCol : 1;
+  result.frequency = monthlyCol>-1 ? 'monthly' : annualCol>-1 ? 'annual' : 'unknown';
+
+  // If frequency unknown, try to detect from values — annual figures tend to be > 10000 for most lines
+  if (result.frequency === 'unknown') {
+    const vals = [];
+    rows.forEach(r => {
+      const v = pd(r[1]||r[2]||'');
+      if (v > 0 && v < 9999999) vals.push(v);
+    });
+    const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+    result.frequency = avg > 8000 ? 'annual' : 'monthly';
+  }
+
+  // Parse rows
+  rows.forEach(r => {
+    const label = (r[0]||'').trim();
+    if (!label || label.length < 2) return;
+
+    const rawVal = pd(r[valueCol]||r[1]||r[2]||'');
+    if (rawVal === 0 && !/0/.test(String(r[valueCol]||r[1]||''))) return;
+
+    const monthly = result.frequency==='annual' ? rawVal/12 : rawVal;
+    const ll = label.toLowerCase();
+
+    if (SKIP_KW.some(k=>ll.includes(k))) return;
+    if (CAPEX_KW.some(k=>ll.includes(k))) { result.capex = result.frequency==='annual'?rawVal:rawVal*12; return; }
+
+    if (INCOME_KW.some(k=>ll.includes(k))) {
+      // Vacancy/concessions are negative
+      const isNeg = /vacancy|concession|loss/.test(ll);
+      result.income.push({label, monthly: isNeg ? -Math.abs(monthly) : monthly, category:'income'});
+    } else if (EXPENSE_KW.some(k=>ll.includes(k))) {
+      result.expenses.push({label, monthly, category:'expense'});
+    } else if (rawVal > 0) {
+      // Unknown — guess based on sign and value
+      result.expenses.push({label, monthly, category:'expense'});
+    }
+  });
+
+  return result;
+}
+
+function remapLine(type, idx, newCat) {
+  const d = uploadState.detected;
+  const arr = type==='income' ? d.income : d.expenses;
+  const item = arr[idx];
+  if (!item) return;
+  item.category = newCat;
+  // Move to correct array if needed
+  if (newCat === 'income' && type !== 'income') {
+    d.income.push({...item, monthly: item.monthly});
+    d.expenses.splice(idx,1);
+  } else if (newCat === 'expense' && type !== 'expense') {
+    d.expenses.push({...item});
+    d.income.splice(idx,1);
+  } else if (newCat === 'capex') {
+    d.capex = item.monthly * 12;
+    arr.splice(idx,1);
+  } else if (newCat === 'skip') {
+    arr.splice(idx,1);
+  }
+  renderUploadStep();
+}
+
+function selectMatch(choice) {
+  uploadState.matchChoice = choice;
+  renderUploadStep();
+}
+
+function confirmSaveBudget() {
+  const d = uploadState.detected;
+  const isNew = uploadState.matchChoice === 'new';
+  const year = d.year;
+
+  const budget = {
+    income:   d.income.map(r=>({label:r.label, monthly:r.monthly})),
+    expenses: d.expenses.map(r=>({label:r.label, monthly:r.monthly})),
+    capexBudget: d.capex || 0,
+  };
+
+  if (isNew) {
+    const addr   = document.getElementById('new-up-addr')?.value||'—';
+    const units  = +document.getElementById('new-up-units')?.value||0;
+    const pm     = document.getElementById('new-up-pm')?.value||'AppFolio';
+    const id = Date.now();
+    const newProp = {
+      id, name: d.propertyName||'Uploaded property',
+      address: addr, units, pm, market:'', type:'existing',
+      budgetYear: year,
+      budget,
+      budgetHistory: {[year]: budget},
+      actuals:{occupancy:0,collections:0,income:budget.income.map(()=>0),expenses:budget.expenses.map(()=>0),capexSpent:0,unitRents:[],monthlyNOI:Array(12).fill(null)},
+      apiConnected:false,
+    };
+    properties.push(newProp);
+    selectedPropId = id;
+  } else {
+    const prop = properties.find(p=>p.id===uploadState.matchChoice);
+    if (prop) {
+      if (!prop.budgetHistory) prop.budgetHistory = {};
+      prop.budgetHistory[year] = budget;
+      prop.budget = budget;
+      prop.budgetYear = year;
+      // Pad actuals arrays if needed
+      if (prop.actuals.income.length !== budget.income.length)
+        prop.actuals.income = budget.income.map(()=>0);
+      if (prop.actuals.expenses.length !== budget.expenses.length)
+        prop.actuals.expenses = budget.expenses.map(()=>0);
+      selectedPropId = prop.id;
+    }
+  }
+
+  closeUploadModal();
+  renderPage();
+  showToast('Budget saved for ' + (d.propertyName||'property') + ' · ' + year + '.');
+}
+
+function switchBudgetYear(propId, year) {
+  const prop = properties.find(p=>p.id===propId);
+  if (!prop||!prop.budgetHistory||!prop.budgetHistory[year]) return;
+  prop.budget = prop.budgetHistory[year];
+  prop.budgetYear = +year;
+  // Pad actuals
+  if (prop.actuals.income.length !== prop.budget.income.length)
+    prop.actuals.income = prop.budget.income.map(()=>0);
+  if (prop.actuals.expenses.length !== prop.budget.expenses.length)
+    prop.actuals.expenses = prop.budget.expenses.map(()=>0);
+  renderPage();
+}
+
+function refreshPropActuals(btn) {
+  const prop = properties.find(p=>p.id===selectedPropId);
+  const name = prop ? prop.name : 'property';
+  showToast('Pulling latest actuals from Looker Studio…');
+  setTimeout(()=>showToast('Actuals updated for '+name+'.'), 1000);
+}
+
+function showToast(msg,err=false){
+  document.getElementById('tdot').style.background=err?'var(--red)':'var(--green)';
+  document.getElementById('tmsg').textContent=msg;
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3400);
+}
+
+// INIT
+renderPage();
+</script>
+</body>
+</html>

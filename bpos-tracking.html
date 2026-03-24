@@ -327,7 +327,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .review-table tr.sec-hd td{background:var(--bg4);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:5px 10px;}
 .review-table tr.tot-hd td{font-weight:600;border-top:1px solid var(--border2);color:var(--text);}
 .review-table tr.noi-row td{background:rgba(34,201,122,.04);font-weight:600;font-size:13px;}
+.year-dropdown{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 28px 5px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;transition:border-color .15s;}
+.year-dropdown:focus{border-color:var(--accent);}
 </style>
+
+<!-- EDIT PROPERTY MODAL -->
+<div class="modal-overlay" id="edit-prop-modal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Edit property</h2>
+        <p>Update property details. Unit count changes can be applied retroactively.</p>
+      </div>
+      <button class="modal-close" onclick="closeEditProp()">×</button>
+    </div>
+    <div class="modal-body" id="edit-prop-body"></div>
+    <div class="modal-footer" id="edit-prop-footer"></div>
+  </div>
+</div>
 </head>
 <body>
 
@@ -988,19 +1005,21 @@ function renderPropDetail(prop) {
       <div class="pd-header">
         <div class="pdh-left">
           <h2>${prop.name}</h2>
-          <p>${prop.address} · ${prop.units} units · ${prop.pm} · ${prop.budgetYear} budget</p>
+          <p>${prop.address} · ${prop.units} units · ${prop.pm} · ${prop.market||''}</p>
         </div>
         <div class="pdh-right">
           <div class="day-progress">Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH} — ${(MONTH_PCT*100).toFixed(0)}% through month</div>
-          ${prop.budgetHistory && Object.keys(prop.budgetHistory).length > 1 ? `
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-size:11px;color:var(--text3);">Budget year:</span>
-              ${Object.keys(prop.budgetHistory).sort().map(yr=>`
-                <button class="year-tab-btn ${+yr===prop.budgetYear?'active':''}"
-                  onclick="switchBudgetYear(${prop.id},${yr})">${yr}</button>`).join('')}
+          ${prop.budgetHistory && Object.keys(prop.budgetHistory).length > 0 ? `
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="font-size:11px;color:var(--text3);">Budget:</span>
+              <select class="year-dropdown" onchange="switchBudgetYear(${prop.id},+this.value)">
+                ${Object.keys(prop.budgetHistory).sort((a,b)=>b-a).map(yr=>`
+                  <option value="${yr}" ${+yr===prop.budgetYear?'selected':''}>${yr}</option>`).join('')}
+              </select>
             </div>` : `<span style="font-size:11px;color:var(--text3);">Budget: ${prop.budgetYear}</span>`}
           <button class="pd-refresh-btn" onclick="refreshPropActuals(this)">⟳ Refresh actuals</button>
-          ${prop.type==='existing'?`<button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">✎ Edit budget</button>`:''}
+          <button class="pd-refresh-btn" onclick="openEditProp(${prop.id})">✎ Edit property</button>
+          ${prop.type==='existing'?`<button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">⤒ Update budget</button>`:''}
         </div>
       </div>
       ${monthProgressHtml}
@@ -1609,64 +1628,17 @@ function renderUploadStep() {
   // ── STEP 3: Match each selected sheet to existing property or create new ──
   } else if (step === 3) {
     const toImport = uploadState.allSheets.filter(s=>uploadState.selectedSheets[s.sheetName]!==false);
-
-    const matchRows = toImport.map(s => {
-      const name = (s.displayName||s.sheetName).toLowerCase().trim();
-      // Score existing properties by name similarity
-      const scored = properties.map(p=>{
-        const pn = p.name.toLowerCase();
-        let score = 0;
-        if (pn===name||pn===s.sheetName.toLowerCase()) score=100;
-        else if (pn.includes(name)||name.includes(pn)) score=85;
-        else {
-          name.split(/\s+/).forEach(w=>{ if(w.length>3&&pn.includes(w)) score+=25; });
-          s.sheetName.toLowerCase().split(/\s+/).forEach(w=>{ if(w.length>2&&pn.includes(w)) score+=15; });
-        }
-        return {...p, score};
-      }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
-
-      const current = uploadState.matchMap[s.sheetName];
-      const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
-      const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
-      const noi = incTotal - expTotal;
-
-      return `
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</div>
-              <div style="font-size:11px;color:var(--text3);">${s.income.length} income lines · ${s.expenses.length} expense lines · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span></div>
-            </div>
-          </div>
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;">Map to:</div>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            ${scored.slice(0,3).map(p=>`
-              <label class="match-card ${current===p.id?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}',${p.id})">
-                <input type="radio" name="match-${s.sheetName}" value="${p.id}" ${current===p.id?'checked':''} style="display:none;"/>
-                <span class="mc-icon">⬡</span>
-                <div class="mc-info">
-                  <div class="mc-name">${p.name}</div>
-                  <div class="mc-sub">${p.address} · ${p.units} units</div>
-                  ${p.budgetHistory?`<div style="font-size:10px;color:var(--text3);">Existing: ${Object.keys(p.budgetHistory).join(', ')}</div>`:''}
-                </div>
-                <span class="mc-score">${p.score}%</span>
-              </label>`).join('')}
-            <label class="match-card new-prop ${current==='new'?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}','new')">
-              <input type="radio" name="match-${s.sheetName}" value="new" ${current==='new'?'checked':''} style="display:none;"/>
-              <span class="mc-icon">+</span>
-              <div class="mc-info"><div class="mc-name">Create new: "${s.displayName}"</div><div class="mc-sub">Add as a new property</div></div>
-            </label>
-            <label class="match-card ${current==='skip'?'selected':''}" style="cursor:pointer;opacity:.7;" onclick="setMatchMap('${s.sheetName}','skip')">
-              <input type="radio" name="match-${s.sheetName}" value="skip" ${current==='skip'?'checked':''} style="display:none;"/>
-              <span class="mc-icon" style="color:var(--text3);">○</span>
-              <div class="mc-info"><div class="mc-name" style="color:var(--text3);">Skip this property</div><div class="mc-sub">Do not import</div></div>
-            </label>
-          </div>
-        </div>`;
-    }).join('');
-
-    const allMapped = toImport.every(s=>uploadState.matchMap[s.sheetName]);
-    body.innerHTML = stepsHtml + `<div style="max-height:450px;overflow-y:auto;">${matchRows}</div>`;
+    const allMapped = toImport.every(s=>
+      uploadState.matchMap[s.sheetName] &&
+      uploadState.matchMap[s.sheetName] !== '__picking__'
+    );
+    body.innerHTML = stepsHtml + `
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
+        The app has checked your portfolio for matching properties. Confirm each match or reassign before saving.
+      </div>
+      <div style="max-height:450px;overflow-y:auto;">
+        ${toImport.map(s=>renderMatchConfirmCard(s)).join('')}
+      </div>`;
     footer.innerHTML = `
       <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
       <button class="btn-primary" ${allMapped?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
@@ -1674,7 +1646,7 @@ function renderUploadStep() {
         Next: Review &amp; save →
       </button>`;
 
-  // ── STEP 4: Summary + save ──
+    // ── STEP 4: Summary + save ──
   } else if (step === 4) {
     const toImport = uploadState.allSheets.filter(s=>
       uploadState.selectedSheets[s.sheetName]!==false &&
@@ -1990,6 +1962,221 @@ function confirmSaveBudget() {
   showToast(`Imported: ${created} new, ${updated} updated. Budgets saved.`);
 }
 
+
+// ══════════════════════════════════════
+// EDIT PROPERTY
+// ══════════════════════════════════════
+let editPropId = null;
+
+function openEditProp(propId) {
+  editPropId = propId;
+  const prop = properties.find(p=>p.id===propId);
+  if (!prop) return;
+  const origUnits = prop.units;
+
+  document.getElementById('edit-prop-body').innerHTML = `
+    <div class="modal-grid">
+      <div class="mf"><label>Property name</label>
+        <input type="text" id="ep-name" value="${prop.name}" placeholder="Property name"/></div>
+      <div class="mf"><label>Address</label>
+        <input type="text" id="ep-addr" value="${prop.address||''}" placeholder="City, ST"/></div>
+      <div class="mf"><label>Total units</label>
+        <input type="number" id="ep-units" value="${prop.units||0}"
+          oninput="epCheckUnits(${origUnits},+this.value)"/></div>
+      <div class="mf"><label>PM software</label>
+        <select id="ep-pm">
+          <option ${prop.pm==='AppFolio'?'selected':''}>AppFolio</option>
+          <option ${prop.pm==='Buildium'?'selected':''}>Buildium</option>
+        </select></div>
+      <div class="mf"><label>Market</label>
+        <select id="ep-market">
+          <option ${(prop.market||'')==='Dallas-Fort Worth (DFW)'?'selected':''}>Dallas-Fort Worth (DFW)</option>
+          <option ${(prop.market||'')==='Wichita, KS'?'selected':''}>Wichita, KS</option>
+          <option ${(prop.market||'')==='Omaha, NE'?'selected':''}>Omaha, NE</option>
+          <option ${(prop.market||'')==='Other'?'selected':''}>Other</option>
+        </select></div>
+      <div class="mf"><label>Property type</label>
+        <select id="ep-type">
+          <option value="existing" ${prop.type==='existing'?'selected':''}>Existing property</option>
+          <option value="new"      ${prop.type==='new'?'selected':''}>New acquisition</option>
+        </select></div>
+    </div>
+    <div id="ep-units-notice" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;font-size:12px;color:var(--amber);">
+      <div style="font-weight:600;margin-bottom:6px;">⚑ Unit count changed</div>
+      <div id="ep-units-notice-text" style="margin-bottom:10px;"></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="ep-retroactive" style="accent-color:var(--accent);"/>
+        <span style="color:var(--text2);">Apply retroactively to all prior budget years on file</span>
+      </label>
+    </div>`;
+
+  document.getElementById('edit-prop-footer').innerHTML = `
+    <button class="btn-ghost" onclick="closeEditProp()">Cancel</button>
+    <button class="btn-primary" onclick="saveEditProp()">Save changes</button>`;
+
+  document.getElementById('edit-prop-modal').classList.add('open');
+}
+
+function epCheckUnits(orig, newVal) {
+  const notice = document.getElementById('ep-units-notice');
+  const text   = document.getElementById('ep-units-notice-text');
+  if (!notice) return;
+  if (newVal !== orig && newVal > 0) {
+    const diff = newVal - orig;
+    text.textContent = `Changing from ${orig} to ${newVal} units (${diff>0?'+':''}${diff}). This applies going forward from today.`;
+    notice.style.display = 'block';
+  } else {
+    notice.style.display = 'none';
+  }
+}
+
+function closeEditProp() {
+  document.getElementById('edit-prop-modal').classList.remove('open');
+  editPropId = null;
+}
+
+function saveEditProp() {
+  const prop = properties.find(p=>p.id===editPropId);
+  if (!prop) return;
+
+  const newName  = document.getElementById('ep-name')?.value?.trim()||prop.name;
+  const newAddr  = document.getElementById('ep-addr')?.value||prop.address;
+  const newUnits = +document.getElementById('ep-units')?.value||prop.units;
+  const newPm    = document.getElementById('ep-pm')?.value||prop.pm;
+  const newMkt   = document.getElementById('ep-market')?.value||prop.market;
+  const newType  = document.getElementById('ep-type')?.value||prop.type;
+  const retroactive = document.getElementById('ep-retroactive')?.checked||false;
+
+  const unitsChanged = newUnits !== prop.units;
+
+  prop.name    = newName;
+  prop.address = newAddr;
+  prop.units   = newUnits;
+  prop.pm      = newPm;
+  prop.market  = newMkt;
+  prop.type    = newType;
+
+  // If retroactive, unit count is already updated on prop (applies to display everywhere)
+  // Log the change in a simple history note
+  if (unitsChanged) {
+    if (!prop.editLog) prop.editLog = [];
+    prop.editLog.push({
+      date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      field: 'Units',
+      from: prop.units === newUnits ? (newUnits - (newUnits - prop.units)) : prop.units,
+      to: newUnits,
+      retroactive,
+    });
+  }
+
+  closeEditProp();
+  renderPage();
+  showToast(newName+' updated successfully.');
+}
+
+// ══════════════════════════════════════
+// UPLOAD MATCH CONFIRMATION
+// Shown in step 3 when a high-confidence match is found
+// ══════════════════════════════════════
+function renderMatchConfirmCard(s) {
+  // Returns HTML for the match confirmation UI inside the match step
+  const name = (s.displayName||s.sheetName).toLowerCase().trim();
+  const scored = properties.map(p=>{
+    const pn = p.name.toLowerCase();
+    const pa = (p.address||'').toLowerCase();
+    const sa = (s.address||'').toLowerCase();
+    let score = 0;
+    if (pn===name||pn===s.sheetName.toLowerCase()) score=100;
+    else if (pn.includes(name)||name.includes(pn)) score=85;
+    else { name.split(/\s+/).forEach(w=>{ if(w.length>3&&pn.includes(w)) score+=25; }); }
+    // Boost score if address also matches
+    if (score>0 && sa && pa && (pa.includes(sa)||sa.includes(pa))) score=Math.min(score+10,100);
+    return {...p, score};
+  }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
+
+  const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+  const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+  const noi = incTotal - expTotal;
+  const current = uploadState.matchMap[s.sheetName];
+
+  // High confidence match — show confirmation card prominently
+  const topMatch = scored[0];
+  const isHighConfidence = topMatch && topMatch.score >= 80;
+  const existingYears = topMatch?.budgetHistory ? Object.keys(topMatch.budgetHistory).sort() : [];
+  const yearConflict  = existingYears.includes(String(s.year));
+
+  return `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</div>
+          <div style="font-size:11px;color:var(--text3);">${s.income.length} inc · ${s.expenses.length} exp · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span> · Budget year: <strong style="color:var(--text);">${s.year}</strong></div>
+        </div>
+      </div>
+
+      ${isHighConfidence ? `
+        <!-- HIGH CONFIDENCE MATCH — show prominent confirmation -->
+        <div style="background:rgba(61,127,255,.07);border:1px solid rgba(61,127,255,.2);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px;">⬡ Already in your portfolio</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">
+            We found <strong style="color:var(--text);">${topMatch.name}</strong> (${topMatch.score}% match)
+            ${topMatch.address?`· ${topMatch.address}`:''}
+            ${existingYears.length?`· Budgets on file: <strong style="color:var(--text);">${existingYears.join(', ')}</strong>`:''}
+          </div>
+          ${yearConflict?`<div style="font-size:11px;color:var(--amber);margin-bottom:8px;">⚑ A ${s.year} budget already exists — uploading will overwrite it.</div>`:''}
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">
+            Add <strong style="color:var(--text);">${s.year}</strong> as a new budget year for this property?
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-primary" style="font-size:12px;padding:7px 16px;"
+              onclick="setMatchMap('${s.sheetName}',${topMatch.id})">
+              ✓ Yes — add to ${topMatch.name}
+            </button>
+            <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
+              onclick="uploadState.matchMap['${s.sheetName}']='__picking__';renderUploadStep()">
+              Pick different property
+            </button>
+            <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
+              onclick="setMatchMap('${s.sheetName}','new')">
+              Create as new
+            </button>
+          </div>
+        </div>
+        ${current && current!=='__picking__' && current!=='new' && current!=='skip' ? `
+          <div style="font-size:11px;color:var(--green);padding:6px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
+            ✓ Will add ${s.year} budget to <strong>${properties.find(p=>p.id===current)?.name||''}</strong>
+          </div>`:''}`
+      : ''}
+
+      ${(!isHighConfidence || current==='__picking__') ? `
+        <!-- LOW CONFIDENCE or user chose to pick manually -->
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;">
+          ${current==='__picking__'?'Pick a different property:':'Map to:'}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${scored.slice(0,3).map(p=>`
+            <label class="match-card ${current===p.id?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}',${p.id})">
+              <span class="mc-icon">⬡</span>
+              <div class="mc-info">
+                <div class="mc-name">${p.name}</div>
+                <div class="mc-sub">${p.address||'—'} · ${p.units} units
+                  ${p.budgetHistory?` · Years: ${Object.keys(p.budgetHistory).join(', ')}`:''}
+                </div>
+              </div>
+              <span class="mc-score">${p.score}%</span>
+            </label>`).join('')}
+          <label class="match-card new-prop ${current==='new'?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}','new')">
+            <span class="mc-icon">+</span>
+            <div class="mc-info"><div class="mc-name">Create new: "${s.displayName}"</div><div class="mc-sub">Add as a new property</div></div>
+          </label>
+          <label class="match-card ${current==='skip'?'selected':''}" style="cursor:pointer;opacity:.7;" onclick="setMatchMap('${s.sheetName}','skip')">
+            <span class="mc-icon" style="color:var(--text3);">○</span>
+            <div class="mc-info"><div class="mc-name" style="color:var(--text3);">Skip this property</div></div>
+          </label>
+        </div>`:''
+      }
+    </div>`;
+}
 
 function switchBudgetYear(propId, year) {
   const prop = properties.find(p=>p.id===propId);

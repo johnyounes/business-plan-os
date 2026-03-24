@@ -218,12 +218,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="divider"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="you@pgmteam.com" autocomplete="off"/></div>
+      <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="your@email.com" autocomplete="off"/></div>
       <div class="fg"><label>Password</label><input type="password" id="a-pw" placeholder="••••••••"/></div>
       <div id="auth-err">Invalid email or password.</div>
       <button class="btn-signin" onclick="login()">Sign in</button>
     </div>
-    <div class="auth-hint">john@pgmteam.com &nbsp;·&nbsp; pgm2026</div>
+    <div class="auth-hint">Point Guard Management &nbsp;·&nbsp; Internal use only</div>
   </div>
 </div>
 
@@ -291,7 +291,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 <div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════
 // PERMISSIONS
 // ══════════════════════════════════════
@@ -324,7 +324,7 @@ const ALL_PROPERTIES = ['Estrella at Kiest','Sierra Gardens','Central Heights','
 // USER DATABASE
 // ══════════════════════════════════════
 let USERS = [
-  {id:1,email:'john@pgmteam.com',pw:'pgm2026',name:'John Younes',initials:'JY',role:'superadmin',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[0]},
+  {id:1,email:'john@leavenwealth.com',pw:'Younes9@',name:'John Younes',initials:'JY',role:'superadmin',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[0]},
   {id:2,email:'tim@pgmteam.com',pw:'pgm2026',name:'Tim Farha',initials:'TF',role:'admin',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[1]},
   {id:3,email:'danny@pgmteam.com',pw:'pgm2026',name:'Danny Humsi',initials:'DH',role:'asset_manager',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[2]},
   {id:4,email:'nathan@pgmteam.com',pw:'pgm2026',name:'Nathan Farha',initials:'NF',role:'underwriter',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[3]},
@@ -779,12 +779,4 @@ function deleteUser(id) {
 // TOAST
 // ══════════════════════════════════════
 function showToast(msg,err=false) {
-  document.getElementById('tdot').style.background=err?'var(--red)':'var(--green)';
-  document.getElementById('tmsg').textContent=msg;
-  const t=document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3500);
-}
-</script>
-</body>
-</html>
+  document.getElementById('tdot').style.background=err?'va

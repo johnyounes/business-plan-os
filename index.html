@@ -259,22 +259,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 <script>
 // ============================================================
-// CREDENTIALS - stored as char arrays to prevent obfuscation
+// CREDENTIALS - base64 encoded
 // ============================================================
-function _c(a){return a.map(function(n){return String.fromCharCode(n);}).join('');}
-
-// credentials stored as char codes below
+function _d(s){return atob(s);}
 
 var _creds = [
-  {id:1, e:_c([106,111,104,110,64,108,101,97,118,101,110,119,101,97,108,116,104,46,99,111,109]), p:_c([89,111,117,110,101,115,57,64]), role:'superadmin', name:'John Younes', initials:'JY', bg:'linear-gradient(135deg,#3d7fff,#9b7aff)'},
-  {id:2, e:_c([116,105,109,64,112,103,109,116,101,97,109,46,99,111,109]),                      p:_c([112,103,109,50,48,50,54]),    role:'admin',      name:'Tim Farha',   initials:'TF', bg:'linear-gradient(135deg,#22c97a,#2ec4b6)'},
-  {id:3, e:_c([100,97,110,110,121,64,112,103,109,116,101,97,109,46,99,111,109]),               p:_c([112,103,109,50,48,50,54]),    role:'asset_manager', name:'Danny Humsi', initials:'DH', bg:'linear-gradient(135deg,#f5a623,#f07052)'},
-  {id:4, e:_c([110,97,116,104,97,110,64,112,103,109,116,101,97,109,46,99,111,109]),            p:_c([112,103,109,50,48,50,54]),    role:'underwriter', name:'Nathan Farha', initials:'NF', bg:'linear-gradient(135deg,#9b7aff,#e8504a)'},
+  {id:1, e:_d('am9obkBsZWF2ZW53ZWFsdGguY29t'), p:_d('WW91bmVzOUA='), role:'superadmin', name:'John Younes', initials:'JY', bg:'linear-gradient(135deg,#3d7fff,#9b7aff)'},
+  {id:2, e:_d('dGltQHBnbXRlYW0uY29t'), p:_d('cGdtMjAyNg=='), role:'admin',      name:'Tim Farha',   initials:'TF', bg:'linear-gradient(135deg,#22c97a,#2ec4b6)'},
+  {id:3, e:_d('ZGFubnlAcGdtdGVhbS5jb20='), p:_d('cGdtMjAyNg=='), role:'asset_manager', name:'Danny Humsi', initials:'DH', bg:'linear-gradient(135deg,#f5a623,#f07052)'},
+  {id:4, e:_d('bmF0aGFuQHBnbXRlYW0uY29t'), p:_d('cGdtMjAyNg=='), role:'underwriter', name:'Nathan Farha', initials:'NF', bg:'linear-gradient(135deg,#9b7aff,#e8504a)'},
 ];
 
-// ============================================================
-// USER DATABASE - built from creds + editable fields
-// ============================================================
 var USERS = _creds.map(function(c){
   return {id:c.id, email:c.e, pw:c.p, name:c.name, initials:c.initials,
           role:c.role, properties:'all', status:'active', mustChangePw:false, bg:c.bg};

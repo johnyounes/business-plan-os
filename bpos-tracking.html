@@ -273,6 +273,60 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .year-tab-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 14px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;font-family:var(--font);}
 .year-tab-btn:hover{color:var(--text);}
 .year-tab-btn.active{background:rgba(61,127,255,.12);border-color:var(--accent);color:var(--accent);}
+
+/* ADD PROPERTY MODAL — 3-step */
+.ap-steps{display:flex;align-items:center;gap:0;margin-bottom:20px;}
+.ap-step{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);flex-shrink:0;}
+.ap-step.active{color:var(--accent);}
+.ap-step.done{color:var(--green);}
+.ap-step-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;}
+.ap-step.active .ap-step-num{background:rgba(61,127,255,.15);border-color:var(--accent);color:var(--accent);}
+.ap-step.done .ap-step-num{background:rgba(34,201,122,.15);border-color:var(--green);color:var(--green);}
+.ap-sep{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:16px;}
+
+/* Budget entry tabs */
+.budget-tabs{display:flex;gap:0;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:3px;margin-bottom:16px;}
+.budget-tab{flex:1;text-align:center;padding:7px 12px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;border-radius:6px;color:var(--text3);transition:all .15s;border:none;background:none;}
+.budget-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+
+/* Toggle monthly/annual */
+.freq-toggle{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.freq-toggle span{font-size:12px;color:var(--text3);}
+.freq-toggle span.active-freq{color:var(--accent);font-weight:600;}
+.toggle-pill{position:relative;width:44px;height:24px;display:inline-block;flex-shrink:0;}
+.toggle-pill input{opacity:0;width:0;height:0;position:absolute;}
+.tp-track{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--border2);border-radius:12px;cursor:pointer;transition:all .2s;}
+.toggle-pill input:checked+.tp-track{background:var(--accent);border-color:var(--accent);}
+.tp-knob{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle-pill input:checked~.tp-knob{transform:translateX(20px);}
+
+/* Manual entry table */
+.me-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);padding:6px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px 6px 0 0;margin-top:12px;display:flex;align-items:center;justify-content:space-between;}
+.me-section-label:first-child{margin-top:0;}
+.me-rows{border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:2px;}
+.me-row{display:grid;grid-template-columns:1fr 110px 24px;align-items:center;gap:0;border-bottom:1px solid var(--border);}
+.me-row:last-child{border-bottom:none;}
+.me-label-input{background:none;border:none;outline:none;font-family:var(--font);font-size:12px;color:var(--text2);padding:8px 10px;width:100%;}
+.me-label-input:focus{color:var(--text);background:rgba(61,127,255,.04);}
+.me-val-input{background:none;border:none;border-left:1px solid var(--border);outline:none;font-family:var(--mono);font-size:12px;color:var(--text);padding:8px 10px;width:100%;text-align:right;}
+.me-val-input:focus{color:var(--accent);background:rgba(61,127,255,.04);}
+.me-del-btn{background:none;border:none;border-left:1px solid var(--border);color:var(--text3);cursor:pointer;padding:8px 6px;font-size:13px;transition:color .15s;height:100%;}
+.me-del-btn:hover{color:var(--red);}
+.me-add-btn{background:none;border:1px dashed var(--border2);color:var(--text3);border-radius:6px;padding:6px 12px;font-size:11px;font-family:var(--font);cursor:pointer;transition:all .15s;width:100%;margin-top:4px;margin-bottom:8px;}
+.me-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Review table */
+.review-table{width:100%;border-collapse:collapse;font-size:12px;}
+.review-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border2);background:var(--bg4);}
+.review-table th.r{text-align:right;}
+.review-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-size:12px;}
+.review-table td.r{text-align:right;font-family:var(--mono);}
+.review-table td.editable{cursor:text;}
+.review-table td input{background:none;border:none;outline:none;font-family:var(--mono);font-size:12px;color:var(--text);text-align:right;width:100%;}
+.review-table td input:focus{color:var(--accent);}
+.review-table tr.sec-hd td{background:var(--bg4);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:5px 10px;}
+.review-table tr.tot-hd td{font-weight:600;border-top:1px solid var(--border2);color:var(--text);}
+.review-table tr.noi-row td{background:rgba(34,201,122,.04);font-weight:600;font-size:13px;}
 </style>
 </head>
 <body>
@@ -292,21 +346,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- injected by JS -->
 </div>
 
-<!-- BUDGET INPUT MODAL -->
+<!-- SINGLE PROPERTY BUDGET MODAL (add new or edit existing) -->
 <div class="modal-overlay" id="budget-modal">
-  <div class="modal">
+  <div class="modal" style="width:660px;">
     <div class="modal-header">
       <div class="modal-header-left">
-        <h2>Enter annual budget</h2>
-        <p>For existing properties not underwritten in BPOS. Budget will be used as the tracking baseline for all actuals comparisons.</p>
+        <h2 id="bm-title">Add / update property budget</h2>
+        <p id="bm-sub">Upload your annual budget file and the app reads it exactly as structured — no manual categorization needed.</p>
       </div>
       <button class="modal-close" onclick="closeBudgetModal()">×</button>
     </div>
-    <div class="modal-body" id="budget-modal-body"></div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeBudgetModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveBudget()">Save budget</button>
-    </div>
+    <div class="modal-body" id="budget-modal-body" style="min-height:260px;"></div>
+    <div class="modal-footer" id="budget-modal-footer"></div>
   </div>
 </div>
 
@@ -328,32 +379,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
-<!-- ADD PROPERTY MODAL -->
+<!-- ADD PROPERTY MODAL — now uses file upload -->
 <div class="modal-overlay" id="add-prop-modal">
-  <div class="modal" style="width:480px;">
+  <div class="modal" style="width:680px;">
     <div class="modal-header">
       <div class="modal-header-left">
-        <h2>Add property to tracking</h2>
-        <p>Add an existing property that wasn't underwritten in BPOS. You'll enter its annual budget manually.</p>
+        <h2 id="ap-modal-title">Add property</h2>
+        <p id="ap-modal-sub">Property details, then enter or upload the annual budget.</p>
       </div>
       <button class="modal-close" onclick="closeAddProp()">×</button>
     </div>
-    <div class="modal-body">
-      <div class="modal-grid">
-        <div class="mf"><label>Property name</label><input type="text" id="new-prop-name" placeholder="e.g. Cedar Haven Duplexes"/></div>
-        <div class="mf"><label>Address</label><input type="text" id="new-prop-addr" placeholder="City, ST"/></div>
-        <div class="mf"><label>Total units</label><input type="number" id="new-prop-units" placeholder="e.g. 22"/></div>
-        <div class="mf"><label>PM software</label>
-          <select id="new-prop-pm"><option>AppFolio</option><option>Buildium</option></select></div>
-        <div class="mf"><label>Market</label>
-          <select id="new-prop-market"><option>Dallas-Fort Worth (DFW)</option><option>Wichita, KS</option><option>Omaha, NE</option><option>Other</option></select></div>
-        <div class="mf"><label>Budget year</label><input type="number" id="new-prop-year" value="2026"/></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeAddProp()">Cancel</button>
-      <button class="btn-primary" onclick="saveNewProp()">Add property</button>
-    </div>
+    <div class="modal-body" id="add-prop-body" style="min-height:300px;"></div>
+    <div class="modal-footer" id="add-prop-footer"></div>
   </div>
 </div>
 
@@ -1000,75 +1037,415 @@ function toggleArp() {
 }
 
 // ══════════════════════════════════════
-// BUDGET MODAL (existing properties)
+// SINGLE-PROPERTY BUDGET MODAL
+// Used for: Edit budget on existing prop, or Add new property
+// Both use the same file-upload flow
 // ══════════════════════════════════════
+let bmState = {mode:'edit', propId:null, step:1, parsed:null, fileName:''};
+
 function openBudgetModal(propId) {
-  budgetModalPropId = propId;
-  const prop = properties.find(p=>p.id===propId);
-  if (!prop) return;
-  const b = prop.budget;
-  document.getElementById('budget-modal-body').innerHTML = `
-    <div class="mf"><label>Budget year</label>
-      <input type="number" id="bm-year" value="${prop.budgetYear}"/></div>
-    <div style="font-size:11px;color:var(--text3);">Enter monthly amounts. Annual totals calculated automatically.</div>
-    <div class="bline-section-label">Income</div>
-    ${b.income.map((r,i)=>`
-      <div class="bline-row">
-        <input class="bline-input" type="text" value="${r.label}" id="bm-inc-lbl-${i}" placeholder="Line item label"/>
-        <input class="bline-input" type="text" value="${fd(r.monthly)}" id="bm-inc-val-${i}" placeholder="Monthly $"/>
-        <button class="del-btn" onclick="removeBudgetModalLine('income',${i})">×</button>
-      </div>`).join('')}
-    <button class="add-line-btn" onclick="addBudgetModalLine('income')">+ Add income line</button>
-    <div class="bline-section-label">Expenses</div>
-    ${b.expenses.map((r,i)=>`
-      <div class="bline-row">
-        <input class="bline-input" type="text" value="${r.label}" id="bm-exp-lbl-${i}" placeholder="Line item label"/>
-        <input class="bline-input" type="text" value="${fd(r.monthly)}" id="bm-exp-val-${i}" placeholder="Monthly $"/>
-        <button class="del-btn" onclick="removeBudgetModalLine('expenses',${i})">×</button>
-      </div>`).join('')}
-    <button class="add-line-btn" onclick="addBudgetModalLine('expenses')">+ Add expense line</button>
-    <div class="bline-section-label">CapEx</div>
-    <div class="bline-row">
-      <input class="bline-input" type="text" value="Annual CapEx budget" readonly style="color:var(--text3);"/>
-      <input class="bline-input" type="text" value="${fd(b.capexBudget)}" id="bm-capex"/>
-      <div></div>
-    </div>`;
+  bmState = {mode:'edit', propId, step:1, parsed:null, fileName:''};
+  document.getElementById('bm-title').textContent = 'Update budget';
+  document.getElementById('bm-sub').textContent = 'Upload the annual budget file for this property. The app reads all line items automatically.';
   document.getElementById('budget-modal').classList.add('open');
+  renderBudgetModal();
+}
+function closeBudgetModal() {
+  document.getElementById('budget-modal').classList.remove('open');
+}
+function openAddProp() {
+  apState = {
+    step: 1,
+    // Step 1 — property details
+    name:'', address:'', units:0, pm:'AppFolio', market:'Dallas-Fort Worth (DFW)', budgetYear: new Date().getFullYear(),
+    // Step 2 — budget source + data
+    budgetTab: 'upload',   // 'upload' | 'manual'
+    freqIsAnnual: false,   // toggle: false=monthly, true=annual
+    fileName: '',
+    // Step 3 — review/edit data before save
+    income: [],
+    expenses: [],
+    nonop: [],
+  };
+  document.getElementById('add-prop-modal').classList.add('open');
+  renderAddPropModal();
+}
+function closeAddProp() {
+  document.getElementById('add-prop-modal').classList.remove('open');
 }
 
-function addBudgetModalLine(type) {
-  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
-  prop.budget[type].push({label:'New line',monthly:0});
-  openBudgetModal(budgetModalPropId);
-}
-function removeBudgetModalLine(type,i) {
-  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
-  prop.budget[type].splice(i,1);
-  openBudgetModal(budgetModalPropId);
+// ── Default manual line items ──
+const DEFAULT_INCOME = [
+  {label:'Gross Potential Rent', monthly:0},
+  {label:'Vacancy Loss',          monthly:0},
+  {label:'Other Income',          monthly:0},
+];
+const DEFAULT_EXPENSES = [
+  {label:'Management Fees',        monthly:0},
+  {label:'Repairs & Maintenance',  monthly:0},
+  {label:'Property Insurance',     monthly:0},
+  {label:'Property Taxes',         monthly:0},
+  {label:'Utilities (Common)',     monthly:0},
+  {label:'Pest Control',           monthly:0},
+  {label:'Make Readies',           monthly:0},
+  {label:'Snow Removal/Ice Melt',  monthly:0},
+  {label:'Reserves',               monthly:0},
+];
+const DEFAULT_NONOP = [
+  {label:'Capital Expenditures (CapEx)', monthly:0},
+  {label:'Debt Service — FIXED',         monthly:0},
+];
+
+let apState = {};
+
+function renderAddPropModal() {
+  const body   = document.getElementById('add-prop-body');
+  const footer = document.getElementById('add-prop-footer');
+  const s = apState;
+
+  const stepsHtml = `
+    <div class="ap-steps">
+      <div class="ap-step ${s.step>=1?s.step>1?'done':'active':''}">
+        <div class="ap-step-num">${s.step>1?'✓':'1'}</div><span>Property details</span>
+      </div><div class="ap-sep"></div>
+      <div class="ap-step ${s.step>=2?s.step>2?'done':'active':''}">
+        <div class="ap-step-num">${s.step>2?'✓':'2'}</div><span>Enter budget</span>
+      </div><div class="ap-sep"></div>
+      <div class="ap-step ${s.step>=3?'active':''}">
+        <div class="ap-step-num">3</div><span>Review &amp; save</span>
+      </div>
+    </div>`;
+
+  // ── STEP 1: Property details ──
+  if (s.step === 1) {
+    body.innerHTML = stepsHtml + `
+      <div class="modal-grid">
+        <div class="mf"><label>Property name *</label>
+          <input type="text" id="ap-name" placeholder="e.g. Cedar Haven Duplexes" value="${s.name}"
+            onchange="apState.name=this.value"/></div>
+        <div class="mf"><label>Address</label>
+          <input type="text" id="ap-addr" placeholder="City, ST" value="${s.address}"
+            onchange="apState.address=this.value"/></div>
+        <div class="mf"><label>Total units</label>
+          <input type="number" id="ap-units" placeholder="e.g. 22" value="${s.units||''}"
+            onchange="apState.units=+this.value"/></div>
+        <div class="mf"><label>PM software</label>
+          <select id="ap-pm" onchange="apState.pm=this.value">
+            <option ${s.pm==='AppFolio'?'selected':''}>AppFolio</option>
+            <option ${s.pm==='Buildium'?'selected':''}>Buildium</option>
+          </select></div>
+        <div class="mf"><label>Market</label>
+          <select id="ap-market" onchange="apState.market=this.value">
+            <option ${s.market==='Dallas-Fort Worth (DFW)'?'selected':''}>Dallas-Fort Worth (DFW)</option>
+            <option ${s.market==='Wichita, KS'?'selected':''}>Wichita, KS</option>
+            <option ${s.market==='Omaha, NE'?'selected':''}>Omaha, NE</option>
+            <option ${s.market==='Other'?'selected':''}>Other</option>
+          </select></div>
+        <div class="mf"><label>Budget year</label>
+          <input type="number" id="ap-year" value="${s.budgetYear}"
+            onchange="apState.budgetYear=+this.value"/></div>
+      </div>`;
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="closeAddProp()">Cancel</button>
+      <button class="btn-primary" onclick="apStep1Next()">Next: Enter budget →</button>`;
+
+  // ── STEP 2: Upload or manual entry ──
+  } else if (s.step === 2) {
+    const isManual = s.budgetTab === 'manual';
+    const isAnnual = s.freqIsAnnual;
+    const valLabel = isAnnual ? 'Annual ($)' : 'Monthly ($)';
+
+    const renderManualSection = (sectionKey, sectionLabel, items) => {
+      const rows = items.map((r,i) => `
+        <div class="me-row">
+          <input class="me-label-input" type="text" value="${r.label}" placeholder="Account name"
+            onchange="apState.${sectionKey}[${i}].label=this.value"/>
+          <input class="me-val-input" type="text" value="${r.monthly>0?(isAnnual?fd(r.monthly*12):fd(r.monthly)):''}"
+            placeholder="${isAnnual?'Annual':'Monthly'}"
+            onchange="apManualVal('${sectionKey}',${i},this.value)"/>
+          <button class="me-del-btn" onclick="apDelLine('${sectionKey}',${i})">×</button>
+        </div>`).join('');
+      return `
+        <div class="me-section-label">${sectionLabel}
+          <span style="font-size:10px;font-weight:400;color:var(--text3);">${items.length} lines</span>
+        </div>
+        <div class="me-rows">${rows}</div>
+        <button class="me-add-btn" onclick="apAddLine('${sectionKey}')">+ Add ${sectionLabel.toLowerCase()} line</button>`;
+    };
+
+    body.innerHTML = stepsHtml + `
+      <div class="budget-tabs">
+        <button class="budget-tab ${!isManual?'active':''}" onclick="apState.budgetTab='upload';renderAddPropModal()">⤒ Upload file</button>
+        <button class="budget-tab ${isManual?'active':''}"  onclick="apState.budgetTab='manual';apInitManual();renderAddPropModal()">✎ Enter manually</button>
+      </div>
+
+      ${!isManual ? `
+        <!-- UPLOAD TAB -->
+        <label class="upload-drop-zone" id="ap-udz"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="apHandleDrop(event)">
+          <div class="udz-icon">⤒</div>
+          <div class="udz-title">Drop the ${s.budgetYear} annual budget file here</div>
+          <div class="udz-sub">Reads ▼ INCOME · ▼ OPERATING EXPENSES · ▼ NON-OPERATING EXPENSES automatically from your PGM format. All line items preserved as-is.</div>
+          <div class="udz-formats"><span class="fmt-badge">XLSX</span><span class="fmt-badge">XLS</span><span class="fmt-badge">CSV</span></div>
+          <input type="file" id="ap-file-input" accept=".csv,.xlsx,.xls" onchange="apHandleFile(this.files[0])"/>
+        </label>
+        <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text3);">
+          Or switch to <button onclick="apState.budgetTab='manual';apInitManual();renderAddPropModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font);font-size:12px;">manual entry</button> to type figures directly.
+        </div>
+      ` : `
+        <!-- MANUAL TAB -->
+        <div class="freq-toggle">
+          <span class="${!isAnnual?'active-freq':''}">Monthly</span>
+          <label class="toggle-pill">
+            <input type="checkbox" ${isAnnual?'checked':''} onchange="apState.freqIsAnnual=this.checked;renderAddPropModal()"/>
+            <span class="tp-track"></span><span class="tp-knob"></span>
+          </label>
+          <span class="${isAnnual?'active-freq':''}">Annual</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:4px;">— enter figures as ${isAnnual?'annual totals (app divides by 12)':'monthly amounts'}</span>
+        </div>
+        <div style="max-height:360px;overflow-y:auto;padding-right:4px;">
+          ${renderManualSection('income',   'Income',               s.income)}
+          ${renderManualSection('expenses', 'Operating Expenses',   s.expenses)}
+          ${renderManualSection('nonop',    'Non-Operating',        s.nonop)}
+        </div>
+      `}`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="apState.step=1;renderAddPropModal()">← Back</button>
+      ${isManual
+        ? `<button class="btn-primary" onclick="apStep2ManualNext()">Review budget →</button>`
+        : `<span style="font-size:12px;color:var(--text3);">Upload a file above to continue</span>`}`;
+
+  // ── STEP 3: Review + edit before saving ──
+  } else if (s.step === 3) {
+    const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+    const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+    const noi = incTotal - expTotal;
+    const nonopTotal = s.nonop.reduce((t,r)=>t+r.monthly,0);
+    const capexLine = s.nonop.find(r=>r.label.toLowerCase().includes('capex'));
+
+    const renderReviewRows = (arr, sectionKey, color) => arr.map((r,i)=>`
+      <tr>
+        <td style="color:var(--text2);">
+          <input style="background:none;border:none;outline:none;font-family:var(--font);font-size:12px;color:var(--text2);width:100%;"
+            type="text" value="${r.label}" onchange="apState.${sectionKey}[${i}].label=this.value"/>
+        </td>
+        <td class="r" style="color:${color};">
+          <input style="background:none;border:none;outline:none;font-family:var(--mono);font-size:12px;color:${color};text-align:right;width:100%;"
+            type="text" value="${fd(r.monthly)}"
+            onchange="apReviewVal('${sectionKey}',${i},this.value);apRecalcReview()"/>
+        </td>
+        <td class="r" style="color:var(--text3);font-family:var(--mono);font-size:11px;">${fd(r.monthly*12)}</td>
+      </tr>`).join('');
+
+    body.innerHTML = stepsHtml + `
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">New property</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">${s.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.address||'—'} · ${s.units||0} units · ${s.pm} · ${s.budgetYear}${s.fileName?' · '+s.fileName:''}</div>
+        </div>
+        <div id="ap-summary-card" style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:160px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;gap:14px;"><span style="color:var(--text3);">Income/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd(incTotal)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;gap:14px;"><span style="color:var(--text3);">Expenses/mo</span><span style="font-family:var(--mono);">${fd(expTotal)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;border-top:1px solid var(--border);padding-top:4px;gap:14px;">
+            <span style="color:var(--text3);">NOI/mo</span>
+            <span id="ap-noi-val" style="color:${noi>=0?'var(--green)':'var(--red)'};font-family:var(--mono);">${fd(noi)}</span>
+          </div>
+          ${capexLine?`<div style="display:flex;justify-content:space-between;font-size:11px;gap:14px;"><span style="color:var(--text3);">CapEx/yr</span><span style="color:var(--amber);font-family:var(--mono);">${fd(capexLine.annual||capexLine.monthly*12)}</span></div>`:''}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Review all figures below. Click any value to edit before saving.</div>
+      <div style="max-height:320px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:9px;overflow:hidden;">
+        <table class="review-table">
+          <thead><tr>
+            <th style="width:50%">Account</th>
+            <th class="r">Monthly</th>
+            <th class="r">Annual</th>
+          </tr></thead>
+          <tbody id="ap-review-body">
+            ${s.income.length?`<tr class="sec-hd"><td colspan="3">Income — ${s.income.length} lines</td></tr>${renderReviewRows(s.income,'income','var(--green)')}
+            <tr class="tot-hd"><td>Total income</td><td class="r" style="color:var(--green);font-family:var(--mono);">${fd(incTotal)}</td><td class="r" style="color:var(--text3);font-family:var(--mono);">${fd(incTotal*12)}</td></tr>`:''}
+            ${s.expenses.length?`<tr class="sec-hd"><td colspan="3">Operating Expenses — ${s.expenses.length} lines</td></tr>${renderReviewRows(s.expenses,'expenses','var(--text2)')}
+            <tr class="tot-hd"><td>Total expenses</td><td class="r" style="font-family:var(--mono);">${fd(expTotal)}</td><td class="r" style="color:var(--text3);font-family:var(--mono);">${fd(expTotal*12)}</td></tr>`:''}
+            ${s.nonop.length?`<tr class="sec-hd"><td colspan="3">Non-Operating — ${s.nonop.length} lines</td></tr>${renderReviewRows(s.nonop,'nonop','var(--amber)')}`:''}
+            <tr class="noi-row"><td>Net operating income</td>
+              <td class="r" style="color:${noi>=0?'var(--green)':'var(--red)'};font-family:var(--mono);">${fd(noi)}</td>
+              <td class="r" style="color:${noi>=0?'var(--green)':'var(--red)'};font-family:var(--mono);">${fd(noi*12)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="apState.step=2;renderAddPropModal()">← Back</button>
+      <button class="btn-primary" onclick="apSave()">✓ Save property &amp; budget</button>`;
+  }
 }
 
-function saveBudget() {
-  const prop=properties.find(p=>p.id===budgetModalPropId);if(!prop)return;
-  prop.budgetYear=+document.getElementById('bm-year').value||prop.budgetYear;
-  prop.budget.income.forEach((r,i)=>{
-    const lbl=document.getElementById(`bm-inc-lbl-${i}`);
-    const val=document.getElementById(`bm-inc-val-${i}`);
-    if(lbl)r.label=lbl.value;
-    if(val)r.monthly=pd(val.value);
+// ── Step helpers ──
+function apStep1Next() {
+  const name = document.getElementById('ap-name')?.value?.trim();
+  if (!name) { showToast('Property name is required.', true); return; }
+  apState.name    = name;
+  apState.address = document.getElementById('ap-addr')?.value||'';
+  apState.units   = +document.getElementById('ap-units')?.value||0;
+  apState.pm      = document.getElementById('ap-pm')?.value||'AppFolio';
+  apState.market  = document.getElementById('ap-market')?.value||'';
+  apState.budgetYear = +document.getElementById('ap-year')?.value||new Date().getFullYear();
+  apState.step = 2;
+  renderAddPropModal();
+}
+
+function apInitManual() {
+  // Only pre-fill defaults if not already populated
+  if (!apState.income.length)   apState.income   = DEFAULT_INCOME.map(r=>({...r}));
+  if (!apState.expenses.length) apState.expenses = DEFAULT_EXPENSES.map(r=>({...r}));
+  if (!apState.nonop.length)    apState.nonop    = DEFAULT_NONOP.map(r=>({...r}));
+}
+
+function apManualVal(section, idx, rawVal) {
+  const v = Math.abs(parseFloat(String(rawVal).replace(/[$,\s]/g,''))||0);
+  apState[section][idx].monthly = apState.freqIsAnnual ? Math.round(v/12*100)/100 : v;
+}
+
+function apAddLine(section) {
+  apState[section].push({label:'New account', monthly:0});
+  renderAddPropModal();
+}
+function apDelLine(section, idx) {
+  apState[section].splice(idx,1);
+  renderAddPropModal();
+}
+
+function apStep2ManualNext() {
+  // Read any unsaved manual inputs before advancing
+  const sections = ['income','expenses','nonop'];
+  sections.forEach(sec => {
+    apState[sec].forEach((r,i) => {
+      const lbl = document.getElementById ? null : null; // values already bound via onchange
+      // Just ensure monthly values are numbers
+      r.monthly = parseFloat(r.monthly)||0;
+    });
   });
-  prop.budget.expenses.forEach((r,i)=>{
-    const lbl=document.getElementById(`bm-exp-lbl-${i}`);
-    const val=document.getElementById(`bm-exp-val-${i}`);
-    if(lbl)r.label=lbl.value;
-    if(val)r.monthly=pd(val.value);
+  apState.step = 3;
+  renderAddPropModal();
+}
+
+function apReviewVal(section, idx, rawVal) {
+  const v = Math.abs(parseFloat(String(rawVal).replace(/[$,\s]/g,''))||0);
+  apState[section][idx].monthly = v;
+}
+
+function apRecalcReview() {
+  // Live-update NOI in summary card without full re-render
+  const inc = apState.income.reduce((t,r)=>t+(parseFloat(r.monthly)||0),0);
+  const exp = apState.expenses.reduce((t,r)=>t+(parseFloat(r.monthly)||0),0);
+  const noi = inc - exp;
+  const el = document.getElementById('ap-noi-val');
+  if (el) { el.textContent = fd(noi); el.style.color = noi>=0?'var(--green)':'var(--red)'; }
+}
+
+// ── File upload for add property flow ──
+function apHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('ap-udz')?.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) apHandleFile(file);
+}
+
+function apHandleFile(file) {
+  if (!file) return;
+  apState.fileName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  const applyParsed = (parsed) => {
+    apState.income   = parsed.income.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025}));
+    apState.expenses = parsed.expenses.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025}));
+    apState.nonop    = parsed.nonop.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025}));
+    // If property name not set yet, use detected name
+    if (!apState.name && parsed.displayName) apState.name = parsed.displayName;
+    if (parsed.year) apState.budgetYear = parsed.year;
+    apState.step = 3;
+    renderAddPropModal();
+  };
+
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const rows = e.target.result.split('\n').map(l=>{
+        const cols=[]; let cur='', inQ=false;
+        for(const ch of l+','){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}else{cur+=ch;}}
+        return cols;
+      });
+      applyParsed(parsePGMSheet(rows, file.name.replace(/\.csv$/i,'').trim()));
+    };
+    reader.readAsText(file); return;
+  }
+  if (['xlsx','xls'].includes(ext)) {
+    const doRead = () => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result,{type:'array'});
+          let parsed = null;
+          for (const sn of wb.SheetNames) {
+            const ws = wb.Sheets[sn];
+            const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+            const p = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sn);
+            if (p.income.length>0||p.expenses.length>0) { parsed=p; break; }
+          }
+          if (!parsed) { showToast('No budget data found.',true); return; }
+          applyParsed(parsed);
+        } catch(err) { showToast('Could not read file. Try CSV.',true); }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    if (typeof XLSX==='undefined') {
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload=doRead; document.head.appendChild(s);
+    } else doRead(); return;
+  }
+  showToast('Please upload XLSX, XLS, or CSV.',true);
+}
+
+// ── Final save ──
+function apSave() {
+  const s = apState;
+  if (!s.name) { showToast('Property name is required.',true); return; }
+  const budget = {
+    income:   s.income.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, actual2025:r.actual2025||null})),
+    expenses: s.expenses.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, actual2025:r.actual2025||null})),
+    nonop:    s.nonop.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, actual2025:r.actual2025||null})),
+    capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.monthly||0)*12,
+  };
+  const id = Date.now();
+  properties.push({
+    id, name:s.name, address:s.address||'—', units:s.units||0,
+    pm:s.pm, market:s.market, type:'existing',
+    budgetYear: s.budgetYear,
+    budget,
+    budgetHistory: {[s.budgetYear]: budget},
+    actuals:{
+      occupancy:0, collections:0,
+      income:  budget.income.map(()=>0),
+      expenses:budget.expenses.map(()=>0),
+      capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
+    },
+    apiConnected:false,
   });
-  const cx=document.getElementById('bm-capex');
-  if(cx)prop.budget.capexBudget=pd(cx.value);
-  closeBudgetModal();
+  selectedPropId = id;
+  closeAddProp();
   renderPage();
-  showToast(`Budget updated for ${prop.name}.`);
+  const lines = budget.income.length + budget.expenses.length + budget.nonop.length;
+  showToast(s.name+' added'+(lines>0?' with '+lines+' budget lines':'')+'.');
 }
-function closeBudgetModal(){document.getElementById('budget-modal').classList.remove('open');budgetModalPropId=null;}
+
+function saveBudget(){spConfirmSave('budget');}
+function saveNewProp(){apSave();}
 
 // ══════════════════════════════════════
 // ALERT SETTINGS MODAL
@@ -1098,52 +1475,37 @@ function saveThresholds(){
     if(inp) THRESHOLDS[key].value=parseFloat(inp.value)||THRESHOLDS[key].value;
     if(en)  THRESHOLDS[key].enabled=en.checked;
   });
-  closeAlertSettings();
-  renderPage();
+  closeAlertSettings(); renderPage();
   showToast('Alert thresholds saved. Monitoring updated.');
 }
 function resetThresholds(){THRESHOLDS=JSON.parse(JSON.stringify(THRESH_DEFAULTS));openAlertSettings();showToast('Thresholds reset to defaults.');}
 function closeAlertSettings(){document.getElementById('alert-modal').classList.remove('open');}
 
 // ══════════════════════════════════════
-// ADD PROPERTY MODAL
-// ══════════════════════════════════════
-function openAddProp(){document.getElementById('add-prop-modal').classList.add('open');}
-function closeAddProp(){document.getElementById('add-prop-modal').classList.remove('open');}
-function saveNewProp(){
-  const name=document.getElementById('new-prop-name').value.trim();
-  const addr=document.getElementById('new-prop-addr').value.trim();
-  const units=+document.getElementById('new-prop-units').value||0;
-  const pm=document.getElementById('new-prop-pm').value;
-  const year=+document.getElementById('new-prop-year').value||2026;
-  if(!name){showToast('Property name is required.',true);return;}
-  const id=Date.now();
-  properties.push({
-    id,name,address:addr||'—',units,pm,market:'',type:'existing',budgetYear:year,
-    budget:{income:[{label:'Gross Potential Rent',monthly:0},{label:'Vacancy Loss',monthly:0},{label:'Other Income',monthly:0}],expenses:[{label:'Property Management',monthly:0},{label:'Repairs & Maintenance',monthly:0},{label:'Insurance',monthly:0},{label:'Property Taxes',monthly:0},{label:'Utilities (Common)',monthly:0},{label:'Reserves',monthly:0}],capexBudget:0},
-    actuals:{occupancy:0,collections:0,income:[0,0,0],expenses:[0,0,0,0,0,0],capexSpent:0,unitRents:[],monthlyNOI:Array(12).fill(null)},
-    apiConnected:false,
-  });
-  closeAddProp();
-  selectedPropId=id;
-  renderPage();
-  openBudgetModal(id);
-  showToast(`${name} added. Enter the annual budget to begin tracking.`);
-}
-
-// ══════════════════════════════════════
-// BUDGET UPLOAD ENGINE
+// BUDGET UPLOAD ENGINE — PGM Format
+// Handles: multi-sheet XLSX (one tab per property)
+// Format: Property name row 0, header row 3,
+//         ▼ INCOME / ▼ OPERATING EXPENSES / ▼ NON-OPERATING EXPENSES sections
+//         Col A = Account, Col B = 2025 Actual, Cols C-N = Jan-Dec monthly
 // ══════════════════════════════════════
 let uploadState = {
-  step: 1,           // 1=upload, 2=preview/map, 3=match, 4=confirm
-  rawRows: [],       // parsed rows from file
-  detected: {},      // {propertyName, year, frequency, income:[], expenses:[], capex}
-  matchChoice: null, // propId or 'new'
+  step: 1,
+  allSheets: [],      // [{sheetName, displayName, year, income, expenses, nonop}]
+  selectedSheets: {}, // {sheetName: true/false}
+  matchMap: {},       // {sheetName: propId|'new'|'skip'}
   fileName: '',
 };
 
+const UPLOAD_SKIP = new Set([
+  'TOTAL INCOME','TOTAL OPERATING EXPENSES','NET OPERATING INCOME (NOI)',
+  'TOTAL NON-OPERATING EXPENSES (INCL. CAPEX)','NET INCOME (LOSS)',
+  'ACCOUNT','2026 ANNUAL BUDGET — MONTHLY BREAKDOWN',
+  'NET OPERATING INCOME','NET NON-OPERATING INCOME','NET INCOME',
+  'TOTAL INCOME (LOSS)',
+]);
+
 function openUploadModal() {
-  uploadState = {step:1, rawRows:[], detected:{}, matchChoice:null, fileName:''};
+  uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:''};
   document.getElementById('upload-modal').classList.add('open');
   renderUploadStep();
 }
@@ -1157,217 +1519,212 @@ function renderUploadStep() {
     <div class="upload-steps">
       <div class="upload-step ${step>=1?step>1?'done':'active':''}">
         <div class="us-num">${step>1?'✓':'1'}</div><span>Upload file</span>
-      </div>
-      <div class="us-sep"></div>
+      </div><div class="us-sep"></div>
       <div class="upload-step ${step>=2?step>2?'done':'active':''}">
-        <div class="us-num">${step>2?'✓':'2'}</div><span>Review &amp; map</span>
-      </div>
-      <div class="us-sep"></div>
+        <div class="us-num">${step>2?'✓':'2'}</div><span>Select properties</span>
+      </div><div class="us-sep"></div>
       <div class="upload-step ${step>=3?step>3?'done':'active':''}">
-        <div class="us-num">${step>3?'✓':'3'}</div><span>Match property</span>
-      </div>
-      <div class="us-sep"></div>
+        <div class="us-num">${step>3?'✓':'3'}</div><span>Match &amp; confirm</span>
+      </div><div class="us-sep"></div>
       <div class="upload-step ${step>=4?'active':''}">
-        <div class="us-num">4</div><span>Confirm &amp; save</span>
+        <div class="us-num">4</div><span>Save</span>
       </div>
     </div>`;
 
-  const body = document.getElementById('upload-modal-body');
+  const body   = document.getElementById('upload-modal-body');
   const footer = document.getElementById('upload-modal-footer');
 
+  // ── STEP 1: Drop zone ──
   if (step === 1) {
     body.innerHTML = stepsHtml + `
-      <label class="upload-drop-zone" id="udz" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+      <label class="upload-drop-zone" id="udz"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event)">
         <div class="udz-icon">⤒</div>
-        <div class="udz-title">Drop your budget file here or click to browse</div>
-        <div class="udz-sub">Auto-detects property name, income, expenses, and whether figures are monthly or annual</div>
+        <div class="udz-title">Drop your PGM budget file here or click to browse</div>
+        <div class="udz-sub">Reads your annual budget Excel exactly as-is — one tab per property.<br/>Auto-detects all properties, income lines, expense lines, and monthly figures.</div>
         <div class="udz-formats">
-          <span class="fmt-badge">CSV</span>
           <span class="fmt-badge">XLSX</span>
           <span class="fmt-badge">XLS</span>
-          <span class="fmt-badge">Google Sheets</span>
-          <span class="fmt-badge">PDF (text)</span>
+          <span class="fmt-badge">CSV</span>
         </div>
-        <input type="file" id="budget-file-input" accept=".csv,.xlsx,.xls,.pdf"
+        <input type="file" id="budget-file-input" accept=".csv,.xlsx,.xls"
           onchange="handleFileSelect(this.files[0])"/>
       </label>
-      <div style="margin-top:16px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.6;">
-        <strong style="color:var(--text2);">Expected format:</strong> Your file should have a property name, a year, and rows with labels and dollar amounts. Column headers like "Category", "Monthly", "Annual", "Budget" are recognized automatically. The app handles most standard budget export formats.
+      <div style="margin-top:14px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.7;">
+        <strong style="color:var(--text2);">PGM format detected automatically.</strong>
+        The app reads your standard annual budget format: property name in row 1,
+        <code style="color:var(--accent);">▼ INCOME</code> /
+        <code style="color:var(--accent);">▼ OPERATING EXPENSES</code> /
+        <code style="color:var(--accent);">▼ NON-OPERATING EXPENSES</code> sections,
+        monthly figures in Jan–Dec columns, and 2025 actuals in column B.
+        Each tab = one property.
       </div>`;
-    footer.innerHTML = `
-      <button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
+    footer.innerHTML = `<button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
 
+  // ── STEP 2: Select which sheets to import ──
   } else if (step === 2) {
-    const d = uploadState.detected;
-    const freqBadge = d.frequency==='annual'
-      ? '<span class="detect-badge db-annual">Annual ÷12</span>'
-      : d.frequency==='monthly'
-      ? '<span class="detect-badge db-monthly">Monthly</span>'
-      : '<span class="detect-badge db-unknown">Unknown — set below</span>';
+    const sheets = uploadState.allSheets;
+    const selectedCount = Object.values(uploadState.selectedSheets).filter(Boolean).length;
 
-    const incRows = (d.income||[]).map((r,i) => `
-      <tr class="income-row">
-        <td>${r.label}</td>
-        <td class="r">${fd(r.monthly)}/mo</td>
-        <td class="r">${fd(r.monthly*12)}/yr</td>
-        <td>
-          <select class="map-select" style="width:160px;" onchange="remapLine('income',${i},this.value)">
-            <option value="income" ${r.category==='income'?'selected':''}>Income line</option>
-            <option value="expense" ${r.category==='expense'?'selected':''}>Expense line</option>
-            <option value="capex" ${r.category==='capex'?'selected':''}>CapEx budget</option>
-            <option value="skip">Skip this row</option>
-          </select>
-        </td>
-      </tr>`).join('');
-
-    const expRows = (d.expenses||[]).map((r,i) => `
-      <tr class="expense-row">
-        <td>${r.label}</td>
-        <td class="r">${fd(r.monthly)}/mo</td>
-        <td class="r">${fd(r.monthly*12)}/yr</td>
-        <td>
-          <select class="map-select" style="width:160px;" onchange="remapLine('expense',${i},this.value)">
-            <option value="income">Income line</option>
-            <option value="expense" selected>Expense line</option>
-            <option value="capex">CapEx budget</option>
-            <option value="skip">Skip this row</option>
-          </select>
-        </td>
-      </tr>`).join('');
+    const sheetRows = sheets.map(s => {
+      const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+      const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noi = incTotal - expTotal;
+      const checked = uploadState.selectedSheets[s.sheetName] !== false; // default true
+      return `
+        <div class="parsed-preview" style="margin-bottom:6px;">
+          <div class="pp-head" style="display:flex;align-items:center;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">
+              <input type="checkbox" ${checked?'checked':''} style="accent-color:var(--accent);"
+                onchange="toggleSheet('${s.sheetName}',this.checked)"/>
+              <span style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</span>
+            </label>
+            <span style="font-size:11px;color:var(--text3);">${s.income.length} income · ${s.expenses.length} expense · ${s.nonop.length} non-op</span>
+            <span style="font-size:12px;font-family:var(--mono);color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo NOI</span>
+          </div>
+        </div>`;
+    }).join('');
 
     body.innerHTML = stepsHtml + `
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">📄 ${uploadState.fileName}</div>
-          <div style="font-size:11px;color:var(--text3);">Review the detected rows below. Change the category if anything was misidentified, then click Next.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;color:var(--text2);">
+          <strong style="color:var(--text);">${sheets.length} properties</strong> found in <strong style="color:var(--text);">${uploadState.fileName}</strong>.
+          Select which ones to import.
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <div style="font-size:11px;color:var(--text3);">Detected figures:</div>${freqBadge}
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div class="parsed-preview">
-          <div class="pp-head"><span>Property detected</span></div>
-          <div style="padding:12px 14px;">
-            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">${d.propertyName||'Not detected'}</div>
-            <div style="display:flex;gap:8px;margin-top:6px;">
-              <div style="font-size:11px;color:var(--text3);">Budget year:</div>
-              <input type="number" value="${d.year||new Date().getFullYear()}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;width:80px;" onchange="uploadState.detected.year=+this.value"/>
-            </div>
-          </div>
-        </div>
-        <div class="parsed-preview">
-          <div class="pp-head"><span>Budget totals</span></div>
-          <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">Total income/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">Total expenses/mo</span><span style="color:var(--text);font-family:var(--mono);">${fd((d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;border-top:1px solid var(--border);padding-top:6px;"><span style="color:var(--text3);">NOI/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0)-(d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}</span></div>
-            ${d.capex?`<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text3);">CapEx budget</span><span style="color:var(--amber);font-family:var(--mono);">${fd(d.capex)}</span></div>`:''}
-          </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="selectAllSheets(true)">Select all</button>
+          <button class="btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="selectAllSheets(false)">Deselect all</button>
         </div>
       </div>
-      <div class="parsed-preview">
-        <div class="pp-head"><span>Detected line items — correct any mismatches</span><span>${(d.income||[]).length} income · ${(d.expenses||[]).length} expense</span></div>
-        <div style="max-height:280px;overflow-y:auto;">
-          <table class="pp-table">
-            <thead><tr><th style="width:40%">Label</th><th class="r">Monthly</th><th class="r">Annual</th><th>Category</th></tr></thead>
-            <tbody>
-              ${(d.income||[]).length?`<tr class="sec-head"><td colspan="4">Income</td></tr>${incRows}`:''}
-              ${(d.expenses||[]).length?`<tr class="sec-head"><td colspan="4">Expenses</td></tr>${expRows}`:''}
-            </tbody>
-          </table>
-        </div>
-      </div>`;
+      <div style="max-height:400px;overflow-y:auto;">${sheetRows}</div>`;
 
     footer.innerHTML = `
       <button class="btn-ghost" onclick="uploadState.step=1;renderUploadStep()">← Back</button>
-      <button class="btn-primary" onclick="uploadState.step=3;renderUploadStep()">Next: Match property →</button>`;
+      <button class="btn-primary" onclick="uploadState.step=3;renderUploadStep()">
+        Next: Match ${selectedCount} propert${selectedCount!==1?'ies':'y'} →
+      </button>`;
 
+  // ── STEP 3: Match each selected sheet to existing property or create new ──
   } else if (step === 3) {
-    // Find matching properties by name similarity
-    const name = (uploadState.detected.propertyName||'').toLowerCase();
-    const scored = properties.map(p => {
-      const pn = p.name.toLowerCase();
-      let score = 0;
-      if (pn === name) score = 100;
-      else if (pn.includes(name) || name.includes(pn)) score = 80;
-      else {
-        const words = name.split(/\s+/);
-        words.forEach(w => { if (w.length>3 && pn.includes(w)) score += 20; });
-      }
-      return {...p, score};
-    }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
+    const toImport = uploadState.allSheets.filter(s=>uploadState.selectedSheets[s.sheetName]!==false);
 
-    const matchCards = scored.map(p => `
-      <div class="match-card ${uploadState.matchChoice===p.id?'selected':''}" onclick="selectMatch(${p.id})">
-        <span class="mc-icon">⬡</span>
-        <div class="mc-info">
-          <div class="mc-name">${p.name}</div>
-          <div class="mc-sub">${p.address} · ${p.units} units · ${p.pm}</div>
-          ${p.budgetHistory?`<div style="font-size:10px;color:var(--text3);margin-top:2px;">Existing budgets: ${Object.keys(p.budgetHistory).join(', ')}</div>`:''}
-        </div>
-        <span class="mc-score">${p.score}% match</span>
-      </div>`).join('');
+    const matchRows = toImport.map(s => {
+      const name = (s.displayName||s.sheetName).toLowerCase().trim();
+      // Score existing properties by name similarity
+      const scored = properties.map(p=>{
+        const pn = p.name.toLowerCase();
+        let score = 0;
+        if (pn===name||pn===s.sheetName.toLowerCase()) score=100;
+        else if (pn.includes(name)||name.includes(pn)) score=85;
+        else {
+          name.split(/\s+/).forEach(w=>{ if(w.length>3&&pn.includes(w)) score+=25; });
+          s.sheetName.toLowerCase().split(/\s+/).forEach(w=>{ if(w.length>2&&pn.includes(w)) score+=15; });
+        }
+        return {...p, score};
+      }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
 
-    body.innerHTML = stepsHtml + `
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;">
-        The file was detected as <strong style="color:var(--text);">"${uploadState.detected.propertyName||'Unknown'}"</strong> · ${uploadState.detected.year} budget.
-        Select which property this budget belongs to, or create a new one.
-      </div>
-      ${scored.length ? `
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px;">Possible matches</div>
-        ${matchCards}` : `
-        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">No matching properties found in the system.</div>`}
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:12px 0 8px;">Or create new property</div>
-      <div class="match-card new-prop ${uploadState.matchChoice==='new'?'selected':''}" onclick="selectMatch('new')">
-        <span class="mc-icon">+</span>
-        <div class="mc-info">
-          <div class="mc-name">Create new property: "${uploadState.detected.propertyName||'Unnamed'}"</div>
-          <div class="mc-sub">Will be added to your portfolio with this budget as the baseline</div>
-        </div>
-      </div>`;
+      const current = uploadState.matchMap[s.sheetName];
+      const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+      const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noi = incTotal - expTotal;
 
+      return `
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</div>
+              <div style="font-size:11px;color:var(--text3);">${s.income.length} income lines · ${s.expenses.length} expense lines · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span></div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;">Map to:</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${scored.slice(0,3).map(p=>`
+              <label class="match-card ${current===p.id?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}',${p.id})">
+                <input type="radio" name="match-${s.sheetName}" value="${p.id}" ${current===p.id?'checked':''} style="display:none;"/>
+                <span class="mc-icon">⬡</span>
+                <div class="mc-info">
+                  <div class="mc-name">${p.name}</div>
+                  <div class="mc-sub">${p.address} · ${p.units} units</div>
+                  ${p.budgetHistory?`<div style="font-size:10px;color:var(--text3);">Existing: ${Object.keys(p.budgetHistory).join(', ')}</div>`:''}
+                </div>
+                <span class="mc-score">${p.score}%</span>
+              </label>`).join('')}
+            <label class="match-card new-prop ${current==='new'?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}','new')">
+              <input type="radio" name="match-${s.sheetName}" value="new" ${current==='new'?'checked':''} style="display:none;"/>
+              <span class="mc-icon">+</span>
+              <div class="mc-info"><div class="mc-name">Create new: "${s.displayName}"</div><div class="mc-sub">Add as a new property</div></div>
+            </label>
+            <label class="match-card ${current==='skip'?'selected':''}" style="cursor:pointer;opacity:.7;" onclick="setMatchMap('${s.sheetName}','skip')">
+              <input type="radio" name="match-${s.sheetName}" value="skip" ${current==='skip'?'checked':''} style="display:none;"/>
+              <span class="mc-icon" style="color:var(--text3);">○</span>
+              <div class="mc-info"><div class="mc-name" style="color:var(--text3);">Skip this property</div><div class="mc-sub">Do not import</div></div>
+            </label>
+          </div>
+        </div>`;
+    }).join('');
+
+    const allMapped = toImport.every(s=>uploadState.matchMap[s.sheetName]);
+    body.innerHTML = stepsHtml + `<div style="max-height:450px;overflow-y:auto;">${matchRows}</div>`;
     footer.innerHTML = `
       <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
-      <button class="btn-primary" ${uploadState.matchChoice?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
-        onclick="${uploadState.matchChoice?'uploadState.step=4;renderUploadStep()':''}">Next: Confirm →</button>`;
+      <button class="btn-primary" ${allMapped?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
+        onclick="${allMapped?'uploadState.step=4;renderUploadStep()':''}">
+        Next: Review &amp; save →
+      </button>`;
 
+  // ── STEP 4: Summary + save ──
   } else if (step === 4) {
-    const d = uploadState.detected;
-    const isNew = uploadState.matchChoice === 'new';
-    const matchedProp = isNew ? null : properties.find(p=>p.id===uploadState.matchChoice);
-    const existingYears = matchedProp?.budgetHistory ? Object.keys(matchedProp.budgetHistory) : [];
-    const willOverwrite = existingYears.includes(String(d.year));
+    const toImport = uploadState.allSheets.filter(s=>
+      uploadState.selectedSheets[s.sheetName]!==false &&
+      uploadState.matchMap[s.sheetName] &&
+      uploadState.matchMap[s.sheetName]!=='skip'
+    );
+    const creates = toImport.filter(s=>uploadState.matchMap[s.sheetName]==='new').length;
+    const updates = toImport.filter(s=>uploadState.matchMap[s.sheetName]!=='new').length;
+
+    const summaryRows = toImport.map(s=>{
+      const mid = uploadState.matchMap[s.sheetName];
+      const isNew = mid==='new';
+      const matched = isNew ? null : properties.find(p=>p.id===mid);
+      const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+      const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noi = incTotal-expTotal;
+      const willOverwrite = matched?.budgetHistory?.[s.year];
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);">
+          <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${isNew?'var(--accent)':'var(--green)'};"></div>
+          <div style="flex:1;font-size:12px;color:var(--text2);">${s.displayName}</div>
+          <div style="font-size:11px;color:var(--text3);">${isNew?'New property':`→ ${matched?.name}`}</div>
+          <div style="font-size:12px;font-family:var(--mono);color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</div>
+          ${willOverwrite?`<span style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:2px 6px;">Overwrites ${s.year}</span>`:''}
+        </div>`;
+    }).join('');
 
     body.innerHTML = stepsHtml + `
       <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">Ready to save</div>
-        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2);">
-          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Property:</span> ${isNew?`New — "${d.propertyName}"`:matchedProp?.name}</div>
-          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Budget year:</span> ${d.year}</div>
-          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Income lines:</span> ${(d.income||[]).length} items · ${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0))}/mo</div>
-          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">Expense lines:</span> ${(d.expenses||[]).length} items · ${fd((d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}/mo</div>
-          <div><span style="color:var(--text3);min-width:120px;display:inline-block;">NOI:</span> <span style="color:var(--green);">${fd((d.income||[]).reduce((s,r)=>s+r.monthly,0)-(d.expenses||[]).reduce((s,r)=>s+r.monthly,0))}/mo</span></div>
-          ${d.capex?`<div><span style="color:var(--text3);min-width:120px;display:inline-block;">CapEx budget:</span> ${fd(d.capex)}/yr</div>`:''}
-          ${!isNew&&existingYears.length?`<div><span style="color:var(--text3);min-width:120px;display:inline-block;">Existing budgets:</span> ${existingYears.join(', ')}</div>`:''}
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">
+          Ready to save ${toImport.length} budget${toImport.length!==1?'s':''}
+        </div>
+        <div style="font-size:12px;color:var(--text2);">
+          ${creates>0?`${creates} new propert${creates!==1?'ies':'y'} will be created. `:''}
+          ${updates>0?`${updates} existing propert${updates!==1?'ies':'y'} will be updated.`:''}
         </div>
       </div>
-      ${willOverwrite?`<div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:14px;">⚑ A ${d.year} budget already exists for this property. Saving will overwrite it.</div>`:''}
-      ${isNew?`
-        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">New property details — fill in before saving:</div>
-        <div class="modal-grid">
-          <div class="mf"><label>Address</label><input type="text" id="new-up-addr" placeholder="City, ST"/></div>
-          <div class="mf"><label>Total units</label><input type="number" id="new-up-units" placeholder="e.g. 48"/></div>
-          <div class="mf"><label>PM software</label><select id="new-up-pm"><option>AppFolio</option><option>Buildium</option></select></div>
-          <div class="mf"><label>Market</label><select id="new-up-market"><option>Dallas-Fort Worth (DFW)</option><option>Wichita, KS</option><option>Omaha, NE</option><option>Other</option></select></div>
+      <div style="max-height:320px;overflow-y:auto;">${summaryRows}</div>
+      ${creates>0?`
+        <div style="margin-top:14px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text3);">
+          New properties will need units, PM software, and address filled in after import. You can edit them from the property detail view.
         </div>`:''}`;
 
     footer.innerHTML = `
       <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
-      <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save budget</button>`;
+      <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save all budgets</button>`;
   }
 }
 
+// ── FILE HANDLERS ──
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('udz')?.classList.remove('drag-over');
@@ -1380,39 +1737,26 @@ function handleFileSelect(file) {
   uploadState.fileName = file.name;
   const ext = file.name.split('.').pop().toLowerCase();
 
-  if (ext === 'pdf') {
-    // Read as text — works for text-based PDFs exported from Excel/Sheets
-    const reader = new FileReader();
-    reader.onload = e => {
-      const text = e.target.result;
-      if (text.includes('%PDF') && !text.includes('\n')) {
-        showToast('This appears to be a scanned/image PDF. Please export as CSV or Excel instead.', true);
-        return;
-      }
-      uploadState.rawRows = text.split('\n').map(l=>l.split(',').map(c=>c.trim()));
-      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
-      uploadState.step = 2;
-      renderUploadStep();
-    };
-    reader.readAsText(file);
-    return;
-  }
-
   if (ext === 'csv') {
     const reader = new FileReader();
     reader.onload = e => {
       const lines = e.target.result.split('\n');
-      uploadState.rawRows = lines.map(l => {
-        // Handle quoted CSV fields
-        const cols = []; let cur='', inQ=false;
+      const rows = lines.map(l => {
+        const cols=[]; let cur='', inQ=false;
         for (const ch of l+',') {
-          if (ch==='"') inQ=!inQ;
-          else if (ch===','&&!inQ) { cols.push(cur.trim()); cur=''; }
+          if(ch==='"') inQ=!inQ;
+          else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
           else cur+=ch;
         }
         return cols;
       });
-      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
+      // CSV = single property, use filename as name
+      const name = file.name.replace(/\.(csv)$/i,'').replace(/[-_]/g,' ').trim();
+      const parsed = parsePGMSheet(rows, name);
+      uploadState.allSheets = [parsed];
+      uploadState.selectedSheets = {[parsed.sheetName]: true};
+      // Auto-suggest match
+      autoSuggestMatches();
       uploadState.step = 2;
       renderUploadStep();
     };
@@ -1421,218 +1765,237 @@ function handleFileSelect(file) {
   }
 
   if (['xlsx','xls'].includes(ext)) {
-    // Use SheetJS loaded from CDN
     if (typeof XLSX === 'undefined') {
       const s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-      s.onload = () => parseExcel(file);
+      s.onload = () => parseExcelFile(file);
       document.head.appendChild(s);
     } else {
-      parseExcel(file);
+      parseExcelFile(file);
     }
     return;
   }
 
-  showToast('Unsupported file type. Please upload CSV, XLSX, or PDF.', true);
+  showToast('Please upload an XLSX, XLS, or CSV file.', true);
 }
 
-function parseExcel(file) {
+function parseExcelFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const wb = XLSX.read(e.target.result, {type:'array'});
-      // Use first sheet
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      uploadState.rawRows = rows.map(r => r.map(c => String(c).trim()));
-      uploadState.detected = detectBudget(uploadState.rawRows, file.name);
+      const sheets = [];
+      wb.SheetNames.forEach(sheetName => {
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName);
+        if (parsed.income.length > 0 || parsed.expenses.length > 0) {
+          sheets.push(parsed);
+        }
+      });
+      if (!sheets.length) { showToast('No budget data found. Check the file format.', true); return; }
+      uploadState.allSheets = sheets;
+      // Default: all selected
+      sheets.forEach(s=>{ uploadState.selectedSheets[s.sheetName]=true; });
+      autoSuggestMatches();
       uploadState.step = 2;
       renderUploadStep();
     } catch(err) {
-      showToast('Could not parse Excel file. Try saving as CSV and re-uploading.', true);
+      showToast('Could not read file. Try saving as CSV and re-uploading.', true);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-// ── DETECTION ENGINE ──
-function detectBudget(rows, fileName) {
+// ── PGM FORMAT PARSER ──
+// Handles: ▼ section headers, mixed sign income, formula cells, multi-sheet
+function parsePGMSheet(rows, sheetName) {
   const result = {
-    propertyName: '', year: new Date().getFullYear(),
-    frequency: 'unknown', income: [], expenses: [], capex: 0
+    sheetName,
+    displayName: sheetName,
+    year: new Date().getFullYear(),
+    income: [],
+    expenses: [],
+    nonop: [],
   };
 
-  // Known income/expense keywords
-  const INCOME_KW = ['rent','revenue','income','rents','gpr','egi','other income','laundry','late fee','pet fee','parking','storage','concession','vacancy','loss'];
-  const EXPENSE_KW = ['management','repair','maintenance','insurance','tax','taxes','utility','utilities','admin','legal','reserve','landscaping','pest','payroll','advertising','professional','accounting','water','electric','gas','trash','sewer'];
-  const CAPEX_KW = ['capex','capital','renovation','improvement','construction'];
-  const SKIP_KW = ['total','subtotal','net','noi','cash flow','debt','mortgage','loan','dscr','cap rate'];
+  let currentSection = null;
+  const ARROW = '\u25bc'; // ▼
 
-  // Detect property name — look for a prominent text-only row near the top
-  for (let i=0;i<Math.min(10,rows.length);i++) {
-    const r = rows[i];
-    const first = (r[0]||'').trim();
-    if (first && !/^\d/.test(first) && first.length>4 && !first.toLowerCase().includes('budget') && !first.toLowerCase().includes('category')) {
-      // Check if it looks like a year
-      const yearMatch = first.match(/20\d\d/);
-      if (yearMatch) { result.year = +yearMatch[0]; continue; }
-      if (!result.propertyName && !/income|expense|revenue|month/i.test(first)) {
-        result.propertyName = first;
-      }
+  rows.forEach((row, rowIdx) => {
+    const label = String(row[0]||'').trim();
+    if (!label) return;
+
+    const labelUp = label.toUpperCase();
+
+    // Row 0: property display name (all caps, no data in other cols)
+    if (rowIdx === 0 && String(row[1]||'').trim()==='' && label.length>2) {
+      result.displayName = label;
+      // Extract year from budget title row if present
+      return;
     }
-    // Also check for year in any cell
-    for (const cell of r) {
-      const ym = String(cell).match(/^(202\d|203\d)$/);
-      if (ym) result.year = +ym[0];
+
+    // Detect year from row 1 or 2
+    if (rowIdx <= 3) {
+      const yrMatch = label.match(/20(\d\d)/);
+      if (yrMatch) result.year = +('20'+yrMatch[1]);
     }
-  }
 
-  // Try to detect year from filename
-  const fnYear = fileName.match(/20\d\d/);
-  if (fnYear && result.year === new Date().getFullYear()) result.year = +fnYear[0];
+    // Skip header and total/summary rows
+    if (UPLOAD_SKIP.has(labelUp)) return;
+    if (label.startsWith('PGM')) return;
 
-  // Try to detect from filename if no property name found
-  if (!result.propertyName) {
-    const cleaned = fileName.replace(/\.(csv|xlsx|xls|pdf)/i,'').replace(/[-_]/g,' ').replace(/budget|20\d\d/gi,'').trim();
-    if (cleaned.length > 2) result.propertyName = cleaned.replace(/\b\w/g, c=>c.toUpperCase());
-  }
-
-  // Find value columns — look for headers like Monthly, Annual, Budget, Jan, Feb etc
-  let monthlyCol = -1, annualCol = -1;
-  for (let i=0;i<Math.min(15,rows.length);i++) {
-    const r = rows[i].map(c=>c.toLowerCase());
-    r.forEach((cell,ci) => {
-      if (/monthly|month/.test(cell) && monthlyCol===-1) monthlyCol=ci;
-      if (/annual|yearly|year|total/.test(cell) && annualCol===-1) annualCol=ci;
-    });
-    if (monthlyCol>-1||annualCol>-1) break;
-  }
-
-  // If no labeled columns found, guess: col 0 = label, col 1 = first number
-  let valueCol = monthlyCol>-1 ? monthlyCol : annualCol>-1 ? annualCol : 1;
-  result.frequency = monthlyCol>-1 ? 'monthly' : annualCol>-1 ? 'annual' : 'unknown';
-
-  // If frequency unknown, try to detect from values — annual figures tend to be > 10000 for most lines
-  if (result.frequency === 'unknown') {
-    const vals = [];
-    rows.forEach(r => {
-      const v = pd(r[1]||r[2]||'');
-      if (v > 0 && v < 9999999) vals.push(v);
-    });
-    const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-    result.frequency = avg > 8000 ? 'annual' : 'monthly';
-  }
-
-  // Parse rows
-  rows.forEach(r => {
-    const label = (r[0]||'').trim();
-    if (!label || label.length < 2) return;
-
-    const rawVal = pd(r[valueCol]||r[1]||r[2]||'');
-    if (rawVal === 0 && !/0/.test(String(r[valueCol]||r[1]||''))) return;
-
-    const monthly = result.frequency==='annual' ? rawVal/12 : rawVal;
-    const ll = label.toLowerCase();
-
-    if (SKIP_KW.some(k=>ll.includes(k))) return;
-    if (CAPEX_KW.some(k=>ll.includes(k))) { result.capex = result.frequency==='annual'?rawVal:rawVal*12; return; }
-
-    if (INCOME_KW.some(k=>ll.includes(k))) {
-      // Vacancy/concessions are negative
-      const isNeg = /vacancy|concession|loss/.test(ll);
-      result.income.push({label, monthly: isNeg ? -Math.abs(monthly) : monthly, category:'income'});
-    } else if (EXPENSE_KW.some(k=>ll.includes(k))) {
-      result.expenses.push({label, monthly, category:'expense'});
-    } else if (rawVal > 0) {
-      // Unknown — guess based on sign and value
-      result.expenses.push({label, monthly, category:'expense'});
+    // Section headers
+    if (label[0] === ARROW || labelUp.startsWith('▼')) {
+      const sect = labelUp.replace('▼','').trim();
+      if (sect.includes('NON-OPERATING')) currentSection = 'nonop';
+      else if (sect.includes('OPERATING EXPENSES')) currentSection = 'expenses';
+      else if (sect.includes('INCOME')) currentSection = 'income';
+      return;
     }
+
+    if (!currentSection) return;
+
+    // Get 2025 actual (col B = index 1)
+    const actual2025 = typeof row[1]==='number' ? row[1] : null;
+
+    // Get monthly budget value — Jan is col C (index 2), go through N (index 13)
+    // Formula cells (like mgmt fee =0.08*...) are strings in XLSX.js — skip them
+    // Fall back to actual_2025/12 for formula-driven rows
+    let monthlyRaw = null;
+    for (let i=2; i<=13; i++) {
+      const v = row[i];
+      if (typeof v === 'number' && isFinite(v)) { monthlyRaw=v; break; }
+    }
+
+    // Fallback: use 2025 actual ÷ 12 for formula cells (e.g. Management Fees)
+    if (monthlyRaw === null && actual2025 !== null) {
+      monthlyRaw = actual2025 / 12;
+    }
+    if (monthlyRaw === null) return;
+
+    // Always abs() — income stored negative in some sheets, positive in others
+    const monthly = Math.round(Math.abs(monthlyRaw) * 100) / 100;
+    if (monthly === 0) return;
+
+    const entry = {
+      label,
+      monthly,
+      annual: Math.round(monthly * 12 * 100) / 100,
+      actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null,
+    };
+
+    result[currentSection].push(entry);
   });
 
   return result;
 }
 
-function remapLine(type, idx, newCat) {
-  const d = uploadState.detected;
-  const arr = type==='income' ? d.income : d.expenses;
-  const item = arr[idx];
-  if (!item) return;
-  item.category = newCat;
-  // Move to correct array if needed
-  if (newCat === 'income' && type !== 'income') {
-    d.income.push({...item, monthly: item.monthly});
-    d.expenses.splice(idx,1);
-  } else if (newCat === 'expense' && type !== 'expense') {
-    d.expenses.push({...item});
-    d.income.splice(idx,1);
-  } else if (newCat === 'capex') {
-    d.capex = item.monthly * 12;
-    arr.splice(idx,1);
-  } else if (newCat === 'skip') {
-    arr.splice(idx,1);
-  }
-  renderUploadStep();
-}
-
-function selectMatch(choice) {
-  uploadState.matchChoice = choice;
-  renderUploadStep();
-}
-
-function confirmSaveBudget() {
-  const d = uploadState.detected;
-  const isNew = uploadState.matchChoice === 'new';
-  const year = d.year;
-
-  const budget = {
-    income:   d.income.map(r=>({label:r.label, monthly:r.monthly})),
-    expenses: d.expenses.map(r=>({label:r.label, monthly:r.monthly})),
-    capexBudget: d.capex || 0,
-  };
-
-  if (isNew) {
-    const addr   = document.getElementById('new-up-addr')?.value||'—';
-    const units  = +document.getElementById('new-up-units')?.value||0;
-    const pm     = document.getElementById('new-up-pm')?.value||'AppFolio';
-    const id = Date.now();
-    const newProp = {
-      id, name: d.propertyName||'Uploaded property',
-      address: addr, units, pm, market:'', type:'existing',
-      budgetYear: year,
-      budget,
-      budgetHistory: {[year]: budget},
-      actuals:{occupancy:0,collections:0,income:budget.income.map(()=>0),expenses:budget.expenses.map(()=>0),capexSpent:0,unitRents:[],monthlyNOI:Array(12).fill(null)},
-      apiConnected:false,
-    };
-    properties.push(newProp);
-    selectedPropId = id;
-  } else {
-    const prop = properties.find(p=>p.id===uploadState.matchChoice);
-    if (prop) {
-      if (!prop.budgetHistory) prop.budgetHistory = {};
-      prop.budgetHistory[year] = budget;
-      prop.budget = budget;
-      prop.budgetYear = year;
-      // Pad actuals arrays if needed
-      if (prop.actuals.income.length !== budget.income.length)
-        prop.actuals.income = budget.income.map(()=>0);
-      if (prop.actuals.expenses.length !== budget.expenses.length)
-        prop.actuals.expenses = budget.expenses.map(()=>0);
-      selectedPropId = prop.id;
+// ── MATCH HELPERS ──
+function autoSuggestMatches() {
+  uploadState.allSheets.forEach(s => {
+    if (uploadState.matchMap[s.sheetName]) return; // already set
+    const name = (s.displayName||s.sheetName).toLowerCase().trim();
+    const scored = properties.map(p=>{
+      const pn = p.name.toLowerCase();
+      let score = 0;
+      if (pn===name||pn===s.sheetName.toLowerCase()) score=100;
+      else if (pn.includes(name)||name.includes(pn)) score=80;
+      else {
+        name.split(/\s+/).forEach(w=>{ if(w.length>3&&pn.includes(w)) score+=25; });
+      }
+      return {id:p.id, score};
+    }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
+    // Auto-select best match if score >= 80
+    if (scored[0]?.score >= 80) {
+      uploadState.matchMap[s.sheetName] = scored[0].id;
+    } else {
+      uploadState.matchMap[s.sheetName] = 'new';
     }
-  }
+  });
+}
+
+function toggleSheet(sheetName, checked) {
+  uploadState.selectedSheets[sheetName] = checked;
+  renderUploadStep();
+}
+function selectAllSheets(val) {
+  uploadState.allSheets.forEach(s=>{ uploadState.selectedSheets[s.sheetName]=val; });
+  renderUploadStep();
+}
+function setMatchMap(sheetName, choice) {
+  uploadState.matchMap[sheetName] = choice;
+  renderUploadStep();
+}
+
+// ── SAVE ──
+function confirmSaveBudget() {
+  const toImport = uploadState.allSheets.filter(s=>
+    uploadState.selectedSheets[s.sheetName]!==false &&
+    uploadState.matchMap[s.sheetName] &&
+    uploadState.matchMap[s.sheetName]!=='skip'
+  );
+
+  let created=0, updated=0;
+
+  toImport.forEach(s => {
+    const mid = uploadState.matchMap[s.sheetName];
+    const isNew = mid==='new';
+    const year = s.year;
+
+    const budget = {
+      income:   s.income.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025})),
+      expenses: s.expenses.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025})),
+      nonop:    s.nonop.map(r=>({label:r.label, monthly:r.monthly, actual2025:r.actual2025})),
+      capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.annual)||0,
+    };
+
+    if (isNew) {
+      const id = Date.now() + Math.random();
+      properties.push({
+        id, name: s.displayName, address:'—', units:0,
+        pm:'AppFolio', market:'', type:'existing',
+        budgetYear: year,
+        budget,
+        budgetHistory: {[year]: budget},
+        actuals:{
+          occupancy:0, collections:0,
+          income: budget.income.map(()=>0),
+          expenses: budget.expenses.map(()=>0),
+          capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
+        },
+        apiConnected:false,
+      });
+      selectedPropId = id;
+      created++;
+    } else {
+      const prop = properties.find(p=>p.id===mid);
+      if (prop) {
+        if (!prop.budgetHistory) prop.budgetHistory = {};
+        prop.budgetHistory[year] = budget;
+        prop.budget = budget;
+        prop.budgetYear = year;
+        // Resize actuals arrays to match new budget line counts
+        if (prop.actuals.income.length !== budget.income.length)
+          prop.actuals.income = budget.income.map(()=>0);
+        if (prop.actuals.expenses.length !== budget.expenses.length)
+          prop.actuals.expenses = budget.expenses.map(()=>0);
+        updated++;
+      }
+    }
+  });
 
   closeUploadModal();
   renderPage();
-  showToast('Budget saved for ' + (d.propertyName||'property') + ' · ' + year + '.');
+  showToast(`Imported: ${created} new, ${updated} updated. Budgets saved.`);
 }
+
 
 function switchBudgetYear(propId, year) {
   const prop = properties.find(p=>p.id===propId);
   if (!prop||!prop.budgetHistory||!prop.budgetHistory[year]) return;
   prop.budget = prop.budgetHistory[year];
   prop.budgetYear = +year;
-  // Pad actuals
   if (prop.actuals.income.length !== prop.budget.income.length)
     prop.actuals.income = prop.budget.income.map(()=>0);
   if (prop.actuals.expenses.length !== prop.budget.expenses.length)

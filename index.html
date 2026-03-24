@@ -19,7 +19,7 @@
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
 
-/* ── AUTH ── */
+/* AUTH */
 #auth{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;}
 .auth-card{width:400px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:44px 40px;display:flex;flex-direction:column;gap:24px;}
 .eyebrow{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
@@ -28,103 +28,76 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .divider{height:1px;background:var(--border);}
 .fg{display:flex;flex-direction:column;gap:6px;}
 .fg label{font-size:12px;font-weight:500;color:var(--text2);}
-.fg input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
-.fg input:focus{border-color:var(--accent);}
+.fg input,.fg select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.fg input:focus,.fg select:focus{border-color:var(--accent);}
 .fg input::placeholder{color:var(--text3);}
+.fg select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--bg3);}
 #auth-err{font-size:12px;color:var(--red);background:rgba(232,80,74,.08);border:1px solid rgba(232,80,74,.2);border-radius:6px;padding:8px 12px;display:none;}
 .btn-signin{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
 .btn-signin:hover{background:var(--accent2);}
 .auth-hint{font-size:11px;color:var(--text3);text-align:center;}
 
-/* ── APP SHELL ── */
+/* CHANGE PASSWORD */
+#change-pw-screen{position:fixed;inset:0;z-index:190;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;}
+#change-pw-screen.show{display:flex;}
+.cpw-card{width:380px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px 36px;display:flex;flex-direction:column;gap:18px;}
+.cpw-card h2{font-size:16px;font-weight:600;color:var(--text);}
+.cpw-card p{font-size:13px;color:var(--text3);line-height:1.6;}
+
+/* APP SHELL */
 #app{display:none;height:100vh;width:100vw;flex-direction:row;}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  width:var(--sidebar);flex-shrink:0;
-  background:var(--bg2);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;height:100vh;
-  overflow:hidden;
-}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 .sb-header{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
 .sb-header .ey{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
 .sb-header .brand{font-family:var(--display);font-size:16px;font-weight:600;color:var(--text);line-height:1.2;}
 .sb-header .ver{font-size:10px;color:var(--text3);margin-top:3px;}
-
 .sb-nav{flex:1;overflow-y:auto;padding:8px 0;}
-
 .nav-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:10px 18px 4px;}
-
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 18px;cursor:pointer;
-  font-size:13px;color:var(--text2);
-  transition:color .12s,background .12s;
-  border-left:2px solid transparent;
-}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:13px;color:var(--text2);transition:color .12s,background .12s;border-left:2px solid transparent;}
 .nav-item:hover{color:var(--text);background:var(--bg3);}
 .nav-item.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);}
+.nav-item.readonly{opacity:.75;}
 .ni-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .ni-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ni-badge{font-size:10px;font-weight:600;border-radius:10px;padding:1px 7px;font-family:var(--mono);flex-shrink:0;}
 .nb-purple{background:rgba(155,122,255,.15);color:var(--purple);}
-.nb-amber {background:rgba(245,166,35,.15); color:var(--amber);}
-.nb-teal  {background:rgba(46,196,182,.15); color:var(--teal);}
-.nb-blue  {background:rgba(61,127,255,.15); color:var(--accent);}
-.nb-coral {background:rgba(240,112,82,.15); color:var(--coral);}
-.nb-green {background:rgba(34,201,122,.15); color:var(--green);}
-
+.nb-amber{background:rgba(245,166,35,.15);color:var(--amber);}
+.nb-teal{background:rgba(46,196,182,.15);color:var(--teal);}
+.nb-blue{background:rgba(61,127,255,.15);color:var(--accent);}
+.nb-coral{background:rgba(240,112,82,.15);color:var(--coral);}
+.nb-green{background:rgba(34,201,122,.15);color:var(--green);}
+.nb-gray{background:rgba(140,147,158,.15);color:var(--text3);}
 .sb-divider{height:1px;background:var(--border);margin:6px 18px;}
-
 .sb-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;}
 .user-info{flex:1;min-width:0;}
 .uname{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .urole{font-size:10px;color:var(--text3);}
 .btn-logout{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px;transition:color .15s;flex-shrink:0;}
 .btn-logout:hover{color:var(--red);}
 
-/* ── CONTENT AREA ── */
+/* CONTENT */
 .content{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh;position:relative;}
-
-/* ── LOADING OVERLAY ── */
-.loading-overlay{
-  position:absolute;inset:0;z-index:10;
-  background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;transition:opacity .3s;
-}
+.loading-overlay{position:absolute;inset:0;z-index:10;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .3s;}
 .loading-overlay.hidden{opacity:0;pointer-events:none;}
-.loading-spinner{
-  width:36px;height:36px;border-radius:50%;
-  border:3px solid var(--border2);
-  border-top-color:var(--accent);
-  animation:spin .7s linear infinite;
-}
+.loading-spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--accent);animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-text{font-size:13px;color:var(--text3);}
-
-/* ── IFRAME ── */
-.module-iframe{
-  flex:1;border:none;width:100%;height:100%;
-  display:block;opacity:0;transition:opacity .3s;
-}
+.module-iframe{flex:1;border:none;width:100%;height:100%;display:block;opacity:0;transition:opacity .3s;}
 .module-iframe.loaded{opacity:1;}
 
-/* ── HOME VIEW ── */
-#home-view{
-  flex:1;overflow-y:auto;padding:36px 40px 60px;
-  display:none;
-}
-#home-view.active{display:block;}
+/* HOME + USER MGMT SHARED SCROLL VIEWS */
+#home-view,#um-view{flex:1;overflow-y:auto;padding:36px 40px 60px;display:none;}
+#home-view.active,#um-view.active{display:block;}
+.home-header h1,#um-view h1{font-family:var(--display);font-size:24px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.home-header p,#um-view .sub{font-size:13px;color:var(--text2);line-height:1.6;}
 
-.home-header{margin-bottom:28px;}
-.home-header h1{font-family:var(--display);font-size:26px;font-weight:600;color:var(--text);margin-bottom:6px;}
-.home-header p{font-size:13px;color:var(--text2);line-height:1.6;max-width:580px;}
-
-.pipeline-row{display:flex;align-items:center;gap:0;margin-bottom:36px;overflow-x:auto;padding-bottom:2px;}
+/* Pipeline */
+.pipeline-row{display:flex;align-items:center;gap:0;margin:24px 0 32px;overflow-x:auto;padding-bottom:2px;}
 .ps{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
-.ps-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border:2px solid;flex-shrink:0;}
+.ps-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid;}
 .ps-dot.c-p{background:rgba(155,122,255,.12);border-color:var(--purple);color:var(--purple);}
 .ps-dot.c-a{background:rgba(245,166,35,.12);border-color:var(--amber);color:var(--amber);}
 .ps-dot.c-t{background:rgba(46,196,182,.12);border-color:var(--teal);color:var(--teal);}
@@ -132,18 +105,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .ps-dot.c-c{background:rgba(240,112,82,.12);border-color:var(--coral);color:var(--coral);}
 .ps-dot.c-g{background:rgba(34,201,122,.12);border-color:var(--green);color:var(--green);}
 .ps-lbl{font-size:10px;color:var(--text3);text-align:center;line-height:1.4;white-space:nowrap;}
-.ps-arr{font-size:16px;color:var(--text3);margin:0 5px;padding-bottom:18px;flex-shrink:0;}
+.ps-arr{font-size:16px;color:var(--text3);margin:0 4px;padding-bottom:18px;flex-shrink:0;}
 
+/* Module cards */
 .phase-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:10px;}
 .phase-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:28px;}
-
-.hcard{
-  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-  overflow:hidden;cursor:pointer;
-  transition:border-color .18s,transform .15s;
-  position:relative;
-}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px;}
+.hcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .15s;position:relative;}
 .hcard:hover{border-color:var(--border2);transform:translateY(-2px);}
 .hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
 .hc-p::before{background:var(--purple);}
@@ -152,19 +120,90 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .hc-b::before{background:var(--accent);}
 .hc-c::before{background:var(--coral);}
 .hc-g::before{background:var(--green);}
-.hcard-body{padding:16px 18px;}
-.hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hcard-body{padding:14px 16px;}
+.hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .hc-num{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--text3);}
 .hc-phase-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:10px;}
-.hc-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
-.hc-desc{font-size:12px;color:var(--text3);line-height:1.6;}
-.hcard-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:var(--bg3);border-top:1px solid var(--border);}
+.hc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.hc-desc{font-size:11px;color:var(--text3);line-height:1.55;}
+.hcard-footer{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:var(--bg3);border-top:1px solid var(--border);}
 .hcf-open{font-size:12px;font-weight:500;color:var(--accent);}
-.hcf-note{font-size:10px;color:var(--text3);}
 
-::-webkit-scrollbar{width:4px;height:4px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+/* BUTTONS */
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-ghost:hover{color:var(--text);background:var(--bg3);}
+.btn-danger{background:none;border:1px solid rgba(232,80,74,.3);color:var(--red);border-radius:7px;padding:6px 12px;font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-danger:hover{background:rgba(232,80,74,.08);}
+.btn-sm-ghost{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:6px;padding:5px 10px;font-size:11px;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.btn-sm-ghost:hover{color:var(--text);}
+
+/* USER TABLE */
+.um-toprow{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;}
+.user-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.user-table{width:100%;border-collapse:collapse;font-size:13px;}
+.user-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border2);background:var(--bg3);}
+.user-table td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.user-table tr:last-child td{border-bottom:none;}
+.user-table tr:hover td{background:rgba(255,255,255,.015);}
+.ua{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.role-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;white-space:nowrap;}
+.rb-superadmin{background:rgba(232,80,74,.12);color:var(--red);border:1px solid rgba(232,80,74,.2);}
+.rb-admin{background:rgba(155,122,255,.12);color:var(--purple);border:1px solid rgba(155,122,255,.2);}
+.rb-asset_manager{background:rgba(61,127,255,.12);color:var(--accent);border:1px solid rgba(61,127,255,.2);}
+.rb-underwriter{background:rgba(46,196,182,.12);color:var(--teal);border:1px solid rgba(46,196,182,.2);}
+.rb-property_manager{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.rb-read_only{background:rgba(140,147,158,.1);color:var(--text2);border:1px solid var(--border2);}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}
+.sd-active{background:var(--green);}
+.sd-invited{background:var(--amber);}
+.prop-pills{display:flex;gap:4px;flex-wrap:wrap;}
+.prop-pill{font-size:10px;padding:2px 7px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text3);}
+
+/* PERMISSION MATRIX */
+.perm-matrix{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.perm-table{width:100%;border-collapse:collapse;font-size:12px;}
+.perm-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);}
+.perm-table th:not(:first-child){text-align:center;}
+.perm-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);}
+.perm-table td:not(:first-child){text-align:center;}
+.perm-table tr:last-child td{border-bottom:none;}
+.perm-chip{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:4px;}
+.pc-edit{background:rgba(34,201,122,.1);color:var(--green);}
+.pc-read{background:rgba(61,127,255,.1);color:var(--accent);}
+.pc-none{background:var(--bg4);color:var(--text3);}
+.pc-upload{background:rgba(245,166,35,.1);color:var(--amber);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:580px;max-width:100%;}
+.modal-header{padding:20px 26px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
+.modal-header-left h2{font-size:15px;font-weight:600;margin-bottom:3px;}
+.modal-header-left p{font-size:12px;color:var(--text3);line-height:1.5;}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:22px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px 26px;display:flex;flex-direction:column;gap:14px;max-height:66vh;overflow-y:auto;}
+.modal-footer{padding:16px 26px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.mf-field{display:flex;flex-direction:column;gap:5px;}
+.mf-field label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);}
+.mf-field input,.mf-field select{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.mf-field input:focus,.mf-field select:focus{border-color:var(--accent);}
+.mf-field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-color:var(--bg3);}
+.m2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.prop-checklist{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;}
+.prop-check-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2);}
+.prop-check-item input{accent-color:var(--accent);}
+.role-preview-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.info-note{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text3);line-height:1.6;}
+#cpw-err{font-size:12px;color:var(--red);display:none;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{display:flex;}
+.toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
 </style>
 </head>
 <body>
@@ -181,242 +220,160 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="you@pgmteam.com" autocomplete="off"/></div>
       <div class="fg"><label>Password</label><input type="password" id="a-pw" placeholder="••••••••"/></div>
-      <div id="auth-err">Invalid email or password. Please try again.</div>
+      <div id="auth-err">Invalid email or password.</div>
       <button class="btn-signin" onclick="login()">Sign in</button>
     </div>
     <div class="auth-hint">john@pgmteam.com &nbsp;·&nbsp; pgm2026</div>
   </div>
 </div>
 
+<!-- SET NEW PASSWORD (first login) -->
+<div id="change-pw-screen">
+  <div class="cpw-card">
+    <h2>Welcome — set your password</h2>
+    <p>Your account was created by an admin. Set a new password to continue. You won't be prompted again after this.</p>
+    <div class="fg"><label>New password</label><input type="password" id="cpw-new" placeholder="Minimum 6 characters"/></div>
+    <div class="fg"><label>Confirm password</label><input type="password" id="cpw-confirm" placeholder="Repeat password"/></div>
+    <div id="cpw-err"></div>
+    <button class="btn-signin" onclick="saveNewPassword()">Save &amp; continue →</button>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="app">
-
-  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sb-header">
       <div class="ey">PGM</div>
       <div class="brand">Business Plan OS</div>
       <div class="ver">v1.0 · Internal</div>
     </div>
-
-    <div class="sb-nav">
-      <div class="nav-section">Overview</div>
-      <div class="nav-item active" data-module="home" onclick="navigate('home',this)">
-        <span class="ni-icon">⬡</span>
-        <span class="ni-label">Dashboard</span>
-      </div>
-
-      <div class="sb-divider"></div>
-      <div class="nav-section">Acquisition</div>
-      <div class="nav-item" data-module="screening" onclick="navigate('screening',this)">
-        <span class="ni-icon">◎</span>
-        <span class="ni-label">Deal Screening</span>
-        <span class="ni-badge nb-purple">M1</span>
-      </div>
-      <div class="nav-item" data-module="underwriting" onclick="navigate('underwriting',this)">
-        <span class="ni-icon">◑</span>
-        <span class="ni-label">Underwriting</span>
-        <span class="ni-badge nb-purple">M2</span>
-      </div>
-
-      <div class="sb-divider"></div>
-      <div class="nav-section">Diligence</div>
-      <div class="nav-item" data-module="capex" onclick="navigate('capex',this)">
-        <span class="ni-icon">◐</span>
-        <span class="ni-label">CapEx &amp; Construction</span>
-        <span class="ni-badge nb-amber">M3</span>
-      </div>
-      <div class="nav-item" data-module="diligence" onclick="navigate('diligence',this)">
-        <span class="ni-icon">◉</span>
-        <span class="ni-label">Due Diligence</span>
-        <span class="ni-badge nb-teal">M4</span>
-      </div>
-
-      <div class="sb-divider"></div>
-      <div class="nav-section">Onboarding</div>
-      <div class="nav-item" data-module="onboarding" onclick="navigate('onboarding',this)">
-        <span class="ni-icon">▷</span>
-        <span class="ni-label">PM Onboarding</span>
-        <span class="ni-badge nb-blue">M5</span>
-      </div>
-      <div class="nav-item" data-module="planlock" onclick="navigate('planlock',this)">
-        <span class="ni-icon">🔒</span>
-        <span class="ni-label">Plan Lock</span>
-        <span class="ni-badge nb-coral">M6</span>
-      </div>
-
-      <div class="sb-divider"></div>
-      <div class="nav-section">Operations</div>
-      <div class="nav-item" data-module="tracking" onclick="navigate('tracking',this)">
-        <span class="ni-icon">◬</span>
-        <span class="ni-label">Budget Tracking</span>
-        <span class="ni-badge nb-green">M7</span>
-      </div>
-    </div>
-
+    <div class="sb-nav" id="sb-nav"></div>
     <div class="sb-footer">
-      <div class="avatar" id="sb-av">JF</div>
+      <div class="avatar" id="sb-av">JY</div>
       <div class="user-info">
         <div class="uname" id="sb-name">John</div>
-        <div class="urole">Director of PM · Admin</div>
+        <div class="urole" id="sb-role">Super Admin</div>
       </div>
       <button class="btn-logout" onclick="logout()" title="Sign out">⇥</button>
     </div>
   </nav>
 
-  <!-- CONTENT -->
-  <div class="content" id="content">
-
-    <!-- HOME -->
-    <div id="home-view" class="active">
-      <div class="home-header">
-        <h1>Business Plan OS</h1>
-        <p>Point Guard Management · Full property lifecycle from acquisition screening through ongoing performance tracking. Select any module from the sidebar or click a card below.</p>
-      </div>
-
-      <div class="pipeline-row">
-        <div class="ps"><div class="ps-dot c-p">1</div><div class="ps-lbl">Deal<br/>Screening</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-p">2</div><div class="ps-lbl">Under-<br/>writing</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-a">3</div><div class="ps-lbl">CapEx<br/>Sign-off</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-t">4</div><div class="ps-lbl">Due<br/>Diligence</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-b">5</div><div class="ps-lbl">PM<br/>Onboarding</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-c">6</div><div class="ps-lbl">Plan<br/>Lock</div></div>
-        <div class="ps-arr">→</div>
-        <div class="ps"><div class="ps-dot c-g">7</div><div class="ps-lbl">Budget<br/>Tracking</div></div>
-      </div>
-
-      <div class="phase-title">Acquisition</div>
-      <div class="modules-grid">
-        <div class="hcard hc-p" onclick="navigate('screening',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 01</span><span class="hc-phase-badge nb-purple">Acquisition</span></div>
-            <div class="hc-title">Deal Screening</div>
-            <div class="hc-desc">Validate deals against PGM criteria. Auto-suggest Pass/Flag/Fail with admin-configurable thresholds. Notes, document upload, and advance gate.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">3 demo deals</span></div>
-        </div>
-        <div class="hcard hc-p" onclick="navigate('underwriting',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 02</span><span class="hc-phase-badge nb-purple">Acquisition</span></div>
-            <div class="hc-title">Underwriting</div>
-            <div class="hc-desc">Full pro forma, T-12 upload, market rent comparison, 3 loan scenarios, 5-year projections, CapEx budget, cash flow waterfall, IRR settings.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Maple Ridge loaded</span></div>
-        </div>
-      </div>
-
-      <div class="phase-title">Diligence</div>
-      <div class="modules-grid">
-        <div class="hcard hc-a" onclick="navigate('capex',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 03</span><span class="hc-phase-badge nb-amber">Diligence</span></div>
-            <div class="hc-title">CapEx &amp; Construction</div>
-            <div class="hc-desc">Unit turn cost approval by type. Exterior scope on rolling 4-quarter roadmap. PM sign-off per category. Budget vs. actual tracking. Photo upload.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">2 properties</span></div>
-        </div>
-        <div class="hcard hc-t" onclick="navigate('diligence',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 04</span><span class="hc-phase-badge nb-teal">Diligence</span></div>
-            <div class="hc-title">Due Diligence</div>
-            <div class="hc-desc">50+ item checklist across 8 categories. Critical item flagging, risk panel, per-item notes. Admin-editable master template. Advance gate on completion.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">2 properties</span></div>
-        </div>
-      </div>
-
-      <div class="phase-title">Onboarding</div>
-      <div class="modules-grid">
-        <div class="hcard hc-b" onclick="navigate('onboarding',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 05</span><span class="hc-phase-badge nb-blue">Onboarding</span></div>
-            <div class="hc-title">PM Onboarding</div>
-            <div class="hc-desc">Data transfer checklist for Buildium and AppFolio. Exact navigation paths per item, document upload with download, blocked status, go-live countdown.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Maple Ridge in progress</span></div>
-        </div>
-        <div class="hcard hc-c" onclick="navigate('planlock',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 06</span><span class="hc-phase-badge nb-coral">Onboarding</span></div>
-            <div class="hc-title">Plan Lock &amp; Approval</div>
-            <div class="hc-desc">Dept sign-offs, pre-lock gates, investment thesis, metrics snapshot, annual budget layers, API actuals panel, permanent amendment log.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">Pending lock</span></div>
-        </div>
-      </div>
-
-      <div class="phase-title">Operations</div>
-      <div class="modules-grid">
-        <div class="hcard hc-g" onclick="navigate('tracking',null)">
-          <div class="hcard-body">
-            <div class="hc-top"><span class="hc-num">MODULE 07</span><span class="hc-phase-badge nb-green">Operations</span></div>
-            <div class="hc-title">Budget Tracking</div>
-            <div class="hc-desc">Portfolio and property budget vs. actuals. Real-time mid-month alerts for expenses, occupancy, collections, unit rents, CapEx. Budget upload from CSV/Excel with multi-year history.</div>
-          </div>
-          <div class="hcard-footer"><span class="hcf-open">Open →</span><span class="hcf-note">4 properties · 2 alerts</span></div>
-        </div>
-      </div>
-
-      <div style="padding:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text3);line-height:1.7;">
-        <strong style="color:var(--text2);">v1.0 · Pre-team review</strong> — All modules contain demo data preloaded. Pending: team feedback, Looker Studio API wiring, backend database for persistence. Built for PGM / LeavenWealth · March 2026.
-      </div>
-    </div>
-
-    <!-- MODULE CONTAINER (iframe + loading overlay) -->
+  <div class="content">
+    <div id="home-view"></div>
+    <div id="um-view"></div>
     <div id="module-container" style="flex:1;display:none;position:relative;flex-direction:column;">
       <div class="loading-overlay" id="loading">
         <div class="loading-spinner"></div>
-        <div class="loading-text" id="loading-text">Loading module…</div>
+        <div class="loading-text" id="loading-text">Loading…</div>
       </div>
-      <iframe
-        id="module-frame"
-        class="module-iframe"
-        src=""
-        title="Module"
-        onload="onFrameLoad()"
-      ></iframe>
+      <iframe id="module-frame" class="module-iframe" src="" title="Module" onload="onFrameLoad()"></iframe>
     </div>
-
   </div>
 </div>
 
-<script>
-const USERS = [
-  {email:'john@pgmteam.com',  pw:'pgm2026', name:'John F.',   initials:'JF'},
-  {email:'tim@pgmteam.com',   pw:'pgm2026', name:'Tim F.',    initials:'TF'},
-  {email:'danny@pgmteam.com', pw:'pgm2026', name:'Danny H.',  initials:'DH'},
-  {email:'nathan@pgmteam.com',pw:'pgm2026', name:'Nathan F.', initials:'NF'},
-];
+<!-- ADD / EDIT USER MODAL -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2 id="um-modal-title">Add user</h2>
+        <p>Assign a role to control module access, then select which properties they can see.</p>
+      </div>
+      <button class="modal-close" onclick="closeUserModal()">×</button>
+    </div>
+    <div class="modal-body" id="um-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeUserModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveUser()">Save user</button>
+    </div>
+  </div>
+</div>
 
-const MODULES = {
-  screening:    {file:'bpos-screening.html',    label:'Deal Screening'},
-  underwriting: {file:'bpos-underwriting.html', label:'Underwriting'},
-  capex:        {file:'bpos-capex.html',         label:'CapEx & Construction'},
-  diligence:    {file:'bpos-diligence.html',     label:'Due Diligence'},
-  onboarding:   {file:'bpos-onboarding.html',    label:'PM Onboarding'},
-  planlock:     {file:'bpos-planlock.html',       label:'Plan Lock'},
-  tracking:     {file:'bpos-tracking.html',       label:'Budget Tracking'},
+<div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ══════════════════════════════════════
+// PERMISSIONS
+// ══════════════════════════════════════
+const ROLE_PERMISSIONS = {
+  superadmin:       {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
+  admin:            {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
+  asset_manager:    {screening:'edit',underwriting:'edit',capex:'edit',diligence:'read',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
+  underwriter:      {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'upload',planlock:'hidden',tracking:'read',users:'hidden'},
+  property_manager: {screening:'read',underwriting:'read',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
+  read_only:        {screening:'read',underwriting:'read',capex:'read',diligence:'read',onboarding:'read',planlock:'hidden',tracking:'read',users:'hidden'},
+};
+const ROLE_LABELS = {superadmin:'Super Admin',admin:'Admin',asset_manager:'Asset Manager',underwriter:'Underwriter',property_manager:'Property Manager',read_only:'Read Only'};
+const ROLE_COLORS = {superadmin:'#e8504a',admin:'#9b7aff',asset_manager:'#3d7fff',underwriter:'#2ec4b6',property_manager:'#f5a623',read_only:'#8c939e'};
+const AVATAR_BG = ['linear-gradient(135deg,#3d7fff,#9b7aff)','linear-gradient(135deg,#22c97a,#2ec4b6)','linear-gradient(135deg,#f5a623,#f07052)','linear-gradient(135deg,#9b7aff,#e8504a)','linear-gradient(135deg,#2ec4b6,#3d7fff)'];
+
+const MODULES_CONFIG = {
+  screening:    {file:'bpos-screening.html',   label:'Deal Screening',       icon:'◎',  badge:'nb-purple', mnum:'M1', phase:'Acquisition'},
+  underwriting: {file:'bpos-underwriting.html',label:'Underwriting',         icon:'◑',  badge:'nb-purple', mnum:'M2', phase:'Acquisition'},
+  capex:        {file:'bpos-capex.html',        label:'CapEx & Construction', icon:'◐',  badge:'nb-amber',  mnum:'M3', phase:'Diligence'},
+  diligence:    {file:'bpos-diligence.html',    label:'Due Diligence',        icon:'◉',  badge:'nb-teal',   mnum:'M4', phase:'Diligence'},
+  onboarding:   {file:'bpos-onboarding.html',   label:'PM Onboarding',        icon:'▷',  badge:'nb-blue',   mnum:'M5', phase:'Onboarding'},
+  planlock:     {file:'bpos-planlock.html',      label:'Plan Lock',            icon:'🔒', badge:'nb-coral',  mnum:'M6', phase:'Onboarding'},
+  tracking:     {file:'bpos-tracking.html',      label:'Budget Tracking',      icon:'◬',  badge:'nb-green',  mnum:'M7', phase:'Operations'},
+  users:        {file:null,                      label:'User Management',      icon:'◈',  badge:'nb-gray',   mnum:'',   phase:'Admin'},
 };
 
-let currentModule = 'home';
+const ALL_PROPERTIES = ['Estrella at Kiest','Sierra Gardens','Central Heights','Cedar Haven','Maple Ridge','Northgate Commons','AksarbenLIV','Bancroft','Beverly','Copperleaf','Langston','Tall Oaks','Vassar Flats','College Heights','Cordes','Dwell','Eagle Creek'];
 
-// ── AUTH ──
-document.getElementById('a-pw').addEventListener('keydown', e=>{if(e.key==='Enter')login();});
+// ══════════════════════════════════════
+// USER DATABASE
+// ══════════════════════════════════════
+let USERS = [
+  {id:1,email:'john@pgmteam.com',pw:'pgm2026',name:'John Younes',initials:'JY',role:'superadmin',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[0]},
+  {id:2,email:'tim@pgmteam.com',pw:'pgm2026',name:'Tim Farha',initials:'TF',role:'admin',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[1]},
+  {id:3,email:'danny@pgmteam.com',pw:'pgm2026',name:'Danny Humsi',initials:'DH',role:'asset_manager',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[2]},
+  {id:4,email:'nathan@pgmteam.com',pw:'pgm2026',name:'Nathan Farha',initials:'NF',role:'underwriter',properties:'all',status:'active',mustChangePw:false,bg:AVATAR_BG[3]},
+];
+
+let currentUser = null;
+let currentModule = 'home';
+let editingUserId = null;
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+document.getElementById('a-pw').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+document.getElementById('cpw-confirm').addEventListener('keydown',e=>{if(e.key==='Enter')saveNewPassword();});
 
 function login() {
   const email = document.getElementById('a-email').value.trim().toLowerCase();
   const pw    = document.getElementById('a-pw').value;
-  const user  = USERS.find(u=>u.email===email && u.pw===pw);
+  const user  = USERS.find(u=>u.email===email && u.pw===pw && u.status!=='disabled');
   if (!user) { document.getElementById('auth-err').style.display='block'; return; }
+  currentUser = user;
   document.getElementById('auth').style.display='none';
+  if (user.mustChangePw) {
+    document.getElementById('change-pw-screen').style.display='flex';
+    return;
+  }
+  launchApp();
+}
+
+function saveNewPassword() {
+  const np  = document.getElementById('cpw-new').value;
+  const cp  = document.getElementById('cpw-confirm').value;
+  const err = document.getElementById('cpw-err');
+  if (np.length<6)   { err.textContent='Must be at least 6 characters.'; err.style.display='block'; return; }
+  if (np!==cp)       { err.textContent='Passwords do not match.'; err.style.display='block'; return; }
+  const u = USERS.find(u=>u.id===currentUser.id);
+  if (u) { u.pw=np; u.mustChangePw=false; currentUser=u; }
+  document.getElementById('change-pw-screen').style.display='none';
+  launchApp();
+}
+
+function launchApp() {
   document.getElementById('app').style.display='flex';
-  document.getElementById('sb-av').textContent   = user.initials;
-  document.getElementById('sb-name').textContent = user.name;
+  document.getElementById('sb-av').textContent  = currentUser.initials;
+  document.getElementById('sb-av').style.background = currentUser.bg||AVATAR_BG[0];
+  document.getElementById('sb-name').textContent = currentUser.name;
+  document.getElementById('sb-role').textContent = ROLE_LABELS[currentUser.role]||currentUser.role;
+  buildSidebar();
+  navigate('home',null);
 }
 
 function logout() {
@@ -425,65 +382,409 @@ function logout() {
   document.getElementById('a-email').value='';
   document.getElementById('a-pw').value='';
   document.getElementById('auth-err').style.display='none';
-  navigate('home', document.querySelector('[data-module="home"]'));
+  currentUser=null; currentModule='home';
 }
 
-// ── NAVIGATION ──
-function navigate(module, clickedEl) {
-  // Update active nav item
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  if (clickedEl) {
-    clickedEl.classList.add('active');
-  } else {
-    // Find and activate the matching nav item
-    const match = document.querySelector('[data-module="'+module+'"]');
-    if (match) match.classList.add('active');
+// ══════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════
+function buildSidebar() {
+  const perms = ROLE_PERMISSIONS[currentUser.role]||ROLE_PERMISSIONS.read_only;
+  const isAdmin = ['superadmin','admin'].includes(currentUser.role);
+  const phases = {Acquisition:['screening','underwriting'],Diligence:['capex','diligence'],Onboarding:['onboarding','planlock'],Operations:['tracking']};
+
+  let html = `
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-module="home" onclick="navigate('home',this)">
+      <span class="ni-icon">⬡</span><span class="ni-label">Dashboard</span>
+    </div>`;
+
+  Object.entries(phases).forEach(([phase,keys])=>{
+    const visible = keys.filter(k=>(perms[k]||'hidden')!=='hidden');
+    if (!visible.length) return;
+    html += `<div class="sb-divider"></div><div class="nav-section">${phase}</div>`;
+    visible.forEach(key=>{
+      const m   = MODULES_CONFIG[key];
+      const acc = perms[key];
+      const ro  = acc==='read'||acc==='upload';
+      html += `<div class="nav-item${ro?' readonly':''}" data-module="${key}" onclick="navigate('${key}',this)">
+        <span class="ni-icon">${m.icon}</span>
+        <span class="ni-label">${m.label}</span>
+        ${m.mnum?`<span class="ni-badge ${m.badge}">${m.mnum}</span>`:''}
+        ${ro?`<span style="font-size:9px;color:var(--text3);margin-left:2px;">👁</span>`:''}
+      </div>`;
+    });
+  });
+
+  if (isAdmin) {
+    html += `<div class="sb-divider"></div>
+      <div class="nav-section">Admin</div>
+      <div class="nav-item" data-module="users" onclick="navigate('users',this)">
+        <span class="ni-icon">◈</span>
+        <span class="ni-label">User Management</span>
+        <span class="ni-badge nb-gray">${USERS.length}</span>
+      </div>`;
   }
+
+  document.getElementById('sb-nav').innerHTML = html;
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function navigate(module, clickedEl) {
+  const perms = ROLE_PERMISSIONS[currentUser?.role]||ROLE_PERMISSIONS.read_only;
+  if (module!=='home'&&module!=='users'&&(perms[module]||'hidden')==='hidden') {
+    showToast('You do not have access to this module.',true); return;
+  }
+
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  if (clickedEl) clickedEl.classList.add('active');
+  else { const m=document.querySelector('[data-module="'+module+'"]'); if(m) m.classList.add('active'); }
 
   currentModule = module;
-  const homeView  = document.getElementById('home-view');
-  const modContainer = document.getElementById('module-container');
-  const frame     = document.getElementById('module-frame');
-  const loading   = document.getElementById('loading');
-  const loadingTxt= document.getElementById('loading-text');
+  const hv = document.getElementById('home-view');
+  const uv = document.getElementById('um-view');
+  const mc = document.getElementById('module-container');
+  const fr = document.getElementById('module-frame');
 
-  if (module === 'home') {
-    homeView.style.display = 'block';
-    homeView.classList.add('active');
-    modContainer.style.display = 'none';
-    frame.src = '';
-    return;
+  hv.style.display='none'; hv.classList.remove('active');
+  uv.style.display='none'; uv.classList.remove('active');
+  mc.style.display='none';
+
+  if (module==='home')  { hv.style.display='block'; hv.classList.add('active'); renderHome(); return; }
+  if (module==='users') { uv.style.display='block'; uv.classList.add('active'); renderUserMgmt(); return; }
+
+  const mod = MODULES_CONFIG[module];
+  if (!mod||!mod.file) return;
+  mc.style.display='flex';
+  document.getElementById('loading').classList.remove('hidden');
+  fr.classList.remove('loaded');
+  document.getElementById('loading-text').textContent='Loading '+mod.label+'…';
+  fr.src=mod.file;
+}
+
+function navFromHome(module){
+  const m=document.querySelector('[data-module="'+module+'"]');
+  navigate(module,m||null);
+}
+
+function onFrameLoad(){
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('module-frame').classList.add('loaded');
+}
+
+// ══════════════════════════════════════
+// HOME VIEW
+// ══════════════════════════════════════
+function renderHome() {
+  const perms = ROLE_PERMISSIONS[currentUser.role]||ROLE_PERMISSIONS.read_only;
+  const isAdmin = ['superadmin','admin'].includes(currentUser.role);
+
+  const allCards = [
+    {key:'screening',  phase:'Acquisition',num:'01',color:'hc-p',badge:'nb-purple',title:'Deal Screening',desc:'Validate deals against PGM criteria. Auto-suggest Pass/Flag/Fail with configurable thresholds.',note:'3 demo deals'},
+    {key:'underwriting',phase:'Acquisition',num:'02',color:'hc-p',badge:'nb-purple',title:'Underwriting',desc:'Full pro forma, loan scenarios, 5-year projections, cash flow waterfall, IRR settings.',note:'Maple Ridge loaded'},
+    {key:'capex',      phase:'Diligence',  num:'03',color:'hc-a',badge:'nb-amber',title:'CapEx & Construction',desc:'Unit turn approvals, 4-quarter exterior roadmap, PM sign-off, budget vs. actual.',note:'2 properties'},
+    {key:'diligence',  phase:'Diligence',  num:'04',color:'hc-t',badge:'nb-teal',title:'Due Diligence',desc:'50+ checklist items across 8 categories. Critical flagging, risk panel, admin template.',note:'2 properties'},
+    {key:'onboarding', phase:'Onboarding', num:'05',color:'hc-b',badge:'nb-blue',title:'PM Onboarding',desc:'AppFolio & Buildium data transfer checklist. Nav paths per item, document upload, go-live countdown.',note:'In progress'},
+    {key:'planlock',   phase:'Onboarding', num:'06',color:'hc-c',badge:'nb-coral',title:'Plan Lock & Approval',desc:'Dept sign-offs, locked metrics snapshot, annual budgets by year, API actuals, amendment log.',note:'Admin only'},
+    {key:'tracking',   phase:'Operations', num:'07',color:'hc-g',badge:'nb-green',title:'Budget Tracking',desc:'Portfolio & property budget vs. actuals. Real-time mid-month alerts. Budget file upload.',note:'4 properties'},
+  ].filter(m=>(perms[m.key]||'hidden')!=='hidden');
+
+  const byPhase = {};
+  allCards.forEach(m=>{ if(!byPhase[m.phase]) byPhase[m.phase]=[]; byPhase[m.phase].push(m); });
+
+  const phasesHtml = Object.entries(byPhase).map(([phase,cards])=>`
+    <div class="phase-title">${phase}</div>
+    <div class="modules-grid">
+      ${cards.map(m=>{
+        const acc=perms[m.key];
+        const roTag=acc==='read'?`<span style="font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-right:4px;">View only</span>`:'';
+        return `<div class="hcard ${m.color}" onclick="navFromHome('${m.key}')">
+          <div class="hcard-body">
+            <div class="hc-top"><span class="hc-num">MODULE ${m.num}</span><span class="hc-phase-badge ${m.badge}">${m.phase}</span></div>
+            <div class="hc-title">${m.title}</div>
+            <div class="hc-desc">${m.desc}</div>
+          </div>
+          <div class="hcard-footer"><span class="hcf-open">Open →</span><span style="display:flex;align-items:center;">${roTag}<span style="font-size:10px;color:var(--text3);">${m.note}</span></span></div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+
+  document.getElementById('home-view').innerHTML = `
+    <div class="home-header">
+      <h1>Welcome back, ${currentUser.name.split(' ')[0]}</h1>
+      <p>${ROLE_LABELS[currentUser.role]} · ${allCards.length} module${allCards.length!==1?'s':''} available · PGM Business Plan OS</p>
+    </div>
+    <div class="pipeline-row">
+      <div class="ps"><div class="ps-dot c-p">1</div><div class="ps-lbl">Deal<br/>Screen</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-p">2</div><div class="ps-lbl">Under-<br/>writing</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-a">3</div><div class="ps-lbl">CapEx</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-t">4</div><div class="ps-lbl">Due<br/>Diligence</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-b">5</div><div class="ps-lbl">PM<br/>Onboard</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-c">6</div><div class="ps-lbl">Plan<br/>Lock</div></div><div class="ps-arr">→</div>
+      <div class="ps"><div class="ps-dot c-g">7</div><div class="ps-lbl">Budget<br/>Tracking</div></div>
+    </div>
+    ${phasesHtml}
+    <div style="padding:14px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text3);line-height:1.7;">
+      <strong style="color:var(--text2);">v1.0 · PGM / LeavenWealth · March 2026</strong> — Pending: Looker Studio API, backend database.
+      ${isAdmin?'<a href="#" onclick="navFromHome(\'users\')" style="color:var(--accent);text-decoration:none;margin-left:8px;">Manage users →</a>':''}
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// USER MANAGEMENT
+// ══════════════════════════════════════
+function renderUserMgmt() {
+  const isSuper = currentUser.role==='superadmin';
+
+  const rows = USERS.map(u=>{
+    const props = u.properties==='all'
+      ? '<span class="prop-pill">All properties</span>'
+      : (Array.isArray(u.properties)?u.properties:[]).map(p=>`<span class="prop-pill">${p}</span>`).join('');
+
+    const canEdit   = isSuper||(currentUser.role==='admin'&&u.role!=='superadmin');
+    const canDelete = isSuper?(u.id!==currentUser.id):(currentUser.role==='admin'&&u.role!=='superadmin'&&u.id!==currentUser.id);
+
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ua" style="background:${u.bg||AVATAR_BG[0]};">${u.initials}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">${u.name}${u.id===currentUser.id?` <span style="font-size:10px;color:var(--text3);">(you)</span>`:''}</div>
+            <div style="font-size:11px;color:var(--text3);">${u.email}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="role-badge rb-${u.role}">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td><span class="status-dot ${u.status==='active'?'sd-active':'sd-invited'}"></span><span style="font-size:12px;color:var(--text2);">${u.status==='active'?'Active':'Invited — awaiting login'}</span></td>
+      <td><div class="prop-pills">${props}</div></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          ${canEdit?`<button class="btn-sm-ghost" onclick="openEditUser(${u.id})">Edit</button>`:''}
+          ${canDelete?`<button class="btn-danger" onclick="deleteUser(${u.id})">Remove</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('um-view').innerHTML = `
+    <div class="um-toprow">
+      <div>
+        <h1>User Management</h1>
+        <p class="sub" style="margin-top:4px;">Manage team access, roles, and property assignments. Roles control what each user can see and edit across all modules.</p>
+      </div>
+      <button class="btn-primary" onclick="openAddUser()">+ Add user</button>
+    </div>
+
+    <!-- PERMISSION MATRIX -->
+    <div class="perm-matrix">
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text);">Permission matrix</div>
+      <div style="overflow-x:auto;">
+        <table class="perm-table">
+          <thead><tr>
+            <th>Module</th>
+            <th>Admin</th>
+            <th>Asset Mgr</th>
+            <th>Underwriter</th>
+            <th>Prop. Mgr</th>
+            <th>Read Only</th>
+          </tr></thead>
+          <tbody>
+            ${[
+              ['Deal Screening',      'edit','edit','edit','read','read'],
+              ['Underwriting',        'edit','edit','edit','read','read'],
+              ['CapEx & Construction','edit','edit','edit','edit','read'],
+              ['Due Diligence',       'edit','read','edit','edit','read'],
+              ['PM Onboarding',       'edit','edit','upload','edit','read'],
+              ['Plan Lock',           'edit','—','—','—','—'],
+              ['Budget Tracking',     'edit','read','read','read','read'],
+              ['User Management',     'edit','—','—','—','—'],
+            ].map(([mod,...levels])=>`<tr>
+              <td style="font-size:12px;color:var(--text2);">${mod}</td>
+              ${levels.map(l=>`<td><span class="perm-chip ${l==='edit'?'pc-edit':l==='read'?'pc-read':l==='upload'?'pc-upload':'pc-none'}">${l==='edit'?'Edit':l==='read'?'Read':l==='upload'?'Upload':'None'}</span></td>`).join('')}
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="user-table-wrap">
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:600;color:var(--text);">${USERS.length} team member${USERS.length!==1?'s':''}</span>
+        <span style="font-size:11px;color:var(--text3);">Roles applied on next login</span>
+      </div>
+      <table class="user-table">
+        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Properties</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── User Modal ──
+function openAddUser() {
+  editingUserId=null;
+  document.getElementById('um-modal-title').textContent='Add user';
+  renderUserModal(null);
+  document.getElementById('user-modal').classList.add('open');
+}
+function openEditUser(id) {
+  editingUserId=id;
+  const u=USERS.find(u=>u.id===id);
+  document.getElementById('um-modal-title').textContent='Edit — '+u.name;
+  renderUserModal(u);
+  document.getElementById('user-modal').classList.add('open');
+}
+function closeUserModal() {
+  document.getElementById('user-modal').classList.remove('open');
+  editingUserId=null;
+}
+
+function renderUserModal(user) {
+  const isEditing = !!user;
+  const isSuperTarget = user?.role==='superadmin';
+  const isCurrentSuper = currentUser.role==='superadmin';
+  const roleOptions = isCurrentSuper
+    ? ['admin','asset_manager','underwriter','property_manager','read_only']
+    : ['asset_manager','underwriter','property_manager','read_only'];
+
+  const propChecks = ALL_PROPERTIES.map(p=>{
+    const checked = !isEditing||user.properties==='all'||(Array.isArray(user.properties)&&user.properties.includes(p));
+    return `<label class="prop-check-item"><input type="checkbox" value="${p}" ${checked?'checked':''}/><span>${p}</span></label>`;
+  }).join('');
+
+  const currentRole = user?.role||'read_only';
+  const selectDisabled = isSuperTarget?'disabled':' ';
+
+  document.getElementById('um-modal-body').innerHTML = `
+    <div class="m2col">
+      <div class="mf-field"><label>Full name *</label>
+        <input type="text" id="um-name" value="${user?.name||''}" placeholder="e.g. Chris Pomerleau"/></div>
+      <div class="mf-field"><label>Email address *</label>
+        <input type="email" id="um-email" value="${user?.email||''}" placeholder="user@pgmteam.com" ${isEditing?'readonly style="opacity:.55;"':''}/></div>
+    </div>
+    ${!isEditing?`
+      <div class="mf-field"><label>Temporary password *</label>
+        <input type="text" id="um-pw" placeholder="User will change this on first login"/>
+      </div>`:''}
+    <div class="mf-field"><label>Role</label>
+      <select id="um-role" ${selectDisabled} onchange="renderRolePreview(this.value)">
+        ${isSuperTarget?`<option value="superadmin" selected>Super Admin</option>`:''}
+        ${roleOptions.map(r=>`<option value="${r}" ${currentRole===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('')}
+      </select>
+      ${isSuperTarget?`<div style="font-size:11px;color:var(--red);margin-top:4px;">⚑ Super Admin role cannot be modified by anyone.</div>`:''}
+    </div>
+    <div id="um-role-preview"></div>
+    <div class="mf-field">
+      <label>Property access</label>
+      <div style="display:flex;gap:16px;margin-bottom:8px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2);">
+          <input type="radio" name="prop-scope" value="all" ${!isEditing||user.properties==='all'?'checked':''}
+            onchange="document.getElementById('prop-list').style.display='none'"/> All properties
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2);">
+          <input type="radio" name="prop-scope" value="select" ${isEditing&&user.properties!=='all'?'checked':''}
+            onchange="document.getElementById('prop-list').style.display='block'"/> Specific properties
+        </label>
+      </div>
+      <div id="prop-list" style="display:${isEditing&&user.properties!=='all'?'block':'none'};">
+        <div class="prop-checklist">${propChecks}</div>
+      </div>
+    </div>
+    ${isEditing?`
+      <div class="mf-field">
+        <label>Reset password (optional)</label>
+        <input type="text" id="um-reset-pw" placeholder="Leave blank to keep current password"/>
+      </div>`:''} `;
+
+  renderRolePreview(currentRole);
+}
+
+function renderRolePreview(role) {
+  const perms = ROLE_PERMISSIONS[role]||ROLE_PERMISSIONS.read_only;
+  const el = document.getElementById('um-role-preview');
+  if (!el) return;
+  const rows = Object.entries(MODULES_CONFIG).map(([key,mod])=>{
+    const acc=perms[key]||'hidden';
+    const chip=acc==='edit'?'<span class="perm-chip pc-edit">Edit</span>':acc==='read'?'<span class="perm-chip pc-read">Read Only</span>':acc==='upload'?'<span class="perm-chip pc-upload">Upload</span>':'<span class="perm-chip pc-none">No Access</span>';
+    return `<tr><td style="font-size:12px;color:var(--text2);">${mod.label}</td><td>${chip}</td></tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="role-preview-wrap">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);">
+        Access for ${ROLE_LABELS[role]||role}
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function saveUser() {
+  const name  = document.getElementById('um-name')?.value?.trim();
+  const email = document.getElementById('um-email')?.value?.trim().toLowerCase();
+  const role  = document.getElementById('um-role')?.value;
+  const pw    = document.getElementById('um-pw')?.value;
+  const rpw   = document.getElementById('um-reset-pw')?.value;
+
+  if (!name)  { showToast('Full name is required.',true); return; }
+  if (!editingUserId&&!email) { showToast('Email is required.',true); return; }
+  if (!editingUserId&&!pw)    { showToast('Temporary password is required.',true); return; }
+  if (!editingUserId&&USERS.find(u=>u.email===email)) { showToast('A user with this email already exists.',true); return; }
+
+  const scope = document.querySelector('input[name="prop-scope"]:checked')?.value||'all';
+  let props = 'all';
+  if (scope==='select') {
+    props = [...document.querySelectorAll('.prop-checklist input:checked')].map(el=>el.value);
+    if (!props.length) { showToast('Select at least one property.',true); return; }
   }
 
-  const mod = MODULES[module];
-  if (!mod) return;
+  if (editingUserId) {
+    const u=USERS.find(u=>u.id===editingUserId);
+    if (u) {
+      if (u.role!=='superadmin') u.role=role;
+      u.name=name; u.properties=props;
+      u.initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      if (rpw&&rpw.length>=6) { u.pw=rpw; u.mustChangePw=false; }
+    }
+    showToast(name+' updated successfully.');
+  } else {
+    USERS.push({
+      id:Date.now(), email, pw, name, role,
+      initials:name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
+      properties:props, status:'invited', mustChangePw:true,
+      bg:AVATAR_BG[USERS.length%AVATAR_BG.length],
+    });
+    showToast(name+' added. They can sign in with their email and set a password on first login.');
+  }
 
-  // Show module container, hide home
-  homeView.style.display = 'none';
-  homeView.classList.remove('active');
-  modContainer.style.display = 'flex';
-
-  // Show loading, hide iframe
-  loading.classList.remove('hidden');
-  frame.classList.remove('loaded');
-  loadingTxt.textContent = 'Loading ' + mod.label + '…';
-
-  // Load the module
-  frame.src = mod.file;
+  closeUserModal();
+  buildSidebar();
+  renderUserMgmt();
 }
 
-function onFrameLoad() {
-  const loading = document.getElementById('loading');
-  const frame   = document.getElementById('module-frame');
-  loading.classList.add('hidden');
-  frame.classList.add('loaded');
+function deleteUser(id) {
+  const u=USERS.find(u=>u.id===id);
+  if (!u) return;
+  if (u.role==='superadmin') { showToast('Super Admin cannot be removed.',true); return; }
+  if (!confirm('Remove '+u.name+' from the system? This cannot be undone.')) return;
+  USERS=USERS.filter(u=>u.id!==id);
+  buildSidebar();
+  renderUserMgmt();
+  showToast(u.name+' removed.');
 }
 
-// Init — activate home nav item on load
-window.addEventListener('load', ()=>{
-  const homeNav = document.querySelector('[data-module="home"]');
-  if (homeNav) homeNav.classList.add('active');
-});
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function showToast(msg,err=false) {
+  document.getElementById('tdot').style.background=err?'var(--red)':'var(--green)';
+  document.getElementById('tmsg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
 </script>
 </body>
 </html>

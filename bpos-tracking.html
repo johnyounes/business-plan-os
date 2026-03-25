@@ -1931,7 +1931,7 @@ function parsePGMSheet(rows, sheetName) {
       else if (sect.includes('INCOME')) currentSection = 'income';
       return;
     }
-    if (UPLOAD_SKIP.has(labelUp)) return;
+    if (UPLOAD_SKIP.has(labelUp) && currentSection !== 'income') return;
     if (label.startsWith('PGM')) return;
     if (!currentSection) return;
     const isIncomeSummaryRow = currentSection === 'income' &&

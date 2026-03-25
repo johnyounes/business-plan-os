@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Budget Tracking — PGM Business Plan OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
-<script src="bpos-db.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -274,19 +273,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .btn-ghost:hover{color:var(--text);background:var(--bg3);}
 .admin-badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:rgba(61,127,255,.1);border:1px solid rgba(61,127,255,.2);border-radius:10px;padding:2px 8px;margin-left:8px;}
 
-/* DB SYNC STATE */
-.db-saving{opacity:.6;pointer-events:none;}
-.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:6px;}
-.sync-badge.saving{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
-.sync-badge.saved{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
-.sync-badge.error{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.2);}
-.sync-badge.offline{background:rgba(140,147,158,.08);color:var(--text3);border:1px solid var(--border2);}
+/* DB SYNC BADGE */
 .db-loading-overlay{position:fixed;inset:0;z-index:500;background:rgba(13,15,18,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 .db-loading-overlay.hidden{display:none;}
-.db-spinner{width:36px;height:36px;border:3px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+.db-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
 .toast.show{display:flex;}
 .toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -417,7 +408,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<div class="db-loading-overlay" id="db-loading-overlay">
+<div class="db-loading-overlay hidden" id="db-loading-overlay">
   <div class="db-spinner"></div>
   <div style="font-size:13px;color:var(--text2);" id="db-loading-msg">Loading portfolio data…</div>
 </div>
@@ -2985,7 +2976,7 @@ function postRenderHook() {
 }
 
 // ══════════════════════════════════════
-// RENDER OVERRIDE — post-render hook runs after every renderPage()
+// OVERRIDE renderPage to run post-render hook
 // ══════════════════════════════════════
 const _baseRenderPage = renderPage;
 renderPage = function() {
@@ -2993,36 +2984,85 @@ renderPage = function() {
   postRenderHook();
 };
 
-// ══════════════════════════════════════
-// SUPABASE DATA LAYER
-// Handles: load on boot, save on every write, sync badge
-// Falls back to demo data gracefully if DB is unreachable
-// ══════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// SUPABASE INTEGRATION
+// Key design decision: numeric `id` drives ALL UI (selectProp,
+// openEditProp, etc). `supabaseId` is the UUID stored separately
+// and used ONLY for DB calls. On hydrate we assign stable numeric
+// IDs based on array index so all existing event handlers work.
+// ══════════════════════════════════════════════════════════════
 
-let dbConnected  = false;
-let dbSyncEl     = null;  // sync badge element in nav
+const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTI3NTQsImV4cCI6MjA5MDAyODc1NH0.xAjHM7s6IphX_oOA_Qma4sspmlLywX209EssAursr0w';
 
-function showDbSync(state, msg) {
-  // state: 'saving' | 'saved' | 'error' | 'offline'
-  if (!dbSyncEl) {
-    dbSyncEl = document.createElement('span');
-    dbSyncEl.className = 'sync-badge';
-    const nav = document.querySelector('.topnav');
-    if (nav) nav.insertBefore(dbSyncEl, nav.querySelector('.settings-btn') || nav.firstChild);
+let dbOnline = false;
+let _syncEl  = null;
+// Map numeric id → supabase UUID, rebuilt on every hydrate
+let _idToUuid = {};
+// Track which alert keys we've already persisted this session
+let _persistedAlertKeys = new Set();
+
+// ── Raw fetch ────────────────────────────────────────────────
+async function sbReq(path, opts = {}) {
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
+    ...opts,
+    headers: {
+      'apikey':        SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type':  'application/json',
+      'Prefer':        opts.prefer || 'return=representation',
+      ...(opts.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('DB ' + res.status + ': ' + txt.substring(0, 120));
   }
-  dbSyncEl.className = 'sync-badge ' + state;
-  dbSyncEl.textContent = msg;
-  if (state === 'saved') setTimeout(() => { if (dbSyncEl) dbSyncEl.textContent = '● Live'; }, 2500);
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : [];
 }
 
-// ── Convert Supabase rows → in-memory properties array ──────
-function hydrateProperties(propRows, budgetMap, actualsMap, noiMap) {
-  return propRows.map(row => {
-    const supaId  = row.id;
-    const budgets = budgetMap[supaId] || [];
-    const latestBudget = budgets[0]; // ordered desc by year
+// ── Sync badge in nav ────────────────────────────────────────
+function syncBadge(state, label) {
+  if (!_syncEl) {
+    _syncEl = document.createElement('span');
+    _syncEl.style.cssText = 'font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;margin-right:6px;';
+    const nav = document.querySelector('.topnav');
+    const first = nav && nav.querySelector('.actuals-upload-btn, .settings-btn, .bitquery-connect-btn');
+    if (nav && first) nav.insertBefore(_syncEl, first);
+  }
+  const styles = {
+    saving:  'background:rgba(245,166,35,.12);color:#f5a623;border:1px solid rgba(245,166,35,.25);',
+    saved:   'background:rgba(34,201,122,.12);color:#22c97a;border:1px solid rgba(34,201,122,.25);',
+    error:   'background:rgba(232,80,74,.12);color:#e8504a;border:1px solid rgba(232,80,74,.25);',
+    offline: 'background:rgba(140,147,158,.08);color:#8c939e;border:1px solid rgba(255,255,255,.07);',
+  };
+  _syncEl.style.cssText += styles[state] || styles.offline;
+  _syncEl.textContent = label;
+  if (state === 'saved') {
+    setTimeout(() => { if (_syncEl) { _syncEl.style.cssText = _syncEl.style.cssText; _syncEl.textContent = '● Live'; } }, 2000);
+  }
+}
 
-    // Build budgetHistory from all budget rows
+// ══════════════════════════════════════
+// HYDRATE — Supabase rows → in-memory properties
+// Assigns stable numeric IDs (1, 2, 3…) for UI compatibility
+// Stores UUID in supabaseId for all DB operations
+// ══════════════════════════════════════
+function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
+  _idToUuid = {};
+  const curYear  = new Date().getFullYear();
+  const curMonth = new Date().getMonth() + 1;
+
+  return propRows.map((row, idx) => {
+    const numId  = idx + 1;                    // stable numeric ID for UI
+    const uuid   = row.id;                     // Supabase UUID for DB calls
+    _idToUuid[numId] = uuid;
+
+    const budgets = budgetsByProp[uuid] || []; // ordered desc by year from DB
+    const latest  = budgets[0];
+
+    // Build budgetHistory
     const budgetHistory = {};
     budgets.forEach(b => {
       budgetHistory[b.year] = {
@@ -3033,259 +3073,420 @@ function hydrateProperties(propRows, budgetMap, actualsMap, noiMap) {
       };
     });
 
-    // Get actuals for current year
-    const now = new Date();
-    const curYear  = now.getFullYear();
-    const curMonth = now.getMonth() + 1;
-    const yearActuals = (actualsMap[supaId] || []).filter(a => a.year === (latestBudget?.year || curYear));
-    const curActuals  = yearActuals.find(a => a.month === curMonth) || yearActuals[yearActuals.length - 1];
-
-    const budget = latestBudget ? {
-      income:      latestBudget.income_lines  || [],
-      expenses:    latestBudget.expense_lines || [],
-      nonop:       latestBudget.nonop_lines   || [],
-      capexBudget: latestBudget.capex_budget  || 0,
+    const budget = latest ? {
+      income:      latest.income_lines  || [],
+      expenses:    latest.expense_lines || [],
+      nonop:       latest.nonop_lines   || [],
+      capexBudget: latest.capex_budget  || 0,
     } : { income: [], expenses: [], nonop: [], capexBudget: 0 };
 
-    // Build monthly NOI array from noi_history
-    const noiRows = noiMap[supaId] || [];
+    // Find best actuals row: prefer current month, fall back to most recent
+    const yearActuals = (actualsByProp[uuid] || [])
+      .filter(a => a.year === (latest?.year || curYear));
+    const act = yearActuals.find(a => a.month === curMonth)
+             || yearActuals[yearActuals.length - 1]
+             || null;
+
+    // Monthly NOI trend
     const monthlyNOI = Array(12).fill(null);
-    noiRows.filter(n => n.year === (latestBudget?.year || curYear))
-           .forEach(n => { monthlyNOI[n.month - 1] = n.noi; });
+    (noiByProp[uuid] || [])
+      .filter(n => n.year === (latest?.year || curYear))
+      .forEach(n => { monthlyNOI[n.month - 1] = n.noi; });
 
     return {
-      id:             row.id,       // use UUID as id
-      supabaseId:     row.id,
-      name:           row.name,
-      address:        row.address || '—',
-      units:          row.units   || 0,
-      pm:             row.pm      || 'AppFolio',
-      market:         row.market  || '',
-      type:           row.type    || 'existing',
-      budgetYear:     latestBudget?.year || curYear,
+      id:          numId,           // numeric — used by all UI handlers
+      supabaseId:  uuid,            // UUID — used only for DB calls
+      name:        row.name,
+      address:     row.address || '—',
+      units:       row.units   || 0,
+      pm:          row.pm      || 'AppFolio',
+      market:      row.market  || '',
+      type:        row.type    || 'existing',
+      budgetYear:  latest?.year || curYear,
       budget,
       budgetHistory,
       actuals: {
-        occupancy:   curActuals?.occupancy   || 0,
-        collections: curActuals?.collections || 0,
-        income:      curActuals?.income_values  || budget.income.map(() => 0),
-        expenses:    curActuals?.expense_values || budget.expenses.map(() => 0),
-        capexSpent:  curActuals?.capex_spent || 0,
-        unitRents:   curActuals?.unit_rents  || [],
+        occupancy:   act?.occupancy    || 0,
+        collections: act?.collections  || 0,
+        income:      act?.income_values  || budget.income.map(() => 0),
+        expenses:    act?.expense_values || budget.expenses.map(() => 0),
+        capexSpent:  act?.capex_spent  || 0,
+        unitRents:   act?.unit_rents   || [],
         monthlyNOI,
       },
-      actualsLastUpdated: curActuals?.uploaded_at || null,
-      actualsSource:      curActuals?.source || null,
-      apiConnected:       !!curActuals,
+      actualsLastUpdated: act?.uploaded_at || null,
+      actualsSource:      act?.source      || null,
+      apiConnected:       !!act,
     };
   });
 }
 
-// ── BOOT: load everything from Supabase ─────────────────────
-async function bootFromSupabase() {
+// ══════════════════════════════════════
+// BOOT — loads everything on page load
+// ══════════════════════════════════════
+async function boot() {
+  // Show loading overlay
   const overlay = document.getElementById('db-loading-overlay');
-  const msg     = document.getElementById('db-loading-msg');
+  const msgEl   = document.getElementById('db-loading-msg');
+  if (overlay) overlay.classList.remove('hidden');
 
   try {
-    msg.textContent = 'Connecting to database…';
-    dbConnected = await testSupabaseConnection();
-    if (!dbConnected) throw new Error('Connection failed');
+    if (msgEl) msgEl.textContent = 'Connecting to database…';
 
-    msg.textContent = 'Loading properties…';
-    const propRows = await DB.getProperties();
+    // Quick connection test
+    await sbReq('properties?select=id&limit=1');
+    dbOnline = true;
+
+    if (msgEl) msgEl.textContent = 'Loading portfolio…';
+    const propRows = await sbReq('properties?select=*&order=name.asc');
 
     if (!propRows || propRows.length === 0) {
-      // Fresh database — seed with demo properties
-      msg.textContent = 'First run — setting up portfolio…';
-      await seedDemoData();
-      overlay.classList.add('hidden');
-      showDbSync('saved', '● Live');
+      // First run — seed demo properties into DB
+      if (msgEl) msgEl.textContent = 'First launch — saving demo portfolio…';
+      await seedDemo();
+      if (overlay) overlay.classList.add('hidden');
+      syncBadge('saved', '● Live');
       renderPage();
       return;
     }
 
-    msg.textContent = 'Loading budgets & actuals…';
+    // Load budgets, actuals, NOI for all properties in parallel
+    if (msgEl) msgEl.textContent = 'Loading budgets & actuals…';
+    const ids = propRows.map(p => p.id);
 
-    // Fetch budgets and actuals for all properties in parallel
-    const [allBudgets, allActuals, allNOI] = await Promise.all([
-      Promise.all(propRows.map(p => DB.getBudgetsForProperty(p.id).then(rows => ({id: p.id, rows})))),
-      Promise.all(propRows.map(p => DB.getActualsForProperty(p.id).then(rows => ({id: p.id, rows})))),
-      Promise.all(propRows.map(p => DB.getNOIHistory(p.id, new Date().getFullYear()).then(rows => ({id: p.id, rows})))),
+    const [budgetRows, actualRows, noiRows, threshRow, alertRows] = await Promise.all([
+      sbReq('budgets?property_id=in.(' + ids.join(',') + ')&order=year.desc'),
+      sbReq('actuals?property_id=in.(' + ids.join(',') + ')&order=month.asc'),
+      sbReq('noi_history?property_id=in.(' + ids.join(',') + ')&year=eq.' + new Date().getFullYear()),
+      sbReq('alert_thresholds?select=*&limit=1'),
+      sbReq('alert_log?dismissed=eq.false&order=created_at.desc&limit=100'),
     ]);
 
-    const budgetMap  = {};
-    const actualsMap = {};
-    const noiMap     = {};
-    allBudgets.forEach(({id, rows}) => { budgetMap[id]  = rows || []; });
-    allActuals.forEach(({id, rows}) => { actualsMap[id] = rows || []; });
-    allNOI.forEach(    ({id, rows}) => { noiMap[id]     = rows || []; });
+    // Group by property UUID
+    const budgetsByProp  = {};
+    const actualsByProp  = {};
+    const noiByProp      = {};
+    ids.forEach(id => { budgetsByProp[id] = []; actualsByProp[id] = []; noiByProp[id] = []; });
+    budgetRows.forEach(b => (budgetsByProp[b.property_id]  = budgetsByProp[b.property_id]  || []).push(b));
+    actualRows.forEach(a => (actualsByProp[a.property_id]  = actualsByProp[a.property_id]  || []).push(a));
+    noiRows.forEach(   n => (noiByProp[n.property_id]      = noiByProp[n.property_id]      || []).push(n));
 
-    // Load thresholds
-    msg.textContent = 'Loading alert thresholds…';
-    const dbThresh = await DB.getThresholds();
-    if (dbThresh) {
-      THRESHOLDS.noiMissPct.value         = dbThresh.noi_miss_pct;
-      THRESHOLDS.noiMissPct.enabled       = dbThresh.noi_enabled;
-      THRESHOLDS.occupancyMin.value       = dbThresh.occupancy_min;
-      THRESHOLDS.occupancyMin.enabled     = dbThresh.occupancy_enabled;
-      THRESHOLDS.expensePacePct.value     = dbThresh.expense_pace_pct;
-      THRESHOLDS.expensePacePct.enabled   = dbThresh.expense_pace_enabled;
-      THRESHOLDS.capexHit.value           = dbThresh.capex_hit_pct;
-      THRESHOLDS.capexHit.enabled         = dbThresh.capex_enabled;
-      THRESHOLDS.unitRentBelowPct.value   = dbThresh.unit_rent_below_pct;
-      THRESHOLDS.unitRentBelowPct.enabled = dbThresh.unit_rent_enabled;
-      THRESHOLDS.collectionsMin.value     = dbThresh.collections_min;
-      THRESHOLDS.collectionsMin.enabled   = dbThresh.collections_enabled;
-      THRESHOLDS.cfNegative.enabled       = dbThresh.cf_negative_enabled;
+    // Apply thresholds from DB
+    if (threshRow && threshRow[0]) {
+      const t = threshRow[0];
+      THRESHOLDS.noiMissPct.value          = t.noi_miss_pct       ?? 5;
+      THRESHOLDS.noiMissPct.enabled        = t.noi_enabled        ?? true;
+      THRESHOLDS.occupancyMin.value        = t.occupancy_min      ?? 88;
+      THRESHOLDS.occupancyMin.enabled      = t.occupancy_enabled  ?? true;
+      THRESHOLDS.expensePacePct.value      = t.expense_pace_pct   ?? 80;
+      THRESHOLDS.expensePacePct.enabled    = t.expense_pace_enabled ?? true;
+      THRESHOLDS.capexHit.value            = t.capex_hit_pct      ?? 100;
+      THRESHOLDS.capexHit.enabled          = t.capex_enabled      ?? true;
+      THRESHOLDS.unitRentBelowPct.value    = t.unit_rent_below_pct ?? 5;
+      THRESHOLDS.unitRentBelowPct.enabled  = t.unit_rent_enabled  ?? true;
+      THRESHOLDS.collectionsMin.value      = t.collections_min    ?? 95;
+      THRESHOLDS.collectionsMin.enabled    = t.collections_enabled ?? true;
+      THRESHOLDS.cfNegative.enabled        = t.cf_negative_enabled ?? true;
     }
 
-    // Load alert log
-    msg.textContent = 'Loading alert history…';
-    const dbAlerts = await DB.getAlertLog(100);
-    if (dbAlerts && dbAlerts.length > 0) {
-      ALERT_LOG = dbAlerts.map(a => ({
-        id:        a.id,
+    // Hydrate in-memory properties with stable numeric IDs
+    properties = hydrate(propRows, budgetsByProp, actualsByProp, noiByProp);
+
+    // Restore alert log from DB
+    if (alertRows && alertRows.length) {
+      const propLookup = {};
+      properties.forEach(p => { propLookup[p.supabaseId] = p; });
+      ALERT_LOG = alertRows.map(a => ({
+        id:         a.id,           // keep UUID as id for DB dismiss calls
         supabaseId: a.id,
-        key:       a.property_id + '|' + a.message.substring(0, 40),
-        ts:        new Date(a.created_at),
-        propId:    a.property_id,
-        propName:  propRows.find(p => p.id === a.property_id)?.name || 'Unknown',
-        sev:       a.severity,
-        msg:       a.message,
-        dismissed: a.dismissed,
-        resolved:  a.resolved,
+        key:        a.property_id + '|' + (a.message || '').substring(0, 40),
+        ts:         new Date(a.created_at),
+        propId:     propLookup[a.property_id]?.id || a.property_id,
+        propName:   propLookup[a.property_id]?.name || 'Unknown',
+        sev:        a.severity,
+        msg:        a.message,
+        dismissed:  a.dismissed,
+        resolved:   a.resolved,
       }));
+      // Mark all loaded alert keys as already persisted
+      ALERT_LOG.forEach(a => _persistedAlertKeys.add(a.key));
     }
 
-    // Hydrate in-memory properties
-    properties = hydrateProperties(propRows, budgetMap, actualsMap, noiMap);
-
-    overlay.classList.add('hidden');
-    showDbSync('saved', '● Live');
+    if (overlay) overlay.classList.add('hidden');
+    syncBadge('saved', '● Live');
     renderPage();
 
   } catch (err) {
-    console.warn('[BPOS] Supabase boot failed, falling back to demo data:', err);
-    dbConnected = false;
-    overlay.classList.add('hidden');
-    showDbSync('offline', '○ Offline');
-    showToast('Running in offline mode — data will not persist.', true);
+    console.warn('[BPOS] DB offline, using demo data:', err.message);
+    dbOnline = false;
+    if (overlay) overlay.classList.add('hidden');
+    syncBadge('offline', '○ Offline — data won\'t save');
     renderPage();
   }
 }
 
-// ── SEED: write demo properties to fresh database ───────────
-async function seedDemoData() {
+// ══════════════════════════════════════
+// SEED — writes demo data to fresh DB
+// ══════════════════════════════════════
+async function seedDemo() {
+  const now = new Date();
   for (const prop of properties) {
     try {
-      const saved = await DB.saveProperty(prop);
+      // Insert property
+      const [saved] = await sbReq('properties', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: prop.name, address: prop.address,
+          units: prop.units, pm: prop.pm,
+          market: prop.market, type: prop.type,
+        }),
+      });
       if (!saved?.id) continue;
       prop.supabaseId = saved.id;
-      prop.id = saved.id;
-      // Save current budget
-      if (prop.budget) {
-        await DB.saveBudget(saved.id, prop.budgetYear, prop.budget);
-      }
-      // Save current actuals as current month
-      const now = new Date();
-      await DB.saveActuals(saved.id, now.getFullYear(), now.getMonth() + 1, prop.actuals);
-      // Save NOI history
-      prop.actuals.monthlyNOI.forEach(async (noi, i) => {
-        if (noi !== null) await DB.saveNOIHistory(saved.id, prop.budgetYear, i + 1, noi);
+
+      // Insert budget
+      await sbReq('budgets', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify({
+          property_id:   saved.id,
+          year:          prop.budgetYear,
+          income_lines:  prop.budget.income,
+          expense_lines: prop.budget.expenses,
+          nonop_lines:   prop.budget.nonop || [],
+          capex_budget:  prop.budget.capexBudget || 0,
+        }),
       });
+
+      // Insert actuals for current month
+      await sbReq('actuals', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify({
+          property_id:    saved.id,
+          year:           now.getFullYear(),
+          month:          now.getMonth() + 1,
+          income_values:  prop.actuals.income,
+          expense_values: prop.actuals.expenses,
+          capex_spent:    prop.actuals.capexSpent || 0,
+          occupancy:      prop.actuals.occupancy  || 0,
+          collections:    prop.actuals.collections || 0,
+          unit_rents:     prop.actuals.unitRents  || [],
+          source:         'demo',
+        }),
+      });
+
+      // Insert NOI history
+      for (let m = 0; m < 12; m++) {
+        const noi = prop.actuals.monthlyNOI[m];
+        if (noi !== null) {
+          await sbReq('noi_history', {
+            method: 'POST',
+            headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+            body: JSON.stringify({
+              property_id: saved.id,
+              year: prop.budgetYear,
+              month: m + 1,
+              noi,
+            }),
+          }).catch(() => {});
+        }
+      }
     } catch (e) {
-      console.warn('[BPOS] Seed failed for', prop.name, e.message);
+      console.warn('[BPOS] Seed failed for', prop.name, ':', e.message);
     }
   }
 }
 
-// ── SAVE PROPERTY to Supabase (called on add/edit) ──────────
-async function savePropertyToDb(prop) {
-  if (!dbConnected) return;
-  showDbSync('saving', '↑ Saving…');
+// ══════════════════════════════════════
+// DB SAVE HELPERS
+// Each checks dbOnline before attempting, silently skips if offline
+// Uses _idToUuid to resolve numeric prop.id → Supabase UUID
+// ══════════════════════════════════════
+
+function getUuid(prop) {
+  // Works whether prop has supabaseId set or we look it up from map
+  return prop.supabaseId || _idToUuid[prop.id] || null;
+}
+
+async function dbSaveProp(prop) {
+  if (!dbOnline) return;
+  const uuid = getUuid(prop);
+  syncBadge('saving', '↑ Saving…');
   try {
-    const saved = await DB.saveProperty(prop);
-    if (saved?.id) {
-      prop.supabaseId = saved.id;
-      prop.id = saved.id;
+    if (uuid) {
+      await sbReq('properties?id=eq.' + uuid, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: prop.name, address: prop.address,
+          units: prop.units, pm: prop.pm,
+          market: prop.market, type: prop.type,
+        }),
+      });
+    } else {
+      const [saved] = await sbReq('properties', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: prop.name, address: prop.address || '—',
+          units: prop.units || 0, pm: prop.pm || 'AppFolio',
+          market: prop.market || '', type: prop.type || 'existing',
+        }),
+      });
+      if (saved?.id) {
+        prop.supabaseId = saved.id;
+        _idToUuid[prop.id] = saved.id;
+      }
     }
-    showDbSync('saved', '● Saved');
+    syncBadge('saved', '● Saved');
   } catch (e) {
-    showDbSync('error', '✕ Save error');
-    console.error('[BPOS] saveProperty failed:', e);
+    syncBadge('error', '✕ Error');
+    console.error('[BPOS] dbSaveProp:', e.message);
   }
 }
 
-// ── SAVE BUDGET to Supabase ──────────────────────────────────
-async function saveBudgetToDb(prop, year, budget) {
-  if (!dbConnected || !prop.supabaseId) return;
-  showDbSync('saving', '↑ Saving…');
+async function dbSaveBudget(prop, year, budget) {
+  const uuid = getUuid(prop);
+  if (!dbOnline || !uuid) return;
+  syncBadge('saving', '↑ Saving…');
   try {
-    await DB.saveBudget(prop.supabaseId, year, budget);
-    showDbSync('saved', '● Saved');
+    await sbReq('budgets', {
+      method:  'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({
+        property_id:   uuid,
+        year:          year,
+        income_lines:  budget.income  || [],
+        expense_lines: budget.expenses || [],
+        nonop_lines:   budget.nonop   || [],
+        capex_budget:  budget.capexBudget || 0,
+      }),
+    });
+    syncBadge('saved', '● Saved');
   } catch (e) {
-    showDbSync('error', '✕ Save error');
-    console.error('[BPOS] saveBudget failed:', e);
+    syncBadge('error', '✕ Error');
+    console.error('[BPOS] dbSaveBudget:', e.message);
   }
 }
 
-// ── SAVE ACTUALS to Supabase ─────────────────────────────────
-async function saveActualsToDb(prop, actualsData) {
-  if (!dbConnected || !prop.supabaseId) return;
-  showDbSync('saving', '↑ Saving actuals…');
+async function dbSaveActuals(prop) {
+  const uuid = getUuid(prop);
+  if (!dbOnline || !uuid) return;
+  const now = new Date();
+  syncBadge('saving', '↑ Saving actuals…');
   try {
-    const now = new Date();
-    await DB.saveActuals(
-      prop.supabaseId,
-      now.getFullYear(),
-      now.getMonth() + 1,
-      actualsData
-    );
-    // Also save NOI to history
-    const actInc = actualsData.income.reduce((s, v) => s + v, 0);
-    const actExp = actualsData.expenses.reduce((s, v) => s + v, 0);
-    const noi    = actInc - actExp;
-    await DB.saveNOIHistory(prop.supabaseId, now.getFullYear(), now.getMonth() + 1, noi);
-    showDbSync('saved', '● Saved');
+    await sbReq('actuals', {
+      method:  'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({
+        property_id:    uuid,
+        year:           now.getFullYear(),
+        month:          now.getMonth() + 1,
+        income_values:  prop.actuals.income,
+        expense_values: prop.actuals.expenses,
+        capex_spent:    prop.actuals.capexSpent  || 0,
+        occupancy:      prop.actuals.occupancy   || 0,
+        collections:    prop.actuals.collections || 0,
+        unit_rents:     prop.actuals.unitRents   || [],
+        source:         prop.actualsSource       || 'upload',
+      }),
+    });
+    // Also write NOI to history
+    const actInc = prop.actuals.income.reduce((s, v) => s + v, 0);
+    const actExp = prop.actuals.expenses.reduce((s, v) => s + v, 0);
+    await sbReq('noi_history', {
+      method:  'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({
+        property_id: uuid,
+        year:  now.getFullYear(),
+        month: now.getMonth() + 1,
+        noi:   actInc - actExp,
+      }),
+    });
+    syncBadge('saved', '● Saved');
   } catch (e) {
-    showDbSync('error', '✕ Save error');
-    console.error('[BPOS] saveActuals failed:', e);
+    syncBadge('error', '✕ Error');
+    console.error('[BPOS] dbSaveActuals:', e.message);
   }
 }
 
-// ── SAVE ALERT LOG ENTRY to Supabase ────────────────────────
-async function saveAlertToDb(prop, alert) {
-  if (!dbConnected || !prop?.supabaseId) return;
+async function dbSaveThresholds() {
+  if (!dbOnline) return;
   try {
-    const saved = await DB.logAlert(prop.supabaseId, alert);
+    const rows = await sbReq('alert_thresholds?select=id&limit=1');
+    const id   = rows?.[0]?.id;
+    if (!id) return;
+    await sbReq('alert_thresholds?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        noi_miss_pct:         THRESHOLDS.noiMissPct.value,
+        noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+        occupancy_min:        THRESHOLDS.occupancyMin.value,
+        occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+        expense_pace_pct:     THRESHOLDS.expensePacePct.value,
+        expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
+        capex_hit_pct:        THRESHOLDS.capexHit.value,
+        capex_enabled:        THRESHOLDS.capexHit.enabled,
+        unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
+        unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+        collections_min:      THRESHOLDS.collectionsMin.value,
+        collections_enabled:  THRESHOLDS.collectionsMin.enabled,
+        cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
+      }),
+    });
+  } catch (e) { console.warn('[BPOS] dbSaveThresholds:', e.message); }
+}
+
+async function dbLogAlert(alert, prop) {
+  if (!dbOnline || !prop) return;
+  const uuid = getUuid(prop);
+  if (!uuid) return;
+  if (_persistedAlertKeys.has(alert.key)) return; // already in DB
+  _persistedAlertKeys.add(alert.key);
+  try {
+    const [saved] = await sbReq('alert_log', {
+      method: 'POST',
+      body: JSON.stringify({
+        property_id: uuid,
+        severity:    alert.sev,
+        category:    alert.category || 'general',
+        message:     alert.msg || alert.text || '',
+      }),
+    });
     if (saved?.id) alert.supabaseId = saved.id;
-  } catch (e) {
-    console.warn('[BPOS] saveAlert failed:', e);
-  }
+  } catch (e) { console.warn('[BPOS] dbLogAlert:', e.message); }
 }
 
-// ── DISMISS ALERT in Supabase ────────────────────────────────
-async function dismissAlertInDb(alert) {
-  if (!dbConnected || !alert.supabaseId) return;
-  try { await DB.dismissAlert(alert.supabaseId); } catch (e) {}
+async function dbDismissAlert(alert) {
+  if (!dbOnline || !alert.supabaseId) return;
+  try {
+    await sbReq('alert_log?id=eq.' + alert.supabaseId, {
+      method: 'PATCH',
+      body: JSON.stringify({ dismissed: true }),
+    });
+  } catch (e) { console.warn('[BPOS] dbDismissAlert:', e.message); }
 }
 
-// ── SAVE THRESHOLDS to Supabase ──────────────────────────────
-async function saveThresholdsToDb() {
-  if (!dbConnected) return;
-  try { await DB.saveThresholds(THRESHOLDS); } catch (e) {
-    console.warn('[BPOS] saveThresholds failed:', e);
-  }
+async function dbClearAlerts() {
+  if (!dbOnline) return;
+  try {
+    await sbReq('alert_log?dismissed=eq.false', {
+      method: 'PATCH',
+      body: JSON.stringify({ dismissed: true }),
+    });
+  } catch (e) { console.warn('[BPOS] dbClearAlerts:', e.message); }
 }
 
-// ── PATCH: wire DB saves into existing functions ─────────────
+// ══════════════════════════════════════
+// PATCH existing functions to persist to DB
+// All patches are additive — original function still runs first
+// ══════════════════════════════════════
 
-// Patch confirmApplyActuals to also save to DB
-const _baseConfirmApplyActuals = confirmApplyActuals;
+// confirmApplyActuals → save actuals to DB after applying in-memory
+const __confirmApplyActuals = confirmApplyActuals;
 confirmApplyActuals = async function() {
-  _baseConfirmApplyActuals();
-  // After in-memory update, persist each updated property's actuals
-  if (!dbConnected) return;
+  __confirmApplyActuals();
+  if (!dbOnline) return;
   const toApply = actualsState.allSheets.filter(s =>
     actualsState.selectedSheets[s.sheetName] !== false &&
     actualsState.matchMap[s.sheetName] &&
@@ -3293,88 +3494,82 @@ confirmApplyActuals = async function() {
   );
   for (const s of toApply) {
     const mid  = actualsState.matchMap[s.sheetName];
-    const prop = properties.find(p => p.id === mid);
-    if (prop) await saveActualsToDb(prop, prop.actuals);
+    const prop = properties.find(p => p.id === mid || p.id === +mid);
+    if (prop) await dbSaveActuals(prop);
   }
 };
 
-// Patch confirmSaveBudget to also save to DB
-const _baseConfirmSaveBudget = confirmSaveBudget;
+// confirmSaveBudget → save budgets to DB
+const __confirmSaveBudget = confirmSaveBudget;
 confirmSaveBudget = async function() {
-  _baseConfirmSaveBudget();
-  if (!dbConnected) return;
-  // Persist all newly saved budgets
+  __confirmSaveBudget();
+  if (!dbOnline) return;
   for (const prop of properties) {
-    if (prop.budget && prop.supabaseId) {
-      await saveBudgetToDb(prop, prop.budgetYear, prop.budget);
-    }
+    if (prop.budget) await dbSaveBudget(prop, prop.budgetYear, prop.budget);
   }
 };
 
-// Patch apSave (add property) to also save to DB
-const _baseApSave = apSave;
+// apSave (add property) → persist new property + budget
+const __apSave = apSave;
 apSave = async function() {
-  _baseApSave();
-  if (!dbConnected) return;
-  // The newest property is the last one added
-  const newProp = properties[properties.length - 1];
-  if (newProp) {
-    await savePropertyToDb(newProp);
-    if (newProp.budget) await saveBudgetToDb(newProp, newProp.budgetYear, newProp.budget);
+  const prevLen = properties.length;
+  __apSave();
+  if (!dbOnline) return;
+  if (properties.length > prevLen) {
+    const newProp = properties[properties.length - 1];
+    await dbSaveProp(newProp);
+    if (newProp.budget) await dbSaveBudget(newProp, newProp.budgetYear, newProp.budget);
   }
 };
 
-// Patch saveEditProp to persist edits
-const _baseSaveEditProp = saveEditProp;
+// saveEditProp → persist property edits
+const __saveEditProp = saveEditProp;
 saveEditProp = function() {
-  _baseSaveEditProp();
-  if (!dbConnected) return;
+  __saveEditProp();
   const prop = properties.find(p => p.id === editPropId);
-  if (prop) savePropertyToDb(prop);
+  if (prop) dbSaveProp(prop);
 };
 
-// Patch saveThresholds to persist to DB
-const _baseSaveThresholds = saveThresholds;
+// saveThresholds → persist threshold changes
+const __saveThresholds = saveThresholds;
 saveThresholds = function() {
-  _baseSaveThresholds();
-  saveThresholdsToDb();
+  __saveThresholds();
+  dbSaveThresholds();
 };
 
-// Patch dismissAlert to persist in DB
-const _baseDismissAlert = dismissAlert;
+// dismissAlert → persist dismiss to DB
+const __dismissAlert = dismissAlert;
 dismissAlert = function(id) {
   const entry = ALERT_LOG.find(l => l.id === id);
-  _baseDismissAlert(id);
-  if (entry) dismissAlertInDb(entry);
+  __dismissAlert(id);
+  if (entry) dbDismissAlert(entry);
 };
 
-// Patch clearAllAlerts to persist in DB
-const _baseClearAllAlerts = clearAllAlerts;
+// clearAllAlerts → persist clears to DB
+const __clearAllAlerts = clearAllAlerts;
 clearAllAlerts = function() {
-  _baseClearAllAlerts();
-  if (dbConnected) DB.clearAllAlerts().catch(e => console.warn('[BPOS] clearAlerts failed:', e));
+  __clearAllAlerts();
+  dbClearAlerts();
 };
 
-// Patch checkAndLogAlerts to persist new alerts to DB
-const _baseCheckAndLogAlerts = checkAndLogAlerts;
+// checkAndLogAlerts → persist new alerts to DB
+const __checkAndLogAlerts = checkAndLogAlerts;
 checkAndLogAlerts = function() {
-  const before = ALERT_LOG.length;
-  _baseCheckAndLogAlerts();
-  // Persist only newly added alerts
-  if (dbConnected && ALERT_LOG.length > before) {
-    const newAlerts = ALERT_LOG.slice(0, ALERT_LOG.length - before);
+  const prevLen = ALERT_LOG.length;
+  __checkAndLogAlerts();
+  if (ALERT_LOG.length > prevLen) {
+    const newAlerts = ALERT_LOG.slice(0, ALERT_LOG.length - prevLen);
     newAlerts.forEach(alert => {
       const prop = properties.find(p => p.id === alert.propId);
-      if (prop) saveAlertToDb(prop, alert);
+      dbLogAlert(alert, prop);
     });
   }
 };
 
 // ══════════════════════════════════════
-// INIT — boot from Supabase, fall back to demo if offline
+// INIT
 // ══════════════════════════════════════
-bootFromSupabase();
-
+boot();
 </script>
 </body>
 </html>

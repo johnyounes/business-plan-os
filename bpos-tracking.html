@@ -1060,7 +1060,18 @@ function renderPropDetail(prop) {
           </tr>
         </tbody>
       </table>
-    </div>`;
+    </div>
+    ${ (budget && budget.nonop && budget.nonop.length) ? `
+    <div class="line-section">
+      <div class="ls-head"><span class="ls-title">NON-OPERATING EXPENSES</span></div>
+      <table class="li-table"><thead><tr>
+        <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th>
+      </tr></thead><tbody>
+        ${budget.nonop.map(l => `<tr><td>${l.label}</td><td class="r">${fd(l.monthly)}</td><td class="r">—</td><td></td><td></td></tr>`).join('')}
+        <tr class="tot-row"><td>Total Non-Operating</td><td class="r">${fd(budget.nonop.reduce((s,l)=>s+l.monthly,0))}</td><td class="r">—</td><td></td><td></td></tr>
+      </tbody></table>
+    </div>
+    ` : '' }`;
 
   // UNIT RENTS
   const unitRentRows = a.unitRents.map(u=>{
@@ -1897,36 +1908,20 @@ function parseExcelFile(file) {
 // ── PGM FORMAT PARSER ──
 // Handles: ▼ section headers, mixed sign income, formula cells, multi-sheet
 function parsePGMSheet(rows, sheetName) {
-  const result = {
-    sheetName,
-    displayName: sheetName,
-    year: new Date().getFullYear(),
-    income: [],
-    expenses: [],
-    nonop: [],
-  };
+  const result = { sheetName, displayName: sheetName, year: new Date().getFullYear(),
+    income: [], expenses: [], nonop: [] };
   let currentSection = null;
   const ARROW = '\u25bc'; // ▼
-  let noiMonthly = null;
-  let nonMgmtExpenseSum = 0;
-  let mgmtPct = 0.08;
-  let hasExplicitRent = false;
-  const RENT_LABELS = new Set([
-    'RENT INCOME', 'RENTAL INCOME', 'GROSS POTENTIAL RENT', 'BASE RENT', 'EFFECTIVE GROSS RENT',
-  ]);
   rows.forEach((row, rowIdx) => {
     const label = String(row[0] || '').trim();
     if (!label) return;
     const labelUp = label.toUpperCase();
     if (rowIdx === 0 && String(row[1] || '').trim() === '' && label.length > 2) {
-      result.displayName = label;
-      return;
+      result.displayName = label; return;
     }
     if (rowIdx <= 3) {
       const yrMatch = label.match(/20(\d\d)/);
       if (yrMatch) result.year = +('20' + yrMatch[1]);
-      const mgmtMatch = label.match(/[Mm]gmt\s*[Ff]ee\s*=\s*(\d+)\s*%/);
-      if (mgmtMatch) mgmtPct = parseInt(mgmtMatch[1]) / 100;
     }
     if (label[0] === ARROW || labelUp.startsWith('\u25bc')) {
       const sect = labelUp.replace('\u25bc', '').trim();
@@ -1935,66 +1930,28 @@ function parsePGMSheet(rows, sheetName) {
       else if (sect.includes('INCOME')) currentSection = 'income';
       return;
     }
-    // Capture NOI from income section before UPLOAD_SKIP filters it out
-    if (currentSection === 'income' && labelUp.includes('NET OPERATING INCOME')) {
-      for (let i = 2; i <= 13; i++) {
-        const v = row[i];
-        if (typeof v === 'number' && isFinite(v) && v !== 0) {
-          noiMonthly = Math.abs(v);
-          break;
-        }
-      }
-      return;
-    }
     if (UPLOAD_SKIP.has(labelUp)) return;
     if (label.startsWith('PGM')) return;
     if (!currentSection) return;
-    // Skip NET/TOTAL summary rows inside income section
     if (currentSection === 'income' && (labelUp.startsWith('NET ') || labelUp.startsWith('TOTAL'))) return;
     const actual2025 = typeof row[1] === 'number' ? row[1] : null;
-    const annualColRaw =
-      typeof row[14] === 'number' && isFinite(row[14]) ? row[14] : null;
+    const annualColRaw = typeof row[14] === 'number' && isFinite(row[14]) ? row[14] : null;
     let monthlyRaw = null;
     for (let i = 2; i <= 13; i++) {
       const v = row[i];
-      if (typeof v === 'number' && isFinite(v) && v !== 0) {
-        monthlyRaw = v;
-        break;
-      }
+      if (typeof v === 'number' && isFinite(v) && v !== 0) { monthlyRaw = v; break; }
     }
     if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
     if (monthlyRaw === null && actual2025 !== null) monthlyRaw = actual2025 / 12;
     if (monthlyRaw === null) return;
     const monthly = Math.round(Math.abs(monthlyRaw) * 100) / 100;
     if (monthly === 0) return;
-    const annual =
-      annualColRaw !== null
-        ? Math.round(Math.abs(annualColRaw) * 100) / 100
-        : Math.round(monthly * 12 * 100) / 100;
-    if (currentSection === 'income' && RENT_LABELS.has(labelUp)) hasExplicitRent = true;
-    if (currentSection === 'expenses' && !labelUp.includes('MANAGEMENT')) nonMgmtExpenseSum += monthly;
-    result[currentSection].push({
-      label,
-      monthly,
-      annual,
-      actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null,
-    });
+    const annual = annualColRaw !== null
+      ? Math.round(Math.abs(annualColRaw) * 100) / 100
+      : Math.round(monthly * 12 * 100) / 100;
+    result[currentSection].push({ label, monthly, annual,
+      actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null });
   });
-  // Back-calculate Gross Potential Rent when not explicitly listed in the budget
-  if (!hasExplicitRent && noiMonthly !== null && nonMgmtExpenseSum > 0) {
-    const otherIncomeSum = result.income.reduce((s, i) => s + i.monthly, 0);
-    const totalIncome = (noiMonthly + nonMgmtExpenseSum) / (1 - mgmtPct);
-    const impliedRent = Math.round(Math.max(0, totalIncome - otherIncomeSum) * 100) / 100;
-    if (impliedRent > 0) {
-      result.income.unshift({
-        label: 'Gross Potential Rent',
-        monthly: impliedRent,
-        annual: Math.round(impliedRent * 12 * 100) / 100,
-        actual2025: null,
-        calculated: true,
-      });
-    }
-  }
   return result;
 }
 

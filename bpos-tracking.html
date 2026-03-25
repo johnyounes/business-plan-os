@@ -1061,14 +1061,14 @@ function renderPropDetail(prop) {
         </tbody>
       </table>
     </div>
-    ${ (budget && budget.nonop && budget.nonop.length) ? `
+    ${ (b && b.nonop && b.nonop.length) ? `
     <div class="line-section">
       <div class="ls-head"><span class="ls-title">NON-OPERATING EXPENSES</span></div>
       <table class="li-table"><thead><tr>
         <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th>
       </tr></thead><tbody>
-        ${budget.nonop.map(l => `<tr><td>${l.label}</td><td class="r">${fd(l.monthly)}</td><td class="r">—</td><td></td><td></td></tr>`).join('')}
-        <tr class="tot-row"><td>Total Non-Operating</td><td class="r">${fd(budget.nonop.reduce((s,l)=>s+l.monthly,0))}</td><td class="r">—</td><td></td><td></td></tr>
+        ${b.nonop.map(l => `<tr><td>${l.label}</td><td class="r">${fd(l.monthly)}</td><td class="r">—</td><td></td><td></td></tr>`).join('')}
+        <tr class="tot-row"><td>Total Non-Operating</td><td class="r">${fd(b.nonop.reduce((x,l)=>x+l.monthly,0))}</td><td class="r">—</td><td></td><td></td></tr>
       </tbody></table>
     </div>
     ` : '' }`;

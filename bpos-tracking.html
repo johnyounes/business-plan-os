@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Budget Tracking — PGM Business Plan OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<script src="bpos-db.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -273,6 +274,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .btn-ghost:hover{color:var(--text);background:var(--bg3);}
 .admin-badge{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);background:rgba(61,127,255,.1);border:1px solid rgba(61,127,255,.2);border-radius:10px;padding:2px 8px;margin-left:8px;}
 
+/* DB SYNC STATE */
+.db-saving{opacity:.6;pointer-events:none;}
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:6px;}
+.sync-badge.saving{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.sync-badge.saved{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
+.sync-badge.error{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.2);}
+.sync-badge.offline{background:rgba(140,147,158,.08);color:var(--text3);border:1px solid var(--border2);}
+.db-loading-overlay{position:fixed;inset:0;z-index:500;background:rgba(13,15,18,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.db-loading-overlay.hidden{display:none;}
+.db-spinner{width:36px;height:36px;border:3px solid var(--bg4);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
 .toast.show{display:flex;}
@@ -403,6 +416,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </div>
 </head>
 <body>
+
+<div class="db-loading-overlay" id="db-loading-overlay">
+  <div class="db-spinner"></div>
+  <div style="font-size:13px;color:var(--text2);" id="db-loading-msg">Loading portfolio data…</div>
+</div>
 
 <div class="topnav">
   <div class="nav-brand">
@@ -2967,7 +2985,7 @@ function postRenderHook() {
 }
 
 // ══════════════════════════════════════
-// OVERRIDE renderPage to run post-render hook
+// RENDER OVERRIDE — post-render hook runs after every renderPage()
 // ══════════════════════════════════════
 const _baseRenderPage = renderPage;
 renderPage = function() {
@@ -2976,9 +2994,387 @@ renderPage = function() {
 };
 
 // ══════════════════════════════════════
-// INIT
+// SUPABASE DATA LAYER
+// Handles: load on boot, save on every write, sync badge
+// Falls back to demo data gracefully if DB is unreachable
 // ══════════════════════════════════════
-renderPage();
+
+let dbConnected  = false;
+let dbSyncEl     = null;  // sync badge element in nav
+
+function showDbSync(state, msg) {
+  // state: 'saving' | 'saved' | 'error' | 'offline'
+  if (!dbSyncEl) {
+    dbSyncEl = document.createElement('span');
+    dbSyncEl.className = 'sync-badge';
+    const nav = document.querySelector('.topnav');
+    if (nav) nav.insertBefore(dbSyncEl, nav.querySelector('.settings-btn') || nav.firstChild);
+  }
+  dbSyncEl.className = 'sync-badge ' + state;
+  dbSyncEl.textContent = msg;
+  if (state === 'saved') setTimeout(() => { if (dbSyncEl) dbSyncEl.textContent = '● Live'; }, 2500);
+}
+
+// ── Convert Supabase rows → in-memory properties array ──────
+function hydrateProperties(propRows, budgetMap, actualsMap, noiMap) {
+  return propRows.map(row => {
+    const supaId  = row.id;
+    const budgets = budgetMap[supaId] || [];
+    const latestBudget = budgets[0]; // ordered desc by year
+
+    // Build budgetHistory from all budget rows
+    const budgetHistory = {};
+    budgets.forEach(b => {
+      budgetHistory[b.year] = {
+        income:      b.income_lines  || [],
+        expenses:    b.expense_lines || [],
+        nonop:       b.nonop_lines   || [],
+        capexBudget: b.capex_budget  || 0,
+      };
+    });
+
+    // Get actuals for current year
+    const now = new Date();
+    const curYear  = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+    const yearActuals = (actualsMap[supaId] || []).filter(a => a.year === (latestBudget?.year || curYear));
+    const curActuals  = yearActuals.find(a => a.month === curMonth) || yearActuals[yearActuals.length - 1];
+
+    const budget = latestBudget ? {
+      income:      latestBudget.income_lines  || [],
+      expenses:    latestBudget.expense_lines || [],
+      nonop:       latestBudget.nonop_lines   || [],
+      capexBudget: latestBudget.capex_budget  || 0,
+    } : { income: [], expenses: [], nonop: [], capexBudget: 0 };
+
+    // Build monthly NOI array from noi_history
+    const noiRows = noiMap[supaId] || [];
+    const monthlyNOI = Array(12).fill(null);
+    noiRows.filter(n => n.year === (latestBudget?.year || curYear))
+           .forEach(n => { monthlyNOI[n.month - 1] = n.noi; });
+
+    return {
+      id:             row.id,       // use UUID as id
+      supabaseId:     row.id,
+      name:           row.name,
+      address:        row.address || '—',
+      units:          row.units   || 0,
+      pm:             row.pm      || 'AppFolio',
+      market:         row.market  || '',
+      type:           row.type    || 'existing',
+      budgetYear:     latestBudget?.year || curYear,
+      budget,
+      budgetHistory,
+      actuals: {
+        occupancy:   curActuals?.occupancy   || 0,
+        collections: curActuals?.collections || 0,
+        income:      curActuals?.income_values  || budget.income.map(() => 0),
+        expenses:    curActuals?.expense_values || budget.expenses.map(() => 0),
+        capexSpent:  curActuals?.capex_spent || 0,
+        unitRents:   curActuals?.unit_rents  || [],
+        monthlyNOI,
+      },
+      actualsLastUpdated: curActuals?.uploaded_at || null,
+      actualsSource:      curActuals?.source || null,
+      apiConnected:       !!curActuals,
+    };
+  });
+}
+
+// ── BOOT: load everything from Supabase ─────────────────────
+async function bootFromSupabase() {
+  const overlay = document.getElementById('db-loading-overlay');
+  const msg     = document.getElementById('db-loading-msg');
+
+  try {
+    msg.textContent = 'Connecting to database…';
+    dbConnected = await testSupabaseConnection();
+    if (!dbConnected) throw new Error('Connection failed');
+
+    msg.textContent = 'Loading properties…';
+    const propRows = await DB.getProperties();
+
+    if (!propRows || propRows.length === 0) {
+      // Fresh database — seed with demo properties
+      msg.textContent = 'First run — setting up portfolio…';
+      await seedDemoData();
+      overlay.classList.add('hidden');
+      showDbSync('saved', '● Live');
+      renderPage();
+      return;
+    }
+
+    msg.textContent = 'Loading budgets & actuals…';
+
+    // Fetch budgets and actuals for all properties in parallel
+    const [allBudgets, allActuals, allNOI] = await Promise.all([
+      Promise.all(propRows.map(p => DB.getBudgetsForProperty(p.id).then(rows => ({id: p.id, rows})))),
+      Promise.all(propRows.map(p => DB.getActualsForProperty(p.id).then(rows => ({id: p.id, rows})))),
+      Promise.all(propRows.map(p => DB.getNOIHistory(p.id, new Date().getFullYear()).then(rows => ({id: p.id, rows})))),
+    ]);
+
+    const budgetMap  = {};
+    const actualsMap = {};
+    const noiMap     = {};
+    allBudgets.forEach(({id, rows}) => { budgetMap[id]  = rows || []; });
+    allActuals.forEach(({id, rows}) => { actualsMap[id] = rows || []; });
+    allNOI.forEach(    ({id, rows}) => { noiMap[id]     = rows || []; });
+
+    // Load thresholds
+    msg.textContent = 'Loading alert thresholds…';
+    const dbThresh = await DB.getThresholds();
+    if (dbThresh) {
+      THRESHOLDS.noiMissPct.value         = dbThresh.noi_miss_pct;
+      THRESHOLDS.noiMissPct.enabled       = dbThresh.noi_enabled;
+      THRESHOLDS.occupancyMin.value       = dbThresh.occupancy_min;
+      THRESHOLDS.occupancyMin.enabled     = dbThresh.occupancy_enabled;
+      THRESHOLDS.expensePacePct.value     = dbThresh.expense_pace_pct;
+      THRESHOLDS.expensePacePct.enabled   = dbThresh.expense_pace_enabled;
+      THRESHOLDS.capexHit.value           = dbThresh.capex_hit_pct;
+      THRESHOLDS.capexHit.enabled         = dbThresh.capex_enabled;
+      THRESHOLDS.unitRentBelowPct.value   = dbThresh.unit_rent_below_pct;
+      THRESHOLDS.unitRentBelowPct.enabled = dbThresh.unit_rent_enabled;
+      THRESHOLDS.collectionsMin.value     = dbThresh.collections_min;
+      THRESHOLDS.collectionsMin.enabled   = dbThresh.collections_enabled;
+      THRESHOLDS.cfNegative.enabled       = dbThresh.cf_negative_enabled;
+    }
+
+    // Load alert log
+    msg.textContent = 'Loading alert history…';
+    const dbAlerts = await DB.getAlertLog(100);
+    if (dbAlerts && dbAlerts.length > 0) {
+      ALERT_LOG = dbAlerts.map(a => ({
+        id:        a.id,
+        supabaseId: a.id,
+        key:       a.property_id + '|' + a.message.substring(0, 40),
+        ts:        new Date(a.created_at),
+        propId:    a.property_id,
+        propName:  propRows.find(p => p.id === a.property_id)?.name || 'Unknown',
+        sev:       a.severity,
+        msg:       a.message,
+        dismissed: a.dismissed,
+        resolved:  a.resolved,
+      }));
+    }
+
+    // Hydrate in-memory properties
+    properties = hydrateProperties(propRows, budgetMap, actualsMap, noiMap);
+
+    overlay.classList.add('hidden');
+    showDbSync('saved', '● Live');
+    renderPage();
+
+  } catch (err) {
+    console.warn('[BPOS] Supabase boot failed, falling back to demo data:', err);
+    dbConnected = false;
+    overlay.classList.add('hidden');
+    showDbSync('offline', '○ Offline');
+    showToast('Running in offline mode — data will not persist.', true);
+    renderPage();
+  }
+}
+
+// ── SEED: write demo properties to fresh database ───────────
+async function seedDemoData() {
+  for (const prop of properties) {
+    try {
+      const saved = await DB.saveProperty(prop);
+      if (!saved?.id) continue;
+      prop.supabaseId = saved.id;
+      prop.id = saved.id;
+      // Save current budget
+      if (prop.budget) {
+        await DB.saveBudget(saved.id, prop.budgetYear, prop.budget);
+      }
+      // Save current actuals as current month
+      const now = new Date();
+      await DB.saveActuals(saved.id, now.getFullYear(), now.getMonth() + 1, prop.actuals);
+      // Save NOI history
+      prop.actuals.monthlyNOI.forEach(async (noi, i) => {
+        if (noi !== null) await DB.saveNOIHistory(saved.id, prop.budgetYear, i + 1, noi);
+      });
+    } catch (e) {
+      console.warn('[BPOS] Seed failed for', prop.name, e.message);
+    }
+  }
+}
+
+// ── SAVE PROPERTY to Supabase (called on add/edit) ──────────
+async function savePropertyToDb(prop) {
+  if (!dbConnected) return;
+  showDbSync('saving', '↑ Saving…');
+  try {
+    const saved = await DB.saveProperty(prop);
+    if (saved?.id) {
+      prop.supabaseId = saved.id;
+      prop.id = saved.id;
+    }
+    showDbSync('saved', '● Saved');
+  } catch (e) {
+    showDbSync('error', '✕ Save error');
+    console.error('[BPOS] saveProperty failed:', e);
+  }
+}
+
+// ── SAVE BUDGET to Supabase ──────────────────────────────────
+async function saveBudgetToDb(prop, year, budget) {
+  if (!dbConnected || !prop.supabaseId) return;
+  showDbSync('saving', '↑ Saving…');
+  try {
+    await DB.saveBudget(prop.supabaseId, year, budget);
+    showDbSync('saved', '● Saved');
+  } catch (e) {
+    showDbSync('error', '✕ Save error');
+    console.error('[BPOS] saveBudget failed:', e);
+  }
+}
+
+// ── SAVE ACTUALS to Supabase ─────────────────────────────────
+async function saveActualsToDb(prop, actualsData) {
+  if (!dbConnected || !prop.supabaseId) return;
+  showDbSync('saving', '↑ Saving actuals…');
+  try {
+    const now = new Date();
+    await DB.saveActuals(
+      prop.supabaseId,
+      now.getFullYear(),
+      now.getMonth() + 1,
+      actualsData
+    );
+    // Also save NOI to history
+    const actInc = actualsData.income.reduce((s, v) => s + v, 0);
+    const actExp = actualsData.expenses.reduce((s, v) => s + v, 0);
+    const noi    = actInc - actExp;
+    await DB.saveNOIHistory(prop.supabaseId, now.getFullYear(), now.getMonth() + 1, noi);
+    showDbSync('saved', '● Saved');
+  } catch (e) {
+    showDbSync('error', '✕ Save error');
+    console.error('[BPOS] saveActuals failed:', e);
+  }
+}
+
+// ── SAVE ALERT LOG ENTRY to Supabase ────────────────────────
+async function saveAlertToDb(prop, alert) {
+  if (!dbConnected || !prop?.supabaseId) return;
+  try {
+    const saved = await DB.logAlert(prop.supabaseId, alert);
+    if (saved?.id) alert.supabaseId = saved.id;
+  } catch (e) {
+    console.warn('[BPOS] saveAlert failed:', e);
+  }
+}
+
+// ── DISMISS ALERT in Supabase ────────────────────────────────
+async function dismissAlertInDb(alert) {
+  if (!dbConnected || !alert.supabaseId) return;
+  try { await DB.dismissAlert(alert.supabaseId); } catch (e) {}
+}
+
+// ── SAVE THRESHOLDS to Supabase ──────────────────────────────
+async function saveThresholdsToDb() {
+  if (!dbConnected) return;
+  try { await DB.saveThresholds(THRESHOLDS); } catch (e) {
+    console.warn('[BPOS] saveThresholds failed:', e);
+  }
+}
+
+// ── PATCH: wire DB saves into existing functions ─────────────
+
+// Patch confirmApplyActuals to also save to DB
+const _baseConfirmApplyActuals = confirmApplyActuals;
+confirmApplyActuals = async function() {
+  _baseConfirmApplyActuals();
+  // After in-memory update, persist each updated property's actuals
+  if (!dbConnected) return;
+  const toApply = actualsState.allSheets.filter(s =>
+    actualsState.selectedSheets[s.sheetName] !== false &&
+    actualsState.matchMap[s.sheetName] &&
+    actualsState.matchMap[s.sheetName] !== 'skip'
+  );
+  for (const s of toApply) {
+    const mid  = actualsState.matchMap[s.sheetName];
+    const prop = properties.find(p => p.id === mid);
+    if (prop) await saveActualsToDb(prop, prop.actuals);
+  }
+};
+
+// Patch confirmSaveBudget to also save to DB
+const _baseConfirmSaveBudget = confirmSaveBudget;
+confirmSaveBudget = async function() {
+  _baseConfirmSaveBudget();
+  if (!dbConnected) return;
+  // Persist all newly saved budgets
+  for (const prop of properties) {
+    if (prop.budget && prop.supabaseId) {
+      await saveBudgetToDb(prop, prop.budgetYear, prop.budget);
+    }
+  }
+};
+
+// Patch apSave (add property) to also save to DB
+const _baseApSave = apSave;
+apSave = async function() {
+  _baseApSave();
+  if (!dbConnected) return;
+  // The newest property is the last one added
+  const newProp = properties[properties.length - 1];
+  if (newProp) {
+    await savePropertyToDb(newProp);
+    if (newProp.budget) await saveBudgetToDb(newProp, newProp.budgetYear, newProp.budget);
+  }
+};
+
+// Patch saveEditProp to persist edits
+const _baseSaveEditProp = saveEditProp;
+saveEditProp = function() {
+  _baseSaveEditProp();
+  if (!dbConnected) return;
+  const prop = properties.find(p => p.id === editPropId);
+  if (prop) savePropertyToDb(prop);
+};
+
+// Patch saveThresholds to persist to DB
+const _baseSaveThresholds = saveThresholds;
+saveThresholds = function() {
+  _baseSaveThresholds();
+  saveThresholdsToDb();
+};
+
+// Patch dismissAlert to persist in DB
+const _baseDismissAlert = dismissAlert;
+dismissAlert = function(id) {
+  const entry = ALERT_LOG.find(l => l.id === id);
+  _baseDismissAlert(id);
+  if (entry) dismissAlertInDb(entry);
+};
+
+// Patch clearAllAlerts to persist in DB
+const _baseClearAllAlerts = clearAllAlerts;
+clearAllAlerts = function() {
+  _baseClearAllAlerts();
+  if (dbConnected) DB.clearAllAlerts().catch(e => console.warn('[BPOS] clearAlerts failed:', e));
+};
+
+// Patch checkAndLogAlerts to persist new alerts to DB
+const _baseCheckAndLogAlerts = checkAndLogAlerts;
+checkAndLogAlerts = function() {
+  const before = ALERT_LOG.length;
+  _baseCheckAndLogAlerts();
+  // Persist only newly added alerts
+  if (dbConnected && ALERT_LOG.length > before) {
+    const newAlerts = ALERT_LOG.slice(0, ALERT_LOG.length - before);
+    newAlerts.forEach(alert => {
+      const prop = properties.find(p => p.id === alert.propId);
+      if (prop) saveAlertToDb(prop, alert);
+    });
+  }
+};
+
+// ══════════════════════════════════════
+// INIT — boot from Supabase, fall back to demo if offline
+// ══════════════════════════════════════
+bootFromSupabase();
+
 </script>
 </body>
 </html>

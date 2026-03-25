@@ -233,7 +233,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text">Loading...</div>
       </div>
-      <iframe id="module-frame" class="module-iframe" src="" title="Module" onload="onFrameLoad()"></iframe>
+      <iframe id="module-frame" class="module-iframe" src="" title="Module" onload="if(typeof onFrameLoad==='function')onFrameLoad()"></iframe>
     </div>
   </div>
 </div>

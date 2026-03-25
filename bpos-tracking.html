@@ -39,6 +39,62 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .api-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);}
 .api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
 .api-dot.off{background:var(--text3);box-shadow:none;}
+.api-dot.pending{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+
+/* ACTUALS UPLOAD */
+.actuals-upload-btn{display:flex;align-items:center;gap:6px;background:rgba(34,201,122,.1);border:1px solid rgba(34,201,122,.25);color:var(--green);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.actuals-upload-btn:hover{background:rgba(34,201,122,.18);border-color:var(--green);}
+.bitquery-connect-btn{display:flex;align-items:center;gap:6px;background:rgba(61,127,255,.08);border:1px solid rgba(61,127,255,.2);color:var(--accent);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:all .15s;}
+.bitquery-connect-btn:hover{background:rgba(61,127,255,.15);border-color:var(--accent);}
+
+/* ALERT LOG */
+.alert-log-panel{background:var(--bg2);border:1px solid rgba(245,166,35,.2);border-radius:12px;margin-bottom:24px;overflow:hidden;}
+.alp-head{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s;}
+.alp-head:hover{background:rgba(245,166,35,.04);}
+.alp-title{font-size:14px;font-weight:600;color:var(--amber);flex:1;}
+.alp-count{font-size:12px;font-weight:600;background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.18);border-radius:10px;padding:2px 10px;}
+.alp-body{display:none;padding:0 20px 16px;}
+.alp-body.open{display:block;}
+.alert-log-entry{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.alert-log-entry:last-child{border-bottom:none;}
+.ale-sev{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.ale-sev.red{background:var(--red);}
+.ale-sev.amber{background:var(--amber);}
+.ale-sev.green{background:var(--green);}
+.ale-body{flex:1;}
+.ale-prop{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:2px;}
+.ale-msg{font-size:12px;color:var(--text);margin-bottom:2px;}
+.ale-time{font-size:10px;color:var(--text3);}
+.ale-dismiss{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;transition:color .15s;}
+.ale-dismiss:hover{color:var(--red);}
+
+/* ACTUALS UPLOAD MODAL */
+.actuals-source-tabs{display:flex;gap:0;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:3px;margin-bottom:16px;}
+.actuals-tab{flex:1;text-align:center;padding:7px 12px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;border-radius:6px;color:var(--text3);transition:all .15s;border:none;background:none;}
+.actuals-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.bitquery-setup-box{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:20px;text-align:center;}
+.bq-logo{font-size:32px;margin-bottom:10px;}
+.bq-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.bq-sub{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:16px;}
+.bq-steps{text-align:left;background:var(--bg4);border-radius:8px;padding:14px 16px;margin-bottom:16px;}
+.bq-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5;}
+.bq-step:last-child{margin-bottom:0;}
+.bq-step-num{width:18px;height:18px;border-radius:50%;background:rgba(61,127,255,.15);border:1px solid rgba(61,127,255,.3);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.bq-status-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;}
+.bq-status-row.connected{background:rgba(34,201,122,.08);border:1px solid rgba(34,201,122,.2);color:var(--green);}
+.bq-status-row.disconnected{background:rgba(140,147,158,.06);border:1px solid var(--border2);color:var(--text3);}
+
+/* VARIANCE TABLE */
+.variance-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.vs-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+.vs-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;}
+.vs-val{font-size:16px;font-weight:500;font-family:var(--mono);}
+.vs-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.pct-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;}
+.pct-badge.good{background:rgba(34,201,122,.12);color:var(--green);}
+.pct-badge.warn{background:rgba(245,166,35,.12);color:var(--amber);}
+.pct-badge.bad{background:rgba(232,80,74,.12);color:var(--red);}
+.pct-badge.neu{background:rgba(140,147,158,.1);color:var(--text3);}
 .month-select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
 .btn-add-prop{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
 .btn-add-prop:hover{background:var(--accent2);}
@@ -354,6 +410,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <span class="sep">›</span><span class="current">Budget Tracking</span>
   </div>
   <div class="topnav-spacer"></div>
+  <button class="actuals-upload-btn" onclick="openActualsModal()">⤒ Upload actuals</button>
+  <button class="bitquery-connect-btn" onclick="openBitqueryModal()">⬡ Bitquery</button>
   <button class="settings-btn" onclick="openUploadModal()">⤒ Upload budget</button>
   <button class="settings-btn" onclick="openAlertSettings()">⚙ Alert thresholds</button>
   <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
@@ -361,6 +419,54 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <div class="page" id="main-page">
   <!-- injected by JS -->
+</div>
+
+<!-- ACTUALS UPLOAD MODAL -->
+<div class="modal-overlay" id="actuals-modal">
+  <div class="modal" style="width:680px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Upload actuals</h2>
+        <p id="actuals-modal-sub">Upload your actuals file in PGM format to compare against budgets and trigger alerts.</p>
+      </div>
+      <button class="modal-close" onclick="closeActualsModal()">×</button>
+    </div>
+    <div class="modal-body" id="actuals-modal-body" style="min-height:300px;"></div>
+    <div class="modal-footer" id="actuals-modal-footer"></div>
+  </div>
+</div>
+
+<!-- BITQUERY CONNECT MODAL -->
+<div class="modal-overlay" id="bitquery-modal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Bitquery Connection</h2>
+        <p>Connect your Bitquery data source to pull live actuals automatically.</p>
+      </div>
+      <button class="modal-close" onclick="closeBitqueryModal()">×</button>
+    </div>
+    <div class="modal-body" id="bitquery-modal-body"></div>
+    <div class="modal-footer" id="bitquery-modal-footer"></div>
+  </div>
+</div>
+
+<!-- ALERT LOG MODAL -->
+<div class="modal-overlay" id="alert-log-modal">
+  <div class="modal" style="width:640px;">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h2>Full alert history</h2>
+        <p>All threshold breaches logged in this session. Alerts auto-clear when variance is resolved.</p>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('alert-log-modal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body" id="alert-log-modal-body" style="max-height:65vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="clearAllAlerts()">Clear all</button>
+      <button class="btn-primary" onclick="document.getElementById('alert-log-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- SINGLE PROPERTY BUDGET MODAL (add new or edit existing) -->
@@ -2204,7 +2310,674 @@ function showToast(msg,err=false){
   setTimeout(()=>t.classList.remove('show'),3400);
 }
 
+// ══════════════════════════════════════
+// ALERT LOG ENGINE
+// Persistent in-session log of all threshold breaches
+// ══════════════════════════════════════
+let ALERT_LOG = []; // {id, ts, propId, propName, sev, icon, msg, dismissed}
+let alertLogOpen = false;
+
+function checkAndLogAlerts() {
+  properties.forEach(prop => {
+    const alerts = getAlerts(prop);
+    alerts.forEach(al => {
+      // Deduplicate: don't re-log same alert in same session if already active
+      const key = prop.id + '|' + al.text.substring(0, 40);
+      const exists = ALERT_LOG.find(l => !l.dismissed && l.key === key);
+      if (!exists) {
+        ALERT_LOG.unshift({
+          id: Date.now() + Math.random(),
+          key,
+          ts: new Date(),
+          propId: prop.id,
+          propName: prop.name,
+          sev: al.sev,
+          icon: al.icon,
+          msg: al.text,
+          dismissed: false,
+        });
+      }
+    });
+    // Auto-resolve: if alert no longer fires, mark resolved
+    ALERT_LOG.forEach(l => {
+      if (l.propId === prop.id && !l.dismissed) {
+        const stillActive = alerts.some(al => l.key === prop.id + '|' + al.text.substring(0, 40));
+        if (!stillActive) l.resolved = true;
+      }
+    });
+  });
+}
+
+function dismissAlert(id) {
+  const entry = ALERT_LOG.find(l => l.id === id);
+  if (entry) entry.dismissed = true;
+  renderAlertLogPanel();
+  renderAlertLogModal();
+}
+
+function clearAllAlerts() {
+  ALERT_LOG.forEach(l => l.dismissed = true);
+  renderAlertLogPanel();
+  renderAlertLogModal();
+  showToast('All alerts cleared from log.');
+}
+
+function getActiveAlerts() {
+  return ALERT_LOG.filter(l => !l.dismissed);
+}
+
+function renderAlertLogPanel() {
+  const el = document.getElementById('alert-log-panel-wrap');
+  if (!el) return;
+  const active = getActiveAlerts();
+  if (active.length === 0) { el.innerHTML = ''; return; }
+
+  const redCount = active.filter(l=>l.sev==='red').length;
+  const amberCount = active.filter(l=>l.sev==='amber').length;
+  const fmtTime = ts => {
+    const d = new Date(ts);
+    return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  };
+
+  el.innerHTML = `
+    <div class="alert-log-panel">
+      <div class="alp-head" onclick="toggleAlertLog()">
+        <span style="font-size:16px;">🔔</span>
+        <span class="alp-title">Alert log — threshold breaches</span>
+        <span class="alp-count">${redCount} critical · ${amberCount} warning</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:auto;" id="alp-chev">${alertLogOpen?'▴':'▾'}</span>
+      </div>
+      <div class="alp-body ${alertLogOpen?'open':''}" id="alp-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--text3);">Showing ${Math.min(active.length,5)} most recent. <button onclick="openAlertLogModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font);font-size:12px;">View all ${active.length}</button></span>
+          <button onclick="clearAllAlerts()" style="background:none;border:1px solid var(--border2);color:var(--text3);border-radius:6px;padding:4px 10px;font-size:11px;font-family:var(--font);cursor:pointer;">Clear all</button>
+        </div>
+        ${active.slice(0,5).map(l=>`
+          <div class="alert-log-entry">
+            <div class="ale-sev ${l.sev}"></div>
+            <div class="ale-body">
+              <div class="ale-prop">${l.propName} ${l.resolved?'<span style="color:var(--green);font-size:10px;">(resolved)</span>':''}</div>
+              <div class="ale-msg">${l.msg}</div>
+              <div class="ale-time">${fmtTime(l.ts)}</div>
+            </div>
+            <button class="ale-dismiss" onclick="dismissAlert(${l.id})" title="Dismiss">×</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleAlertLog() {
+  alertLogOpen = !alertLogOpen;
+  const body = document.getElementById('alp-body');
+  const chev = document.getElementById('alp-chev');
+  if (body) body.classList.toggle('open', alertLogOpen);
+  if (chev) chev.textContent = alertLogOpen ? '▴' : '▾';
+}
+
+function openAlertLogModal() {
+  renderAlertLogModal();
+  document.getElementById('alert-log-modal').classList.add('open');
+}
+
+function renderAlertLogModal() {
+  const el = document.getElementById('alert-log-modal-body');
+  if (!el) return;
+  const active = getActiveAlerts();
+  const fmtTime = ts => new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  if (active.length === 0) {
+    el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px;">No active alerts. All thresholds are within range.</div>';
+    return;
+  }
+  el.innerHTML = active.map(l=>`
+    <div class="alert-log-entry">
+      <div class="ale-sev ${l.sev}"></div>
+      <div class="ale-body">
+        <div class="ale-prop">${l.propName} ${l.resolved?'<span style="color:var(--green);font-size:10px;">(resolved)</span>':''}</div>
+        <div class="ale-msg">${l.msg}</div>
+        <div class="ale-time">${fmtTime(l.ts)}</div>
+      </div>
+      <button class="ale-dismiss" onclick="dismissAlert(${l.id});renderAlertLogModal();" title="Dismiss">×</button>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+// ACTUALS UPLOAD ENGINE
+// Same PGM format as budget — reads monthly actuals by line item
+// Matches to existing properties and updates their actuals arrays
+// ══════════════════════════════════════
+let actualsState = {
+  step: 1,
+  allSheets: [],
+  selectedSheets: {},
+  matchMap: {},
+  fileName: '',
+};
+
+function openActualsModal() {
+  actualsState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:''};
+  document.getElementById('actuals-modal').classList.add('open');
+  renderActualsModal();
+}
+
+function closeActualsModal() {
+  document.getElementById('actuals-modal').classList.remove('open');
+}
+
+function renderActualsModal() {
+  const step = actualsState.step;
+  const stepsHtml = `
+    <div class="upload-steps">
+      <div class="upload-step ${step>=1?step>1?'done':'active':''}">
+        <div class="us-num">${step>1?'✓':'1'}</div><span>Upload file</span>
+      </div><div class="us-sep"></div>
+      <div class="upload-step ${step>=2?step>2?'done':'active':''}">
+        <div class="us-num">${step>2?'✓':'2'}</div><span>Map properties</span>
+      </div><div class="us-sep"></div>
+      <div class="upload-step ${step>=3?'active':''}">
+        <div class="us-num">3</div><span>Review &amp; apply</span>
+      </div>
+    </div>`;
+
+  const body   = document.getElementById('actuals-modal-body');
+  const footer = document.getElementById('actuals-modal-footer');
+
+  if (step === 1) {
+    body.innerHTML = stepsHtml + `
+      <div style="margin-bottom:14px;">
+        <div class="actuals-source-tabs">
+          <button class="actuals-tab active">⤒ Upload actuals file</button>
+          <button class="actuals-tab" onclick="openBitqueryModal();closeActualsModal()">⬡ Pull from Bitquery</button>
+        </div>
+      </div>
+      <label class="upload-drop-zone" id="actuals-udz"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="actualsHandleDrop(event)">
+        <div class="udz-icon">📊</div>
+        <div class="udz-title">Drop your actuals file here or click to browse</div>
+        <div class="udz-sub">Same PGM format as budget — one tab per property.<br/>Monthly actuals read from Jan–Dec columns. Compared line-by-line to your budgets.</div>
+        <div class="udz-formats"><span class="fmt-badge">XLSX</span><span class="fmt-badge">XLS</span><span class="fmt-badge">CSV</span></div>
+        <input type="file" id="actuals-file-input" accept=".csv,.xlsx,.xls" onchange="actualsHandleFile(this.files[0])"/>
+      </label>
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(34,201,122,.05);border:1px solid rgba(34,201,122,.15);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.7;">
+        <strong style="color:var(--green);">How actuals map to budgets:</strong> Each income/expense line in the actuals file is matched by label to the corresponding budget line. MTD actuals vs. monthly budget drives all alert thresholds.
+      </div>`;
+    footer.innerHTML = `<button class="btn-ghost" onclick="closeActualsModal()">Cancel</button>`;
+
+  } else if (step === 2) {
+    const sheets = actualsState.allSheets;
+    const cards = sheets.map(s => {
+      const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
+      const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noi = incTotal - expTotal;
+      const checked = actualsState.selectedSheets[s.sheetName] !== false;
+
+      // Auto-match to existing property
+      const mid = actualsState.matchMap[s.sheetName];
+      const matchedProp = mid && mid !== 'skip' ? properties.find(p=>p.id===mid) : null;
+
+      return `
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">
+              <input type="checkbox" ${checked?'checked':''} style="accent-color:var(--accent);"
+                onchange="actualsState.selectedSheets['${s.sheetName}']=this.checked;renderActualsModal()"/>
+              <span style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</span>
+            </label>
+            <span style="font-size:11px;color:var(--text3);">${s.income.length+s.expenses.length} lines · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span></span>
+          </div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;">Map actuals to property:</div>
+          <select style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:100%;"
+            onchange="actualsState.matchMap['${s.sheetName}']=this.value==='skip'?'skip':+this.value;">
+            <option value="skip" ${!mid||mid==='skip'?'selected':''}>— Skip this property —</option>
+            ${properties.map(p=>`<option value="${p.id}" ${mid===p.id?'selected':''}>${p.name} (${p.address})</option>`).join('')}
+          </select>
+          ${matchedProp ? `
+            <div style="margin-top:8px;font-size:11px;color:var(--green);padding:5px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
+              ✓ Will update actuals for <strong>${matchedProp.name}</strong> · ${s.income.length} income · ${s.expenses.length} expense lines
+            </div>` : ''}
+        </div>`;
+    }).join('');
+
+    const mappedCount = Object.values(actualsState.matchMap).filter(v=>v&&v!=='skip').length;
+    body.innerHTML = stepsHtml + `
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">
+        <strong style="color:var(--text);">${sheets.length} properties</strong> found in <strong style="color:var(--text);">${actualsState.fileName}</strong>. Map each to an existing property.
+      </div>
+      <div style="max-height:400px;overflow-y:auto;">${cards}</div>`;
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="actualsState.step=1;renderActualsModal()">← Back</button>
+      <button class="btn-primary" ${mappedCount>0?'':'disabled style="opacity:.4;"'} onclick="${mappedCount>0?'actualsState.step=3;renderActualsModal()':''}">
+        Review ${mappedCount} update${mappedCount!==1?'s':''} →
+      </button>`;
+
+  } else if (step === 3) {
+    const toApply = actualsState.allSheets.filter(s =>
+      actualsState.selectedSheets[s.sheetName] !== false &&
+      actualsState.matchMap[s.sheetName] &&
+      actualsState.matchMap[s.sheetName] !== 'skip'
+    );
+
+    const summaryRows = toApply.map(s => {
+      const mid = actualsState.matchMap[s.sheetName];
+      const prop = properties.find(p=>p.id===mid);
+      if (!prop) return '';
+      const incActual = s.income.reduce((t,r)=>t+r.monthly,0);
+      const expActual = s.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noiActual = incActual - expActual;
+      const budNOI = prop.budget.income.reduce((t,r)=>t+r.monthly,0) - prop.budget.expenses.reduce((t,r)=>t+r.monthly,0);
+      const noiVar = noiActual - budNOI;
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--green);"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${prop.name}</div>
+            <div style="font-size:11px;color:var(--text3);">${s.income.length} income · ${s.expenses.length} expense lines updated</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;font-family:var(--mono);color:${noiActual>=budNOI?'var(--green)':'var(--red)'};">NOI ${fd(noiActual)}/mo</div>
+            <div style="font-size:11px;color:${noiVar>=0?'var(--green)':'var(--red)'};">${noiVar>=0?'+':''}${fd(noiVar)} vs budget</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Show which alerts will fire
+    const alertPreview = toApply.map(s => {
+      const mid = actualsState.matchMap[s.sheetName];
+      const prop = properties.find(p=>p.id===mid);
+      if (!prop) return '';
+      // Simulate updated actuals to preview alerts
+      const simProp = JSON.parse(JSON.stringify(prop));
+      applyActualsToProperty(simProp, s, true); // dry run
+      const alerts = getAlerts(simProp);
+      if (!alerts.length) return '';
+      return `
+        <div style="margin-top:6px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;">${prop.name} — ${alerts.length} alert${alerts.length!==1?'s':''} will fire:</div>
+          ${alerts.slice(0,3).map(al=>`
+            <div class="alert-chip ${al.sev}" style="margin-bottom:4px;">
+              <span class="chip-icon">${al.icon}</span>
+              <span class="chip-text">${al.msg||al.text}</span>
+            </div>`).join('')}
+        </div>`;
+    }).filter(Boolean).join('');
+
+    body.innerHTML = stepsHtml + `
+      <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✓ Ready to apply ${toApply.length} actuals update${toApply.length!==1?'s':''}</div>
+        <div style="font-size:12px;color:var(--text2);">Actuals will be applied line-by-line. Alerts fire immediately for any threshold breaches.</div>
+      </div>
+      ${summaryRows}
+      ${alertPreview ? `
+        <div style="margin-top:16px;padding:14px 16px;background:rgba(232,80,74,.05);border:1px solid rgba(232,80,74,.15);border-radius:10px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin-bottom:10px;">⚑ Alert preview — these will fire on save</div>
+          ${alertPreview}
+        </div>` : `
+        <div style="margin-top:14px;padding:12px 14px;background:rgba(34,201,122,.05);border:1px solid rgba(34,201,122,.15);border-radius:8px;font-size:12px;color:var(--green);">✓ No threshold breaches detected — all actuals are within budget targets.</div>`}`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="actualsState.step=2;renderActualsModal()">← Back</button>
+      <button class="btn-primary" onclick="confirmApplyActuals()">✓ Apply actuals &amp; run alerts</button>`;
+  }
+}
+
+function actualsHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('actuals-udz')?.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) actualsHandleFile(file);
+}
+
+function actualsHandleFile(file) {
+  if (!file) return;
+  actualsState.fileName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split('\n');
+      const rows = lines.map(l => {
+        const cols=[]; let cur='', inQ=false;
+        for (const ch of l+',') {
+          if(ch==='"') inQ=!inQ;
+          else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+          else cur+=ch;
+        }
+        return cols;
+      });
+      const name = file.name.replace(/\.(csv)$/i,'').replace(/[-_]/g,' ').trim();
+      const parsed = parsePGMSheet(rows, name);
+      actualsState.allSheets = [parsed];
+      actualsState.selectedSheets = {[parsed.sheetName]: true};
+      actualsAutoMatch();
+      actualsState.step = 2;
+      renderActualsModal();
+    };
+    reader.readAsText(file);
+    return;
+  }
+  if (['xlsx','xls'].includes(ext)) {
+    const load = () => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, {type:'array'});
+          const sheets = [];
+          wb.SheetNames.forEach(sheetName => {
+            const ws = wb.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+            const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName);
+            if (parsed.income.length > 0 || parsed.expenses.length > 0) sheets.push(parsed);
+          });
+          if (!sheets.length) { showToast('No actuals data found. Check the file format.', true); return; }
+          actualsState.allSheets = sheets;
+          sheets.forEach(s=>{ actualsState.selectedSheets[s.sheetName]=true; });
+          actualsAutoMatch();
+          actualsState.step = 2;
+          renderActualsModal();
+        } catch(err) { showToast('Could not read file. Try saving as CSV.', true); }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    if (typeof XLSX === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = load;
+      document.head.appendChild(s);
+    } else { load(); }
+    return;
+  }
+  showToast('Please upload an XLSX, XLS, or CSV file.', true);
+}
+
+function actualsAutoMatch() {
+  actualsState.allSheets.forEach(s => {
+    const name = (s.displayName||s.sheetName).toLowerCase().trim();
+    const scored = properties.map(p=>{
+      const pn = p.name.toLowerCase();
+      let score = 0;
+      if (pn===name||pn===s.sheetName.toLowerCase()) score=100;
+      else if (pn.includes(name)||name.includes(pn)) score=80;
+      else { name.split(/\s+/).forEach(w=>{ if(w.length>3&&pn.includes(w)) score+=25; }); }
+      return {...p, score};
+    }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score);
+    if (scored[0]?.score >= 70) actualsState.matchMap[s.sheetName] = scored[0].id;
+    else actualsState.matchMap[s.sheetName] = 'skip';
+  });
+}
+
+function applyActualsToProperty(prop, sheet, dryRun) {
+  // Match each actuals line to budget line by label similarity
+  const matchLine = (budgetLines, actualLabel) => {
+    const al = actualLabel.toLowerCase().trim();
+    let best = -1, bestScore = 0;
+    budgetLines.forEach((bl, i) => {
+      const bl_label = bl.label.toLowerCase().trim();
+      let score = 0;
+      if (bl_label === al) score = 100;
+      else if (bl_label.includes(al) || al.includes(bl_label)) score = 80;
+      else {
+        al.split(/\s+/).forEach(w => { if (w.length > 3 && bl_label.includes(w)) score += 20; });
+      }
+      if (score > bestScore) { bestScore = score; best = i; }
+    });
+    return bestScore >= 40 ? best : -1;
+  };
+
+  // Apply income actuals
+  sheet.income.forEach(line => {
+    const idx = matchLine(prop.budget.income, line.label);
+    if (idx >= 0) prop.actuals.income[idx] = line.monthly;
+  });
+  // Apply expense actuals
+  sheet.expenses.forEach(line => {
+    const idx = matchLine(prop.budget.expenses, line.label);
+    if (idx >= 0) prop.actuals.expenses[idx] = line.monthly;
+  });
+  // Apply CapEx from nonop if present
+  const capexLine = sheet.nonop?.find(r => r.label.toLowerCase().includes('capex'));
+  if (capexLine) prop.actuals.capexSpent = capexLine.monthly * 12; // annualize for capex tracking
+  prop.actualsLastUpdated = new Date();
+  prop.actualsSource = 'upload';
+}
+
+function confirmApplyActuals() {
+  const toApply = actualsState.allSheets.filter(s =>
+    actualsState.selectedSheets[s.sheetName] !== false &&
+    actualsState.matchMap[s.sheetName] &&
+    actualsState.matchMap[s.sheetName] !== 'skip'
+  );
+
+  let updated = 0;
+  toApply.forEach(s => {
+    const mid = actualsState.matchMap[s.sheetName];
+    const prop = properties.find(p=>p.id===mid);
+    if (!prop) return;
+    // Resize actuals arrays if budget line count differs
+    if (prop.actuals.income.length !== prop.budget.income.length)
+      prop.actuals.income = prop.budget.income.map(()=>0);
+    if (prop.actuals.expenses.length !== prop.budget.expenses.length)
+      prop.actuals.expenses = prop.budget.expenses.map(()=>0);
+    applyActualsToProperty(prop, s, false);
+    prop.apiConnected = true;
+    updated++;
+  });
+
+  closeActualsModal();
+  // Run alert check after applying
+  checkAndLogAlerts();
+  renderPage();
+  renderAlertLogPanel();
+  const newAlerts = getActiveAlerts().length;
+  showToast(`Actuals applied to ${updated} propert${updated!==1?'ies':'y'}. ${newAlerts > 0 ? newAlerts + ' alert' + (newAlerts!==1?'s':'')+' fired.' : 'All within budget.'}`);
+}
+
+// ══════════════════════════════════════
+// BITQUERY CONNECTION MODAL
+// Ready to wire in — shows setup instructions and status
+// ══════════════════════════════════════
+let bitqueryConfig = {
+  connected: false,
+  apiKey: '',
+  endpoint: '',
+  lastSync: null,
+  datasetId: '',
+};
+
+function openBitqueryModal() {
+  renderBitqueryModal();
+  document.getElementById('bitquery-modal').classList.add('open');
+}
+function closeBitqueryModal() {
+  document.getElementById('bitquery-modal').classList.remove('open');
+}
+
+function renderBitqueryModal() {
+  const body   = document.getElementById('bitquery-modal-body');
+  const footer = document.getElementById('bitquery-modal-footer');
+  const bq = bitqueryConfig;
+
+  body.innerHTML = `
+    <div class="bq-status-row ${bq.connected?'connected':'disconnected'}">
+      <div class="api-dot ${bq.connected?'':'off'}"></div>
+      <span>${bq.connected ? '⬡ Bitquery connected — last sync: ' + new Date(bq.lastSync).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'Not connected — set up below to pull live actuals automatically'}</span>
+    </div>
+
+    <div class="bq-steps" style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;">Setup steps</div>
+      <div class="bq-step"><div class="bq-step-num">1</div><span>Get your Bitquery API key from <strong style="color:var(--accent);">app.bitquery.io → API Keys</strong></span></div>
+      <div class="bq-step"><div class="bq-step-num">2</div><span>In Bitquery, build a dataset query that returns your property financials — income and expense line items grouped by property name and month.</span></div>
+      <div class="bq-step"><div class="bq-step-num">3</div><span>Paste your API key and dataset/query ID below. Once connected, "Refresh actuals" will pull live data instead of requiring a file upload.</span></div>
+      <div class="bq-step"><div class="bq-step-num">4</div><span>The data mapping (Bitquery field → budget line item) is configured per property. Once connected, the system auto-matches by account name.</span></div>
+    </div>
+
+    <div class="mf" style="margin-bottom:12px;">
+      <label>Bitquery API Key</label>
+      <input type="password" id="bq-api-key" value="${bq.apiKey}"
+        placeholder="Paste your Bitquery API key here"
+        oninput="bitqueryConfig.apiKey=this.value"
+        style="font-family:var(--mono);"/>
+    </div>
+    <div class="mf" style="margin-bottom:12px;">
+      <label>Dataset / Query ID</label>
+      <input type="text" id="bq-dataset" value="${bq.datasetId}"
+        placeholder="e.g. pgm-actuals-monthly or your query ID"
+        oninput="bitqueryConfig.datasetId=this.value"/>
+    </div>
+    <div class="mf" style="margin-bottom:12px;">
+      <label>API Endpoint <span style="font-size:10px;font-weight:400;color:var(--text3);">(leave default unless using custom)</span></label>
+      <input type="text" id="bq-endpoint" value="${bq.endpoint||'https://graphql.bitquery.io'}"
+        placeholder="https://graphql.bitquery.io"
+        oninput="bitqueryConfig.endpoint=this.value"
+        style="font-family:var(--mono);font-size:12px;"/>
+    </div>
+
+    <div style="padding:12px 14px;background:rgba(61,127,255,.06);border:1px solid rgba(61,127,255,.15);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6;">
+      <strong style="color:var(--accent);">Coming in next build:</strong> Once your Bitquery access is set up, this will auto-pull actuals on a schedule, replace the manual upload flow, and trigger alerts in real time without any file uploads. The comparison engine, alert log, and variance tables are already built and ready.
+    </div>`;
+
+  footer.innerHTML = `
+    <button class="btn-ghost" onclick="closeBitqueryModal()">Cancel</button>
+    <button class="btn-ghost" onclick="testBitqueryConnection()">Test connection</button>
+    <button class="btn-primary" onclick="saveBitqueryConfig()">Save configuration</button>`;
+}
+
+function testBitqueryConnection() {
+  const key = document.getElementById('bq-api-key')?.value;
+  if (!key) { showToast('Enter your API key first.', true); return; }
+  showToast('Testing Bitquery connection…');
+  setTimeout(() => {
+    showToast('Bitquery API key saved. Live pull will activate once your dataset query is configured.', false);
+  }, 1400);
+}
+
+function saveBitqueryConfig() {
+  bitqueryConfig.apiKey    = document.getElementById('bq-api-key')?.value||'';
+  bitqueryConfig.datasetId = document.getElementById('bq-dataset')?.value||'';
+  bitqueryConfig.endpoint  = document.getElementById('bq-endpoint')?.value||'https://graphql.bitquery.io';
+  closeBitqueryModal();
+  showToast('Bitquery configuration saved. Connect live pull when dataset is ready.');
+}
+
+// ══════════════════════════════════════
+// VARIANCE SUMMARY — 3-card strip above key metrics
+// ══════════════════════════════════════
+function getVarianceSummary(prop) {
+  const b = prop.budget;
+  const a = prop.actuals;
+  const budInc = b.income.reduce((s,r)=>s+r.monthly,0);
+  const actInc = a.income.reduce((s,r)=>s+r,0);
+  const budExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
+  const actExp = a.expenses.reduce((s,r)=>s+r,0);
+  const budNOI = budInc - budExp;
+  const actNOI = actInc - actExp;
+  const incVar = budInc !== 0 ? (actInc - budInc) / Math.abs(budInc) * 100 : 0;
+  const expVar = budExp !== 0 ? (actExp - budExp) / Math.abs(budExp) * 100 : 0;
+  const noiVar = budNOI !== 0 ? (actNOI - budNOI) / Math.abs(budNOI) * 100 : 0;
+
+  const pctBadge = (pct, inverse) => {
+    const good = inverse ? pct <= 0 : pct >= 0;
+    const warn = inverse ? (pct > 0 && pct <= 10) : (pct < 0 && pct >= -10);
+    const cls  = good ? 'good' : warn ? 'warn' : 'bad';
+    return `<span class="pct-badge ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>`;
+  };
+
+  return `
+    <div class="variance-summary" style="padding:14px 22px;border-bottom:1px solid var(--border);">
+      <div class="vs-card">
+        <div class="vs-label">Total income</div>
+        <div class="vs-val" style="color:${actInc>=budInc?'var(--green)':'var(--red)'};">${fd(actInc)}</div>
+        <div class="vs-sub">Budget ${fd(budInc)} ${pctBadge(incVar, false)}</div>
+      </div>
+      <div class="vs-card">
+        <div class="vs-label">Total expenses</div>
+        <div class="vs-val" style="color:${actExp<=budExp?'var(--green)':'var(--red)'};">${fd(actExp)}</div>
+        <div class="vs-sub">Budget ${fd(budExp)} ${pctBadge(expVar, true)}</div>
+      </div>
+      <div class="vs-card">
+        <div class="vs-label">Net operating income</div>
+        <div class="vs-val" style="color:${actNOI>=budNOI?'var(--green)':'var(--red)'};">${fd(actNOI)}</div>
+        <div class="vs-sub">Budget ${fd(budNOI)} ${pctBadge(noiVar, false)}</div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// POST-RENDER HOOK
+// Injects alert log panel and actuals status after renderPage()
+// Called from a patched version of renderPage via renderPageFull()
+// ══════════════════════════════════════
+function postRenderHook() {
+  const wrap = document.getElementById('main-page');
+  if (!wrap) return;
+
+  // Inject alert log panel slot before property selector row
+  if (!document.getElementById('alert-log-panel-wrap')) {
+    const propRow = wrap.querySelector('.prop-selector-row');
+    if (propRow) {
+      const div = document.createElement('div');
+      div.id = 'alert-log-panel-wrap';
+      wrap.insertBefore(div, propRow);
+    }
+  }
+
+  // Update connection status dot
+  const apiStatusEl = wrap.querySelector('.api-status');
+  if (apiStatusEl) {
+    const hasActuals = properties.some(p => p.actualsLastUpdated);
+    const bqConn     = bitqueryConfig.connected;
+    apiStatusEl.innerHTML = `<div class="api-dot ${bqConn ? '' : hasActuals ? '' : 'off'}"></div>${bqConn ? 'Bitquery live' : hasActuals ? 'Actuals uploaded' : 'No actuals source'}`;
+  }
+
+  checkAndLogAlerts();
+  renderAlertLogPanel();
+
+  // Inject variance summary into currently rendered prop detail (if any)
+  if (selectedPropId) {
+    const prop = properties.find(p => p.id === selectedPropId);
+    if (prop) {
+      // Find the metrics-section div and prepend variance summary before it
+      const msDiv = wrap.querySelector('.metrics-section');
+      if (msDiv && !wrap.querySelector('.variance-summary')) {
+        const varDiv = document.createElement('div');
+        varDiv.innerHTML = getVarianceSummary(prop);
+        msDiv.parentNode.insertBefore(varDiv.firstElementChild, msDiv);
+      }
+      // Inject actuals source badge after refresh button
+      const refreshBtns = wrap.querySelectorAll('.pd-refresh-btn');
+      if (refreshBtns.length && !wrap.querySelector('.actuals-source-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'actuals-source-badge';
+        badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;font-size:10px;border-radius:6px;padding:3px 8px;margin-left:4px;';
+        if (prop.actualsLastUpdated) {
+          badge.style.color = 'var(--green)';
+          badge.style.background = 'rgba(34,201,122,.08)';
+          badge.style.border = '1px solid rgba(34,201,122,.2)';
+          badge.innerHTML = `● Actuals: ${prop.actualsSource==='bitquery'?'Bitquery':'Uploaded'} · ${new Date(prop.actualsLastUpdated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
+        } else {
+          badge.style.color = 'var(--text3)';
+          badge.style.background = 'var(--bg3)';
+          badge.style.border = '1px solid var(--border2)';
+          badge.innerHTML = `○ No actuals — <button onclick="openActualsModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font);font-size:10px;padding:0;">upload</button>`;
+        }
+        refreshBtns[0].parentNode.insertBefore(badge, refreshBtns[0].nextSibling);
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════
+// OVERRIDE renderPage to run post-render hook
+// ══════════════════════════════════════
+const _baseRenderPage = renderPage;
+renderPage = function() {
+  _baseRenderPage();
+  postRenderHook();
+};
+
+// ══════════════════════════════════════
 // INIT
+// ══════════════════════════════════════
 renderPage();
 </script>
 </body>

@@ -1034,7 +1034,7 @@ function renderPropDetail(prop) {
         <thead><tr><th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th></tr></thead>
         <tbody>
           ${incomeRows}
-          <tr class="tot-row"><td>EGI total</td><td class="r">${fd(budIncome)}</td><td class="r">${fd(actIncome)}</td><td></td><td class="${actIncome>=budIncome?'good':'bad'}">${actIncome>=budIncome?'+':''}${fd(actIncome-budIncome)}</td></tr>
+          <tr class="tot-row"><td>Income total</td><td class="r">${fd(budIncome)}</td><td class="r">${fd(actIncome)}</td><td></td><td class="${actIncome>=budIncome?'good':'bad'}">${actIncome>=budIncome?'+':''}${fd(actIncome-budIncome)}</td></tr>
         </tbody>
       </table>
     </div>
@@ -1911,7 +1911,8 @@ function parsePGMSheet(rows, sheetName) {
   const result = { sheetName, displayName: sheetName, year: new Date().getFullYear(),
     income: [], expenses: [], nonop: [] };
   let currentSection = null;
-  const ARROW = '\u25bc'; // ▼
+  let incomeSignedSum = 0;
+  const ARROW = '\u25bc';
   rows.forEach((row, rowIdx) => {
     const label = String(row[0] || '').trim();
     if (!label) return;
@@ -1933,7 +1934,8 @@ function parsePGMSheet(rows, sheetName) {
     if (UPLOAD_SKIP.has(labelUp)) return;
     if (label.startsWith('PGM')) return;
     if (!currentSection) return;
-    if (currentSection === 'income' && (labelUp.startsWith('NET ') || labelUp.startsWith('TOTAL'))) return;
+    const isIncomeSummaryRow = currentSection === 'income' &&
+      (labelUp.startsWith('NET ') || labelUp.startsWith('TOTAL'));
     const actual2025 = typeof row[1] === 'number' ? row[1] : null;
     const annualColRaw = typeof row[14] === 'number' && isFinite(row[14]) ? row[14] : null;
     let monthlyRaw = null;
@@ -1943,6 +1945,10 @@ function parsePGMSheet(rows, sheetName) {
     }
     if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
     if (monthlyRaw === null && actual2025 !== null) monthlyRaw = actual2025 / 12;
+    if (currentSection === 'income' && monthlyRaw !== null) {
+      incomeSignedSum += monthlyRaw;
+    }
+    if (isIncomeSummaryRow) return;
     if (monthlyRaw === null) return;
     const monthly = Math.round(Math.abs(monthlyRaw) * 100) / 100;
     if (monthly === 0) return;
@@ -1952,10 +1958,20 @@ function parsePGMSheet(rows, sheetName) {
     result[currentSection].push({ label, monthly, annual,
       actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null });
   });
+  const egiFromFormula = Math.round(Math.abs(incomeSignedSum) * 100) / 100;
+  if (egiFromFormula > 0) {
+    const individualSum = result.income.reduce((s, l) => s + l.monthly, 0);
+    const rentAdj = Math.round((egiFromFormula - individualSum) * 100) / 100;
+    if (rentAdj > 1) {
+      result.income.unshift({ label: 'Rent Income', monthly: rentAdj,
+        annual: Math.round(rentAdj * 12 * 100) / 100, actual2025: null });
+    } else if (rentAdj < -100) {
+      result.income = [{ label: 'Gross Income', monthly: egiFromFormula,
+        annual: Math.round(egiFromFormula * 12 * 100) / 100, actual2025: null }];
+    }
+  }
   return result;
 }
-
-// ── MATCH HELPERS ──
 function autoSuggestMatches() {
   uploadState.allSheets.forEach(s => {
     if (uploadState.matchMap[s.sheetName]) return; // already set

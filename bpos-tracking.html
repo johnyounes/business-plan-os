@@ -2298,11 +2298,35 @@ function switchBudgetYear(propId, year) {
   renderPage();
 }
 
-function refreshPropActuals(btn) {
+async function refreshPropActuals(btn) {
   const prop = properties.find(p=>p.id===selectedPropId);
-  const name = prop ? prop.name : 'property';
-  showToast('Pulling latest actuals from Looker Studio…');
-  setTimeout(()=>showToast('Actuals updated for '+name+'.'), 1000);
+  if (!prop) return;
+  if (!bitqueryConfig.edgeFnReady) {
+    showToast('PointGuard not connected yet — click the ⧡ Bitquery button to connect first.', true);
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+  showToast('Pulling ' + prop.name + ' actuals from PointGuard…');
+  try {
+    const now = new Date();
+    const data = await bqFetch({
+      type: 'actuals',
+      propertyName: bqSearchName(prop.name),
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+    });
+    if (data.rows && data.rows.length > 0) {
+      applyBQActuals(prop, data.rows[0]);
+      showToast('Actuals updated for ' + prop.name + '.');
+      renderPage();
+    } else {
+      showToast('No data found for ' + prop.name + ' in PointGuard.', true);
+    }
+  } catch (err) {
+    showToast('Refresh failed: ' + err.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⟳ Refresh actuals'; }
+  }
 }
 
 function showToast(msg,err=false){
@@ -2775,16 +2799,45 @@ function confirmApplyActuals() {
 }
 
 // ══════════════════════════════════════
-// BITQUERY CONNECTION MODAL
-// Ready to wire in — shows setup instructions and status
 // ══════════════════════════════════════
+// BIGQUERY / POINTGUARD LIVE ACTUALS
+// Calls Supabase Edge Function bq-actuals as secure proxy
+// ══════════════════════════════════════
+
+// Property name mapping: BPOS short name -> BigQuery PropertyName search string
+// BigQuery uses full street addresses. Add entries once you have the full list.
+const BQ_NAME_MAP = {
+  // 'beverly': 'Beverly',
+  // 'sierra gardens': 'Sierra Gardens',
+  // 'ave k': '1003-1005 Avenue K',
+};
+
+function bqSearchName(propName) {
+  const mapped = BQ_NAME_MAP[propName.toLowerCase()];
+  return mapped || propName;
+}
+
 let bitqueryConfig = {
   connected: false,
-  apiKey: '',
-  endpoint: '',
   lastSync: null,
-  datasetId: '',
+  edgeFnReady: false,
 };
+
+async function bqFetch(payload) {
+  const res = await fetch(SUPA_URL + '/functions/v1/bq-actuals', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('Edge function error: ' + txt);
+  }
+  return res.json();
+}
 
 function openBitqueryModal() {
   renderBitqueryModal();
@@ -2798,68 +2851,114 @@ function renderBitqueryModal() {
   const body   = document.getElementById('bitquery-modal-body');
   const footer = document.getElementById('bitquery-modal-footer');
   const bq = bitqueryConfig;
+  const syncTime = bq.lastSync
+    ? new Date(bq.lastSync).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
+    : null;
 
-  body.innerHTML = `
-    <div class="bq-status-row ${bq.connected?'connected':'disconnected'}">
-      <div class="api-dot ${bq.connected?'':'off'}"></div>
-      <span>${bq.connected ? '⬡ Bitquery connected — last sync: ' + new Date(bq.lastSync).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'Not connected — set up below to pull live actuals automatically'}</span>
-    </div>
+  body.innerHTML = '<div class="bq-status-row ' + (bq.connected ? 'connected' : 'disconnected') + '">'
+    + '<div class="api-dot ' + (bq.connected ? '' : 'off') + '"></div>'
+    + '<span>' + (bq.connected
+        ? '⧡ PointGuard BigQuery connected' + (syncTime ? ' — last sync: ' + syncTime : '')
+        : 'Not connected — deploy the Edge Function and click Test Connection')
+    + '</span></div>'
+    + '<div class="bq-steps" style="margin-bottom:14px;">'
+    + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;">One-time setup</div>'
+    + '<div class="bq-step"><div class="bq-step-num">1</div><span>Ask the PointGuard team to create a service account with <strong>BigQuery Data Viewer</strong> + <strong>BigQuery Job User</strong> roles on project <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">versatile-hull-395101</code> and send you the JSON key file.</span></div>'
+    + '<div class="bq-step"><div class="bq-step-num">2</div><span>Deploy the Edge Function: <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase functions deploy bq-actuals</code></span></div>'
+    + '<div class="bq-step"><div class="bq-step-num">3</div><span>Set the secret: <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase secrets set GOOGLE_SERVICE_ACCOUNT="$(cat key.json)"</code></span></div>'
+    + '<div class="bq-step"><div class="bq-step-num">4</div><span>Click <strong>Test Connection</strong> below — once green, Refresh actuals on any property pulls live PointGuard data automatically.</span></div>'
+    + '</div>'
+    + '<div style="padding:12px 14px;background:rgba(61,127,255,.06);border:1px solid rgba(61,127,255,.15);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6;">'
+    + '<strong style="color:var(--accent);">What gets pulled:</strong> Monthly income, expenses &amp; NOI from PointGuard &bull; rent roll (all units) &bull; unit status from PropUp. All read-only via BigQuery Data Viewer.'
+    + '</div>';
 
-    <div class="bq-steps" style="margin-bottom:14px;">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;">Setup steps</div>
-      <div class="bq-step"><div class="bq-step-num">1</div><span>Get your Bitquery API key from <strong style="color:var(--accent);">app.bitquery.io → API Keys</strong></span></div>
-      <div class="bq-step"><div class="bq-step-num">2</div><span>In Bitquery, build a dataset query that returns your property financials — income and expense line items grouped by property name and month.</span></div>
-      <div class="bq-step"><div class="bq-step-num">3</div><span>Paste your API key and dataset/query ID below. Once connected, "Refresh actuals" will pull live data instead of requiring a file upload.</span></div>
-      <div class="bq-step"><div class="bq-step-num">4</div><span>The data mapping (Bitquery field → budget line item) is configured per property. Once connected, the system auto-matches by account name.</span></div>
-    </div>
-
-    <div class="mf" style="margin-bottom:12px;">
-      <label>Bitquery API Key</label>
-      <input type="password" id="bq-api-key" value="${bq.apiKey}"
-        placeholder="Paste your Bitquery API key here"
-        oninput="bitqueryConfig.apiKey=this.value"
-        style="font-family:var(--mono);"/>
-    </div>
-    <div class="mf" style="margin-bottom:12px;">
-      <label>Dataset / Query ID</label>
-      <input type="text" id="bq-dataset" value="${bq.datasetId}"
-        placeholder="e.g. pgm-actuals-monthly or your query ID"
-        oninput="bitqueryConfig.datasetId=this.value"/>
-    </div>
-    <div class="mf" style="margin-bottom:12px;">
-      <label>API Endpoint <span style="font-size:10px;font-weight:400;color:var(--text3);">(leave default unless using custom)</span></label>
-      <input type="text" id="bq-endpoint" value="${bq.endpoint||'https://graphql.bitquery.io'}"
-        placeholder="https://graphql.bitquery.io"
-        oninput="bitqueryConfig.endpoint=this.value"
-        style="font-family:var(--mono);font-size:12px;"/>
-    </div>
-
-    <div style="padding:12px 14px;background:rgba(61,127,255,.06);border:1px solid rgba(61,127,255,.15);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6;">
-      <strong style="color:var(--accent);">Coming in next build:</strong> Once your Bitquery access is set up, this will auto-pull actuals on a schedule, replace the manual upload flow, and trigger alerts in real time without any file uploads. The comparison engine, alert log, and variance tables are already built and ready.
-    </div>`;
-
-  footer.innerHTML = `
-    <button class="btn-ghost" onclick="closeBitqueryModal()">Cancel</button>
-    <button class="btn-ghost" onclick="testBitqueryConnection()">Test connection</button>
-    <button class="btn-primary" onclick="saveBitqueryConfig()">Save configuration</button>`;
+  footer.innerHTML = '<button class="btn-ghost" onclick="closeBitqueryModal()">Close</button>'
+    + '<button class="btn-ghost" id="bq-test-btn" onclick="testBigQueryConnection()">Test connection</button>'
+    + (bq.connected ? '<button class="btn-primary" onclick="refreshAllActuals()">Refresh all actuals</button>' : '');
 }
 
-function testBitqueryConnection() {
-  const key = document.getElementById('bq-api-key')?.value;
-  if (!key) { showToast('Enter your API key first.', true); return; }
-  showToast('Testing Bitquery connection…');
-  setTimeout(() => {
-    showToast('Bitquery API key saved. Live pull will activate once your dataset query is configured.', false);
-  }, 1400);
+async function testBigQueryConnection() {
+  const btn = document.getElementById('bq-test-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; }
+  showToast('Pinging PointGuard BigQuery…');
+  try {
+    const now = new Date();
+    const data = await bqFetch({
+      type: 'portfolio_summary',
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+    });
+    bitqueryConfig.connected = true;
+    bitqueryConfig.lastSync  = Date.now();
+    bitqueryConfig.edgeFnReady = true;
+    showToast('Connected! Pulled ' + (data.rows ? data.rows.length : 0) + ' properties from PointGuard.');
+    renderBitqueryModal();
+    renderPage();
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Test connection'; }
+    showToast('Connection failed: ' + err.message, true);
+  }
 }
 
-function saveBitqueryConfig() {
-  bitqueryConfig.apiKey    = document.getElementById('bq-api-key')?.value||'';
-  bitqueryConfig.datasetId = document.getElementById('bq-dataset')?.value||'';
-  bitqueryConfig.endpoint  = document.getElementById('bq-endpoint')?.value||'https://graphql.bitquery.io';
-  closeBitqueryModal();
-  showToast('Bitquery configuration saved. Connect live pull when dataset is ready.');
+async function refreshAllActuals() {
+  showToast('Refreshing actuals for all properties…');
+  const now = new Date();
+  try {
+    const data = await bqFetch({
+      type: 'portfolio_summary',
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+    });
+    let updated = 0;
+    (data.rows || []).forEach(function(row) {
+      const bqName = String(row.PropertyName || '').toLowerCase();
+      const prop = properties.find(function(p) {
+        const searchName = bqSearchName(p.name).toLowerCase();
+        return bqName.includes(searchName) || (searchName.split(' ')[0].length > 3 && bqName.includes(searchName.split(' ')[0]));
+      });
+      if (!prop) return;
+      applyBQActuals(prop, row);
+      updated++;
+    });
+    bitqueryConfig.lastSync = Date.now();
+    showToast('Updated actuals for ' + updated + ' of ' + properties.length + ' properties.');
+    renderPage();
+  } catch (err) {
+    showToast('Refresh failed: ' + err.message, true);
+  }
 }
+
+function applyBQActuals(prop, row) {
+  const income  = Math.abs(parseFloat(row.TotalIncome  || 0));
+  const expense = Math.abs(parseFloat(row.TotalExpense || 0));
+  if (prop.budget.income.length === 1) {
+    prop.actuals.income = [income];
+  } else {
+    const budTotal = prop.budget.income.reduce(function(s,r){return s+r.monthly;},0);
+    prop.actuals.income = prop.budget.income.map(function(r){
+      return budTotal > 0 ? Math.round(income * r.monthly / budTotal * 100) / 100 : 0;
+    });
+  }
+  if (prop.budget.expenses.length === 1) {
+    prop.actuals.expenses = [expense];
+  } else {
+    const budTotal = prop.budget.expenses.reduce(function(s,r){return s+r.monthly;},0);
+    prop.actuals.expenses = prop.budget.expenses.map(function(r){
+      return budTotal > 0 ? Math.round(expense * r.monthly / budTotal * 100) / 100 : 0;
+    });
+  }
+  prop.actualsLastUpdated = Date.now();
+  prop.actualsSource = 'bigquery';
+  prop.bqActuals = {
+    income: income,
+    expense: expense,
+    noi: parseFloat(row.NetIncome || 0),
+    rentIncome: Math.abs(parseFloat(row.RentIncome || 0)),
+    date: row.Date,
+  };
+}
+
+function saveBitqueryConfig() { closeBitqueryModal(); }
 
 // ══════════════════════════════════════
 // VARIANCE SUMMARY — 3-card strip above key metrics
@@ -2928,7 +3027,7 @@ function postRenderHook() {
   if (apiStatusEl) {
     const hasActuals = properties.some(p => p.actualsLastUpdated);
     const bqConn     = bitqueryConfig.connected;
-    apiStatusEl.innerHTML = `<div class="api-dot ${bqConn ? '' : hasActuals ? '' : 'off'}"></div>${bqConn ? 'Bitquery live' : hasActuals ? 'Actuals uploaded' : 'No actuals source'}`;
+    apiStatusEl.innerHTML = `<div class="api-dot ${bqConn ? '' : hasActuals ? '' : 'off'}"></div>${bqConn ? 'PointGuard live' : hasActuals ? 'Actuals uploaded' : 'No actuals source'}`;
   }
 
   checkAndLogAlerts();

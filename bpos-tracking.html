@@ -1168,7 +1168,7 @@ function renderUnitTrackerSection(prop) {
     return '<div class="unit-tracker-section">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
       + '<span style="font-size:13px;font-weight:600;color:var(--text);">Unit Tracker</span>'
-      + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits('' + prop.id + '')">Load Units</button>'
+      + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits(\'' + prop.id + '\')">Load Units</button>'
       + '</div>'
       + '<p style="font-size:12px;color:var(--text3);margin:0;">Click Load Units to fetch live unit data from BigQuery.</p>'
       + '</div>';
@@ -1186,7 +1186,7 @@ function renderUnitTrackerSection(prop) {
   let html = '<div class="unit-tracker-section">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
     + '<span style="font-size:13px;font-weight:600;color:var(--text);">Unit Tracker</span>'
-    + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits('' + prop.id + '')">&#8635; Refresh</button>'
+    + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits(\'' + prop.id + '\')">&#8635; Refresh</button>'
     + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
   pills.forEach(function(p) {

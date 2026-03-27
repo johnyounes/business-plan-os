@@ -1158,10 +1158,92 @@ function renderPropDetail(prop) {
       ${lineItemsHtml}
       ${unitRentHtml}
       ${trendHtml}
+             ${renderUnitTrackerSection(prop)}
     </div>`;
 }
 
 // ══════════════════════════════════════
+function renderUnitTrackerSection(prop) {
+  if (!prop.bqOccupancy && (!prop.bqUnits || !prop.bqUnits.length)) {
+    return '<div class="unit-tracker-section">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+      + '<span style="font-size:13px;font-weight:600;color:var(--text);">Unit Tracker</span>'
+      + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits('' + prop.id + '')">Load Units</button>'
+      + '</div>'
+      + '<p style="font-size:12px;color:var(--text3);margin:0;">Click Load Units to fetch live unit data from BigQuery.</p>'
+      + '</div>';
+  }
+  const occ = prop.bqOccupancy || {};
+  const units = prop.bqUnits || [];
+  const pills = [
+    ['Total', occ.total || 0, '#444'],
+    ['Occupied', occ.occupied || 0, 'var(--green)'],
+    ['Vacant', occ.vacant || 0, 'var(--red)'],
+    ['MakeReady', occ.makeReady || 0, 'var(--amber)'],
+    ['Available', occ.available || 0, 'var(--accent)'],
+    ['Occ%', occ.occPct ? occ.occPct.toFixed(1) + '%' : '—', 'var(--teal)'],
+  ];
+  let html = '<div class="unit-tracker-section">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+    + '<span style="font-size:13px;font-weight:600;color:var(--text);">Unit Tracker</span>'
+    + '<button class="btn-ghost" style="font-size:11px;" onclick="refreshPropUnits('' + prop.id + '')">&#8635; Refresh</button>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
+  pills.forEach(function(p) {
+    html += '<div style="background:var(--bg2);border-radius:8px;padding:6px 12px;text-align:center;min-width:60px;">'
+      + '<div style="font-size:18px;font-weight:700;color:' + p[2] + ';">' + p[1] + '</div>'
+      + '<div style="font-size:10px;color:var(--text3);margin-top:2px;">' + p[0] + '</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  const vacant = units.filter(function(u) { return String(u.Status||'').toLowerCase() === 'vacant'; })
+    .sort(function(a,b) { return (+b.DaysVacant||0) - (+a.DaysVacant||0); });
+  if (vacant.length) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;">Vacant Units (' + vacant.length + ')</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<tr style="color:var(--text3);border-bottom:1px solid var(--border);">'
+      + '<th style="text-align:left;padding:4px 6px;">Unit</th><th style="text-align:left;padding:4px 6px;">Floor Plan</th>'
+      + '<th style="text-align:right;padding:4px 6px;">Days Vacant</th><th style="text-align:left;padding:4px 6px;">Turn Status</th>'
+      + '<th style="text-align:right;padding:4px 6px;">Market Rent</th><th style="text-align:center;padding:4px 6px;">Agro</th></tr>';
+    vacant.forEach(function(u) {
+      const agro = u.AgroMeterRent && u.MarketRent && (+u.MarketRent < +u.AgroMeterRent);
+      html += '<tr style="border-bottom:1px solid var(--border2);">'
+        + '<td style="padding:4px 6px;">' + (u.UnitNumber||'') + '</td>'
+        + '<td style="padding:4px 6px;color:var(--text3);">' + (u.FloorPlan||'') + '</td>'
+        + '<td style="padding:4px 6px;text-align:right;">' + (u.DaysVacant||0) + '</td>'
+        + '<td style="padding:4px 6px;">' + (u.TurnStatus||'') + '</td>'
+        + '<td style="padding:4px 6px;text-align:right;">$' + (+u.MarketRent||0).toLocaleString() + '</td>'
+        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? '⚠️' : '') + '</td></tr>';
+    });
+    html += '</table></div>';
+  }
+  const occupied = units.filter(function(u) { return String(u.Status||'').toLowerCase() === 'occupied'; })
+    .sort(function(a,b) { return new Date(a.LeaseEndDate||'9999') - new Date(b.LeaseEndDate||'9999'); });
+  if (occupied.length) {
+    html += '<div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;">Occupied Units (' + occupied.length + ')</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<tr style="color:var(--text3);border-bottom:1px solid var(--border);">'
+      + '<th style="text-align:left;padding:4px 6px;">Unit</th><th style="text-align:left;padding:4px 6px;">Floor Plan</th>'
+      + '<th style="text-align:left;padding:4px 6px;">Lease End</th>'
+      + '<th style="text-align:right;padding:4px 6px;">Rent</th><th style="text-align:center;padding:4px 6px;">Agro</th></tr>';
+    occupied.forEach(function(u) {
+      const end = u.LeaseEndDate ? new Date(u.LeaseEndDate) : null;
+      const daysLeft = end ? Math.round((end - Date.now()) / 86400000) : 999;
+      const rowColor = daysLeft <= 30 ? 'rgba(232,80,91,0.08)' : daysLeft <= 60 ? 'rgba(251,191,36,0.08)' : daysLeft <= 90 ? 'rgba(34,197,94,0.08)' : '';
+      const agro = u.AgroMeterRent && u.SignedRent && (+u.SignedRent < +u.AgroMeterRent);
+      html += '<tr style="border-bottom:1px solid var(--border2);background:' + rowColor + ';">'
+        + '<td style="padding:4px 6px;">' + (u.UnitNumber||'') + '</td>'
+        + '<td style="padding:4px 6px;color:var(--text3);">' + (u.FloorPlan||'') + '</td>'
+        + '<td style="padding:4px 6px;">' + (u.LeaseEndDate||'') + '</td>'
+        + '<td style="padding:4px 6px;text-align:right;">$' + (+u.SignedRent||0).toLocaleString() + '</td>'
+        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? '⚠️' : '') + '</td></tr>';
+    });
+    html += '</table></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 // INTERACTIONS
 // ══════════════════════════════════════
 function selectProp(id) {
@@ -2823,7 +2905,7 @@ function bqSearchName(propName) {
 let bitqueryConfig = {
   connected: false,
   lastSync: null,
-  edgeFnReady: false,
+  edgeFnReady: true,
 };
 
 async function bqFetch(payload) {
@@ -2877,6 +2959,7 @@ function renderBitqueryModal() {
 
   footer.innerHTML = '<button class="btn-ghost" onclick="closeBitqueryModal()">Close</button>'
     + '<button class="btn-ghost" id="bq-test-btn" onclick="testBigQueryConnection()">Test connection</button>'
+    + '<button class="btn-ghost" id="bq-refresh-all-btn" style="font-size:12px;" onclick="refreshAllActuals()">&#8635; Refresh BQ data</button>'
     + (bq.connected ? '<button class="btn-primary" onclick="refreshAllActuals()">Refresh all actuals</button>' : '');
 }
 
@@ -2907,30 +2990,54 @@ async function refreshAllActuals() {
   showToast('Refreshing actuals for all properties…');
   const now = new Date();
   try {
-    const data = await bqFetch({
-      type: 'portfolio_summary',
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-    });
+    const [data, occData] = await Promise.all([
+      bqFetch({ type: 'portfolio_summary', year: now.getFullYear(), month: now.getMonth() + 1 }),
+      bqFetch({ type: 'portfolio_occupancy' })
+    ]);
     let updated = 0;
     (data.rows || []).forEach(function(row) {
       const bqName = String(row.PropertyName || '').toLowerCase();
       const prop = properties.find(function(p) {
-        const searchName = bqSearchName(p.name).toLowerCase();
-        return bqName.includes(searchName) || (searchName.split(' ')[0].length > 3 && bqName.includes(searchName.split(' ')[0]));
+        const n = p.name.toLowerCase();
+        return bqName.includes(n.split(' ')[0]) || n.includes(bqName.split(' ')[0]);
       });
       if (!prop) return;
       applyBQActuals(prop, row);
       updated++;
     });
+    (occData.rows || []).forEach(function(row) {
+      const bqName = String(row.PropertyName || '').toLowerCase();
+      const prop = properties.find(function(p) {
+        const n = p.name.toLowerCase();
+        return bqName.includes(n.split(' ')[0]) || n.includes(bqName.split(' ')[0]);
+      });
+      if (!prop) return;
+      prop.bqOccupancy = {
+        total: +row.TotalUnits||0, occupied: +row.Occupied||0,
+        vacant: +row.Vacant||0, makeReady: +row.MakeReady||0,
+        available: +row.Available||0, occPct: +row.OccupancyPct||0,
+        leasesExp30d: +row.LeasesExpiring30d||0, leasesExp60d: +row.LeasesExpiring60d||0
+      };
+    });
+    bitqueryConfig.connected = true;
     bitqueryConfig.lastSync = Date.now();
     showToast('Updated actuals for ' + updated + ' of ' + properties.length + ' properties.');
     renderPage();
-  } catch (err) {
-    showToast('Refresh failed: ' + err.message, true);
-  }
+  } catch (err) { showToast('Refresh failed: ' + err.message, true); }
 }
 
+async function refreshPropUnits(propId) {
+  const prop = properties.find(function(p) { return p.id === propId; });
+  if (!prop) return;
+  showToast('Loading unit tracker for ' + prop.name + '…');
+  try {
+    const data = await bqFetch({ type: 'property_units', property: prop.name });
+    prop.bqUnits = data.rows || [];
+    bitqueryConfig.lastSync = Date.now();
+    renderPage();
+    showToast('Unit tracker loaded — ' + prop.bqUnits.length + ' units.');
+  } catch (err) { showToast('Unit tracker failed: ' + err.message, true); }
+}
 function applyBQActuals(prop, row) {
   const income  = Math.abs(parseFloat(row.TotalIncome  || 0));
   const expense = Math.abs(parseFloat(row.TotalExpense || 0));
@@ -3310,6 +3417,8 @@ async function boot() {
     if (overlay) overlay.classList.add('hidden');
     syncBadge('saved', '● Live');
     renderPage();
+    bitqueryConfig.connected = true;
+    setTimeout(function() { refreshAllActuals().catch(function(e){ console.warn('BQ auto-refresh:', e.message); }); }, 1500);
 
   } catch (err) {
     console.warn('[BPOS] DB offline, using demo data:', err.message);

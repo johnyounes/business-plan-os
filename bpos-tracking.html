@@ -2807,9 +2807,12 @@ function confirmApplyActuals() {
 // Property name mapping: BPOS short name -> BigQuery PropertyName search string
 // BigQuery uses full street addresses. Add entries once you have the full list.
 const BQ_NAME_MAP = {
-  // 'beverly': 'Beverly',
-  // 'sierra gardens': 'Sierra Gardens',
-  // 'ave k': '1003-1005 Avenue K',
+  // Maps BPOS short names (lowercase) → BQ search term (matched via LIKE '%term%')
+  // Only entries that don't auto-match are listed here.
+  '1003-1005 ave k':   '1003-1005 Avenue K',   // BQ: "1003-1005 Avenue K - PGO"
+  'greenway 1':        'Greenway Townhomes 1',  // BQ: "The Greenway Townhomes 1 - SD - PGO"
+  'greenway 2':        'Greenway Townhomes 2',  // BQ: "The Greenway Townhomes 2 - SD - PGO"
+  // '6990 dodge st': '???',                    // Not yet in BigQuery — confirm name with PointGuard
 };
 
 function bqSearchName(propName) {

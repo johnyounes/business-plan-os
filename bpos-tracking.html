@@ -1996,7 +1996,7 @@ function buildFormulaMap(ws) {
   for (let r = range.s.r; r <= range.e.r; r++) {
     for (let c = range.s.c; c <= range.e.c; c++) {
       const cell = ws[XLSX.utils.encode_cell({r, c})];
-      if (cell && cell.f && (cell.v === undefined || cell.v === null || (typeof cell.v === 'number' && !isFinite(cell.v)))) {
+      if (cell && cell.f) {
         const ri = r - range.s.r;
         if (!map[ri]) map[ri] = {};
         map[ri][c - range.s.c] = cell.f;

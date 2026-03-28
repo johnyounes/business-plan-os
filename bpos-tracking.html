@@ -733,8 +733,8 @@ function getAlerts(prop) {
   if (T.noiMissPct.enabled && noiPct > T.noiMissPct.value)
     alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiPct.toFixed(1)}%`});
 
-  // Occupancy
-  if (T.occupancyMin.enabled && a.occupancy < T.occupancyMin.value)
+  // Occupancy — only fire when we actually have occupancy data (>0 means it was entered)
+  if (T.occupancyMin.enabled && a.occupancy > 0 && a.occupancy < T.occupancyMin.value)
     alerts.push({sev:'red', icon:'◎', text:`Occupancy at <strong>${fp(a.occupancy)}</strong> — below ${T.occupancyMin.value}% threshold`});
 
   // Expense pace mid-month
@@ -760,8 +760,8 @@ function getAlerts(prop) {
     });
   }
 
-  // Collections
-  if (T.collectionsMin.enabled && a.collections < T.collectionsMin.value)
+  // Collections — only fire when we actually have collections data (>0 means it was entered)
+  if (T.collectionsMin.enabled && a.collections > 0 && a.collections < T.collectionsMin.value)
     alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
 
   // Cash flow negative
@@ -2687,6 +2687,24 @@ function renderActualsModal() {
             <option value="skip" ${!mid||mid==='skip'?'selected':''}>— Skip this property —</option>
             ${properties.map(p=>`<option value="${p.id}" ${mid===p.id?'selected':''}>${p.name} (${p.address})</option>`).join('')}
           </select>
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Occupancy %</label>
+              <input type="number" min="0" max="100" step="0.1"
+                value="${(actualsState.occupancyMap||{})[s.sheetName]||''}"
+                placeholder="e.g. 94.5"
+                oninput="if(!actualsState.occupancyMap)actualsState.occupancyMap={};actualsState.occupancyMap['${s.sheetName}']=parseFloat(this.value)||0"
+                style="width:100%;box-sizing:border-box;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;"/>
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Collections %</label>
+              <input type="number" min="0" max="100" step="0.1"
+                value="${(actualsState.collectionsMap||{})[s.sheetName]||''}"
+                placeholder="e.g. 98.0"
+                oninput="if(!actualsState.collectionsMap)actualsState.collectionsMap={};actualsState.collectionsMap['${s.sheetName}']=parseFloat(this.value)||0"
+                style="width:100%;box-sizing:border-box;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;"/>
+            </div>
+          </div>
           ${matchedProp ? `
             <div style="margin-top:8px;font-size:11px;color:var(--green);padding:5px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
               ✓ Will update actuals for <strong>${matchedProp.name}</strong> · ${s.income.length} income · ${s.expenses.length} expense lines
@@ -2914,6 +2932,11 @@ function confirmApplyActuals() {
     if (prop.actuals.expenses.length !== prop.budget.expenses.length)
       prop.actuals.expenses = prop.budget.expenses.map(()=>0);
     applyActualsToProperty(prop, s, false);
+    // Apply occupancy and collections if entered in the upload form
+    const occ = (actualsState.occupancyMap||{})[s.sheetName];
+    if (occ > 0) prop.actuals.occupancy = occ;
+    const col = (actualsState.collectionsMap||{})[s.sheetName];
+    if (col > 0) prop.actuals.collections = col;
     prop.apiConnected = true;
     updated++;
   });

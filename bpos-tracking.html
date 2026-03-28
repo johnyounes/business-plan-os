@@ -2055,13 +2055,13 @@ function parsePGMSheet(rows, sheetName, ws) {
       incomeSignedSum += monthlyRaw;
     }
     if (monthlyRaw === null) return;
-    const monthly = Math.round(Math.abs(monthlyRaw) * 100) / 100;
+    const monthly = Math.round(monthlyRaw * 100) / 100;
     if (monthly === 0) return;
     const annual = annualColRaw !== null
-      ? Math.round(Math.abs(annualColRaw) * 100) / 100
+      ? Math.round(annualColRaw * 100) / 100
       : Math.round(monthly * 12 * 100) / 100;
     result[currentSection].push({ label, monthly, annual,
-      actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null });
+      actual2025: actual2025 !== null ? Math.round(actual2025 * 100) / 100 : null });
   });
 
   return result;

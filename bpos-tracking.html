@@ -1728,7 +1728,7 @@ const UPLOAD_SKIP = new Set([
   'TOTAL NON-OPERATING EXPENSES (INCL. CAPEX)','NET INCOME (LOSS)',
   'ACCOUNT','2026 ANNUAL BUDGET — MONTHLY BREAKDOWN',
   'NET OPERATING INCOME','NET NON-OPERATING INCOME','NET INCOME',
-  'TOTAL INCOME (LOSS)',
+  'TOTAL INCOME (LOSS)','TOTAL CAPEX','TOTAL NON-OPERATING (EXCL. CAPEX)',
 ]);
 
 function openUploadModal() {
@@ -1988,84 +1988,119 @@ function parseExcelFile(file) {
 }
 
 // ── PGM FORMAT PARSER ──
-// Handles: ▼ section headers, mixed sign income, formula cells, multi-sheet
-function buildFormulaMap(ws) {
-  if (!ws || !ws['!ref']) return {};
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  const map = {};
-  for (let r = range.s.r; r <= range.e.r; r++) {
-    for (let c = range.s.c; c <= range.e.c; c++) {
-      const cell = ws[XLSX.utils.encode_cell({r, c})];
-      if (cell && cell.f) {
-        const ri = r - range.s.r;
-        if (!map[ri]) map[ri] = {};
-        map[ri][c - range.s.c] = cell.f;
-      }
-    }
-  }
-  return map;
-}
-function parsePGMSheet(rows, sheetName, ws) {
-  const result = { sheetName, displayName: sheetName, year: new Date().getFullYear(),
-    income: [], expenses: [], capex: [], nonop: [] };
+// Handles: ▼ section headers, formula-based management fees, multi-sheet
+// Management fees have no cached value in Excel — rates are extracted from
+// the plain-text PGM header row (e.g. "PGM | Mgmt=6%×Income | AMF=3%×Income")
+// and computed as rate × accumulated income total.
+function parsePGMSheet(rows, sheetName) {
+  const result = {
+    sheetName,
+    displayName: sheetName,
+    year: new Date().getFullYear(),
+    income: [],
+    expenses: [],
+    capex: [],
+    nonop: [],
+  };
+
   let currentSection = null;
-  let incomeSignedSum = 0;
-  const formulaMap = ws ? buildFormulaMap(ws) : {};
-  const ARROW = '\u25bc';
+  let incomeSignedSum = 0; // running total of income for mgmt fee calculation
+  let mgmtRate = 0;        // extracted from PGM header: Mgmt=X%×Income
+  let amfRate  = 0;        // extracted from PGM header: AMF=X%×Income
+  const ARROW = '▼';  // ▼
+
   rows.forEach((row, rowIdx) => {
-    const label = String(row[0] || '').trim();
+    const label = String(row[0]||'').trim();
     if (!label) return;
+
     const labelUp = label.toUpperCase();
-    if (rowIdx === 0 && String(row[1] || '').trim() === '' && label.length > 2) {
-      result.displayName = label; return;
-    }
-    if (rowIdx <= 3) {
-      const yrMatch = label.match(/20(\d\d)/);
-      if (yrMatch) result.year = +('20' + yrMatch[1]);
-    }
-    if (label[0] === ARROW || labelUp.startsWith('\u25bc')) {
-      const sect = labelUp.replace('\u25bc', '').trim();
-      if (sect.includes('NON-OPERATING')) currentSection = 'nonop';
-      else if (sect.includes('OPERATING EXPENSES')) currentSection = 'expenses';
-      else if (sect.includes('CAPITAL')) currentSection = 'capex';
-      else if (sect.includes('INCOME')) currentSection = 'income';
+
+    // Row 0: property display name
+    if (rowIdx === 0 && String(row[1]||'').trim()==='' && label.length>2) {
+      result.displayName = label;
       return;
     }
-    if (UPLOAD_SKIP.has(labelUp) && currentSection !== 'income') return;
-    if (label.startsWith('PGM')) return;
+
+    // Detect year from early rows
+    if (rowIdx <= 3) {
+      const yrMatch = label.match(/20(\d\d)/);
+      if (yrMatch) result.year = +('20'+yrMatch[1]);
+    }
+
+    // PGM header row: extract management fee rates from plain text
+    // e.g. "PGM | Mgmt=6%×Income | AMF=3%×Income | ..."
+    if (label.startsWith('PGM')) {
+      const mgmtM = label.match(/Mgmt=(\d+(?:\.\d+)?)%/);
+      if (mgmtM) mgmtRate = parseFloat(mgmtM[1]) / 100;
+      const amfM = label.match(/AMF=(\d+(?:\.\d+)?)%/);
+      if (amfM) amfRate = parseFloat(amfM[1]) / 100;
+      return;
+    }
+
+    // Skip known summary/total rows
+    if (UPLOAD_SKIP.has(labelUp)) return;
+    // Skip any row whose label starts with TOTAL or NET
+    if (/^TOTAL\s/i.test(label) || /^NET\s/i.test(label)) return;
+
+    // Section headers (▼ prefix)
+    if (label[0] === ARROW || labelUp.includes('▼')) {
+      const sect = labelUp.replace(/▼/g,'').trim();
+      if      (sect.includes('NON-OPERATING'))      currentSection = 'nonop';
+      else if (sect.includes('CAPITAL'))            currentSection = 'capex';
+      else if (sect.includes('OPERATING EXPENSES')) currentSection = 'expenses';
+      else if (sect.includes('INCOME'))             currentSection = 'income';
+      return;
+    }
+
     if (!currentSection) return;
-    const isIncomeSummaryRow = currentSection === 'income' &&
-      (labelUp.startsWith('NET ') || labelUp.startsWith('TOTAL'));
-    if (!isIncomeSummaryRow && currentSection !== 'income' &&
-        (labelUp.startsWith('TOTAL') || labelUp.startsWith('NET '))) return;
-    const actual2025 = typeof row[1] === 'number' ? row[1] : null;
-    const annualColRaw = typeof row[14] === 'number' && isFinite(row[14]) ? row[14] : null;
+
+    // 2025 actual (col B = index 1)
+    const actual2025Raw = row[1];
+    const actual2025 = typeof actual2025Raw === 'number' ? actual2025Raw : null;
+
+    // Monthly budget: Jan = col C (index 2) through Dec = col N (index 13)
+    // Formula cells with no cached value arrive as '' via defval:'' — not a number, so skipped
     let monthlyRaw = null;
     for (let i = 2; i <= 13; i++) {
       const v = row[i];
-      if (typeof v === 'number' && isFinite(v) && v !== 0) { monthlyRaw = v; break; }
+      if (typeof v === 'number' && isFinite(v)) { monthlyRaw = v; break; }
     }
-    if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
-    if (monthlyRaw === null && incomeSignedSum > 0) {
-      const fml = formulaMap[rowIdx] && formulaMap[rowIdx][2];
-      if (fml) { const m = fml.match(/^=?(\d+\.?\d*)\*[A-Z]+\d+$/i); if (m) monthlyRaw = parseFloat(m[1]) * incomeSignedSum; }
+
+    // For management/AMF fee rows with no cached value (Excel formula cells),
+    // compute from rate in PGM header × accumulated income total.
+    if (monthlyRaw === null) {
+      if ((labelUp === 'MANAGEMENT FEES' || labelUp.includes('MANAGEMENT FEE')) && mgmtRate > 0 && incomeSignedSum > 0) {
+        monthlyRaw = mgmtRate * incomeSignedSum;
+      } else if ((labelUp === 'ASSET MANAGEMENT FEE' || labelUp.includes('ASSET MANAGEMENT')) && amfRate > 0 && incomeSignedSum > 0) {
+        monthlyRaw = amfRate * incomeSignedSum;
+      }
     }
-    if (isIncomeSummaryRow) return;
-    if (currentSection === 'income' && monthlyRaw !== null) {
-      incomeSignedSum += monthlyRaw;
-    }
+
     if (monthlyRaw === null) return;
+
     const monthly = Math.round(monthlyRaw * 100) / 100;
     if (monthly === 0) return;
-    const annual = annualColRaw !== null
-      ? Math.round(annualColRaw * 100) / 100
-      : Math.round(monthly * 12 * 100) / 100;
-    result[currentSection].push({ label, monthly, annual,
-      actual2025: actual2025 !== null ? Math.round(actual2025 * 100) / 100 : null });
+
+    // Accumulate income total (always positive) for mgmt fee calculation
+    if (currentSection === 'income') {
+      incomeSignedSum += Math.abs(monthly);
+    }
+
+    const entry = {
+      label,
+      monthly,
+      annual: Math.round(monthly * 12 * 100) / 100,
+      actual2025: actual2025 !== null ? Math.round(actual2025 * 100) / 100 : null,
+    };
+
+    if (result[currentSection]) {
+      result[currentSection].push(entry);
+    }
   });
 
   return result;
 }
+
 function autoSuggestMatches() {
   uploadState.allSheets.forEach(s => {
     if (uploadState.matchMap[s.sheetName]) return; // already set

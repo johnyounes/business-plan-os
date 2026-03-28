@@ -389,6 +389,79 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .review-table tr.noi-row td{background:rgba(34,201,122,.04);font-weight:600;font-size:13px;}
 .year-dropdown{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 28px 5px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;transition:border-color .15s;}
 .year-dropdown:focus{border-color:var(--accent);}
+/* ═══════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════ */
+@media (max-width: 768px) {
+  .topnav{height:auto;min-height:48px;padding:8px 12px;flex-wrap:wrap;row-gap:6px;column-gap:6px;}
+  .nav-brand .sep,.nav-brand .current{display:none;}
+  .nav-brand .logo{font-size:16px;}
+  .module-badge{display:none;}
+  .topnav-spacer{min-width:100%;height:0;order:1;}
+  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{order:2;padding:7px 10px;font-size:11px;flex:1;justify-content:center;min-width:0;white-space:nowrap;}
+  .page{padding:14px 12px 72px;}
+  .portfolio-header{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .ph-right{width:100%;gap:6px;flex-wrap:wrap;}
+  .ph-right>*{flex:1;min-width:0;}
+  .portfolio-kpis{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+  .pkpi{padding:11px 12px;}
+  .pkpi-value{font-size:17px;}
+  .pkpi-label{font-size:9px;}
+  .alert-log-panel,.at-risk-panel{margin-bottom:14px;border-radius:10px;}
+  .alp-head,.arp-head{padding:12px 14px;}
+  .alp-body,.arp-body{padding:0 14px 12px;}
+  .prop-selector-row{flex-direction:column;align-items:stretch;gap:8px;}
+  .prop-select{min-width:unset;width:100%;}
+  .prop-detail{border-radius:10px;}
+  .pd-header{flex-direction:column;align-items:flex-start;gap:10px;padding:14px 16px;}
+  .pdh-right{flex-wrap:wrap;gap:6px;width:100%;}
+  .pdh-right>*{flex:1;min-width:0;text-align:center;}
+  .month-progress-wrap{padding:10px 16px;}
+  .variance-summary{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+  .metrics-section{padding:14px 16px;}
+  .metrics-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .metric-card{padding:11px 12px;}
+  .mc-actual{font-size:17px;}
+  .line-section{padding:14px 0;}
+  .line-section .ls-head{padding:0 16px;margin-bottom:10px;}
+  .li-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 4px;}
+  .li-table{min-width:520px;}
+  .li-bar-cell{width:80px;}
+  .capex-section,.unit-rent-section{padding:14px 16px;}
+  .trend-section{padding:14px 16px;overflow:hidden;}
+  .trend-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .trend-grid{min-width:460px;gap:2px;height:68px;}
+  .trend-value,.trend-month-label{font-size:8px;}
+  .modal-overlay{padding:10px;}
+  .modal{width:100%!important;max-width:100%!important;border-radius:12px;}
+  .modal-header{padding:14px 16px 12px;}
+  .modal-header-left p{font-size:11px;}
+  .modal-body{padding:14px 16px;max-height:72vh;overflow-x:hidden;}
+  .modal-footer{padding:12px 16px;gap:8px;}
+  .modal-footer .btn-ghost,.modal-footer .btn-primary{flex:1;text-align:center;}
+  .modal-grid{grid-template-columns:1fr;}
+  .review-table,.pp-table{min-width:480px;}
+  .parsed-preview{overflow-x:auto;}
+  .upload-drop-zone{padding:22px 14px;}
+  .udz-icon{font-size:28px;margin-bottom:8px;}
+  .udz-title{font-size:13px;}
+  .upload-steps{gap:0;}
+  .us-sep{min-width:8px;margin:0 3px;}
+  .upload-step{gap:4px;font-size:10px;}
+  .us-num{width:20px;height:20px;font-size:10px;}
+  .toast{right:12px;left:12px;bottom:16px;justify-content:center;}
+  .btn-primary,.btn-ghost{padding:9px 14px;font-size:12px;}
+  .btn-add-prop{font-size:12px;padding:7px 12px;}
+  .thresh-row{flex-wrap:wrap;gap:8px;}
+  .thresh-label{flex:none;width:100%;}
+}
+@media (max-width:480px){
+  .metrics-grid{grid-template-columns:1fr;}
+  .variance-summary{grid-template-columns:1fr;}
+  .topnav{padding:6px 10px;}
+  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{font-size:10px;padding:6px 8px;}
+  .page{padding:12px 10px 64px;}
+}
 </style>
 
 <!-- EDIT PROPERTY MODAL -->

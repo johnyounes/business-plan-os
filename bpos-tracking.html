@@ -1616,7 +1616,7 @@ function apHandleFile(file) {
       const reader = new FileReader();
       reader.onload = e => {
         try {
-          const wb = XLSX.read(e.target.result,{type:'array'});
+          const wb = XLSX.read(e.target.result,{type:'array',cellFormula:true});
           let parsed = null;
           for (const sn of wb.SheetNames) {
             const ws = wb.Sheets[sn];
@@ -1963,7 +1963,7 @@ function parseExcelFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, {type:'array'});
+      const wb = XLSX.read(e.target.result, {type:'array', cellFormula:true});
       const sheets = [];
       wb.SheetNames.forEach(sheetName => {
         const ws = wb.Sheets[sheetName];
@@ -2781,7 +2781,7 @@ function actualsHandleFile(file) {
       const reader = new FileReader();
       reader.onload = e => {
         try {
-          const wb = XLSX.read(e.target.result, {type:'array'});
+          const wb = XLSX.read(e.target.result, {type:'array', cellFormula:true});
           const sheets = [];
           wb.SheetNames.forEach(sheetName => {
             const ws = wb.Sheets[sheetName];

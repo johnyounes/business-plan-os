@@ -2029,7 +2029,6 @@ function parsePGMSheet(rows, sheetName) {
       if (typeof v === 'number' && isFinite(v) && v !== 0) { monthlyRaw = v; break; }
     }
     if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
-    if (monthlyRaw === null && actual2025 !== null && !labelUp.includes('MANAGEMENT FEE')) monthlyRaw = actual2025 / 12;
     if (isIncomeSummaryRow) return;
     if (currentSection === 'income' && monthlyRaw !== null) {
       incomeSignedSum += monthlyRaw;
@@ -2044,24 +2043,6 @@ function parsePGMSheet(rows, sheetName) {
       actual2025: actual2025 !== null ? Math.round(Math.abs(actual2025) * 100) / 100 : null });
   });
 
-  // Auto-compute Management Fee as 8% of budgeted income if not provided in sheet
-  const hasMgmtFee = result.expenses.some(e => e.label.toUpperCase().includes('MANAGEMENT FEE'));
-  if (!hasMgmtFee && incomeSignedSum > 0) {
-    const mgmtMonthly = Math.round(incomeSignedSum * 0.08 * 100) / 100;
-    if (mgmtMonthly > 0) result.expenses.unshift({ label: 'Management Fees', monthly: mgmtMonthly, annual: Math.round(mgmtMonthly * 12 * 100) / 100, actual2025: null });
-  }
-  const egiFromFormula = Math.round(Math.abs(incomeSignedSum) * 100) / 100;
-  if (egiFromFormula > 0) {
-    const individualSum = result.income.reduce((s, l) => s + l.monthly, 0);
-    const rentAdj = Math.round((egiFromFormula - individualSum) * 100) / 100;
-    if (rentAdj > 1) {
-      result.income.unshift({ label: 'Rent Income', monthly: rentAdj,
-        annual: Math.round(rentAdj * 12 * 100) / 100, actual2025: null });
-    } else if (rentAdj < -100) {
-      result.income = [{ label: 'Gross Income', monthly: egiFromFormula,
-        annual: Math.round(egiFromFormula * 12 * 100) / 100, actual2025: null }];
-    }
-  }
   return result;
 }
 function autoSuggestMatches() {

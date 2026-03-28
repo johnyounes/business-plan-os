@@ -390,55 +390,93 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .year-dropdown{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 28px 5px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;transition:border-color .15s;}
 .year-dropdown:focus{border-color:var(--accent);}
 /* ═══════════════════════
+   DESKTOP NAV ACTIONS
+═══════════════════════ */
+.nav-actions-desktop{display:flex;align-items:center;gap:14px;}
+.hamburger-btn{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;flex-direction:column;gap:4px;align-items:center;justify-content:center;width:38px;height:38px;transition:border-color .15s;}
+.hamburger-btn:hover{border-color:var(--accent);}
+.ham-line{display:block;width:18px;height:2px;background:var(--text2);border-radius:1px;transition:all .2s;}
+
+/* MOBILE NAV DRAWER */
+.mobile-nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+.mobile-nav-overlay.open{opacity:1;pointer-events:auto;}
+.mobile-nav-drawer{position:fixed;top:0;right:0;bottom:0;width:280px;max-width:80vw;background:var(--bg2);border-left:1px solid var(--border2);z-index:201;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.4);}
+.mobile-nav-drawer.open{transform:translateX(0);}
+.mnd-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.mnd-close{background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer;padding:4px;line-height:1;}
+.mnd-close:hover{color:var(--text);}
+.mnd-body{flex:1;padding:12px 0;overflow-y:auto;}
+.mnd-item{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;color:var(--text2);font-size:14px;font-family:var(--font);padding:14px 20px;cursor:pointer;transition:all .15s;text-align:left;}
+.mnd-item:hover{background:rgba(61,127,255,.06);color:var(--text);}
+.mnd-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.mnd-footer{padding:16px 20px;border-top:1px solid var(--border);}
+
+/* ═══════════════════════
    MOBILE RESPONSIVE
 ═══════════════════════ */
 @media (max-width: 768px) {
-  .topnav{height:48px;min-height:48px;padding:0 10px;flex-wrap:nowrap;gap:6px;}
+  /* NAV: hamburger replaces inline buttons */
+  .topnav{height:48px;min-height:48px;padding:0 12px;flex-wrap:nowrap;gap:8px;}
   .nav-brand .sep,.nav-brand .current{display:none;}
-  .nav-brand .logo{font-size:16px;}
-  .module-badge{display:none;}
-  .topnav-spacer{flex:1;min-width:0;height:auto;} .btn-label{display:none;} .btn-icon{font-size:15px;}
-  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{padding:7px 10px;font-size:13px;flex:0 0 auto;justify-content:center;min-width:36px;white-space:nowrap;}
-  .page{padding:14px 12px 72px;}
+  .nav-brand .logo{font-size:18px;}
+  .nav-actions-desktop{display:none;}
+  .hamburger-btn{display:flex;}
+  .page{padding:16px 14px 72px;}
   .portfolio-header{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .ph-left h1{font-size:18px;}
+  .ph-left p{font-size:11px;}
   .ph-right{width:100%;gap:6px;flex-wrap:wrap;}
-  .ph-right>*{flex:1;min-width:0;}
+  .ph-right>*{flex:1;min-width:0;text-align:center;}
+  .ph-right .api-status{display:none;}
   .portfolio-kpis{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
-  .pkpi{padding:11px 12px;}
-  .pkpi-value{font-size:17px;}
+  .pkpi{padding:12px;}
+  .pkpi-value{font-size:18px;}
   .pkpi-label{font-size:9px;}
+  .pkpi-sub{font-size:10px;}
   .alert-log-panel,.at-risk-panel{margin-bottom:14px;border-radius:10px;}
-  .alp-head,.arp-head{padding:10px 14px;flex-wrap:wrap;gap:6px;} .alp-title,.arp-title{font-size:13px;white-space:nowrap;} .alp-count,.arp-count{font-size:11px;white-space:nowrap;} .arp-icon{display:none;} .rpc-head{flex-wrap:wrap;gap:4px;} .rpc-name{font-size:12px;} .rpc-alert-count{font-size:10px;}
-  .alp-body,.arp-body{padding:0 14px 12px;}
+  .alp-head,.arp-head{padding:12px 14px;flex-wrap:wrap;gap:6px;}
+  .alp-title,.arp-title{font-size:13px;white-space:nowrap;}
+  .alp-count,.arp-count{font-size:11px;white-space:nowrap;}
+  .arp-icon{display:none;}
+  .rpc-head{flex-wrap:wrap;gap:4px;}
+  .rpc-name{font-size:12px;}
+  .rpc-alert-count{font-size:9px;}
+  .alp-body,.arp-body{padding:0 12px 12px;}
+  .risk-prop-card{padding:10px 12px;}
+  .alert-chip{font-size:10px;padding:5px 8px;}
   .prop-selector-row{flex-direction:column;align-items:stretch;gap:8px;}
-  .prop-select{min-width:unset;width:100%;}
+  .prop-select{min-width:unset;width:100%;font-size:14px;padding:12px 36px 12px 14px;}
   .prop-detail{border-radius:10px;}
   .pd-header{flex-direction:column;align-items:flex-start;gap:10px;padding:14px 16px;}
+  .pdh-left h2{font-size:15px;}
   .pdh-right{flex-wrap:wrap;gap:6px;width:100%;}
-  .pdh-right>*{flex:1;min-width:0;text-align:center;}
-  .month-progress-wrap{padding:10px 16px;}
+  .pdh-right>*{flex:1;min-width:0;text-align:center;font-size:11px;}
+  .month-progress-wrap{padding:10px 14px;}
   .variance-summary{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
-  .metrics-section{padding:14px 16px;}
+  .vs-card{padding:10px 12px;}
+  .vs-val{font-size:14px;}
+  .metrics-section{padding:14px 14px;}
   .metrics-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
-  .metric-card{padding:11px 12px;}
-  .mc-actual{font-size:17px;}
+  .metric-card{padding:10px 12px;}
+  .mc-actual{font-size:16px;}
   .line-section{padding:14px 0;}
-  .line-section .ls-head{padding:0 16px;margin-bottom:10px;}
-  .li-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 4px;}
+  .line-section .ls-head{padding:0 14px;margin-bottom:10px;}
+  .li-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 14px 4px;}
   .li-table{min-width:520px;}
   .li-bar-cell{width:80px;}
-  .capex-section,.unit-rent-section{padding:14px 16px;}
-  .trend-section{padding:14px 16px;overflow:hidden;}
+  .capex-section,.unit-rent-section{padding:14px 14px;}
+  .trend-section{padding:14px 14px;overflow:hidden;}
   .trend-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .trend-grid{min-width:460px;gap:2px;height:68px;}
   .trend-value,.trend-month-label{font-size:8px;}
-  .modal-overlay{padding:10px;}
-  .modal{width:100%!important;max-width:100%!important;border-radius:12px;}
+  .modal-overlay{padding:0;}
+  .modal{width:100%!important;max-width:100%!important;min-height:100vh;border-radius:0;display:flex;flex-direction:column;}
   .modal-header{padding:14px 16px 12px;}
+  .modal-header-left h2{font-size:16px;}
   .modal-header-left p{font-size:11px;}
-  .modal-body{padding:14px 16px;max-height:72vh;overflow-x:hidden;}
-  .modal-footer{padding:12px 16px;gap:8px;}
-  .modal-footer .btn-ghost,.modal-footer .btn-primary{flex:1;text-align:center;}
+  .modal-body{padding:14px 16px;flex:1;max-height:none;overflow-y:auto;overflow-x:hidden;}
+  .modal-footer{padding:12px 16px;gap:8px;position:sticky;bottom:0;background:var(--bg2);border-top:1px solid var(--border);}
+  .modal-footer .btn-ghost,.modal-footer .btn-primary{flex:1;text-align:center;padding:12px 14px;}
   .modal-grid{grid-template-columns:1fr;}
   .review-table,.pp-table{min-width:480px;}
   .parsed-preview{overflow-x:auto;}
@@ -450,17 +488,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .upload-step{gap:4px;font-size:10px;}
   .us-num{width:20px;height:20px;font-size:10px;}
   .toast{right:12px;left:12px;bottom:16px;justify-content:center;}
-  .btn-primary,.btn-ghost{padding:9px 14px;font-size:12px;}
-  .btn-add-prop{font-size:12px;padding:7px 12px;}
+  .btn-primary,.btn-ghost{padding:10px 14px;font-size:13px;}
+  .btn-add-prop{font-size:12px;padding:8px 12px;}
   .thresh-row{flex-wrap:wrap;gap:8px;}
   .thresh-label{flex:none;width:100%;}
 }
 @media (max-width:480px){
+  .portfolio-kpis{grid-template-columns:1fr;gap:6px;}
   .metrics-grid{grid-template-columns:1fr;}
   .variance-summary{grid-template-columns:1fr;}
-  .topnav{padding:6px 10px;}
-  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{font-size:10px;padding:6px 8px;}
   .page{padding:12px 10px 64px;}
+  .ph-left h1{font-size:16px;}
+  .prop-select{font-size:15px;padding:14px 36px 14px 14px;}
+  .pkpi-value{font-size:20px;}
 }
 </style>
 
@@ -492,11 +532,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <span class="sep">›</span><span class="current">Budget Tracking</span>
   </div>
   <div class="topnav-spacer"></div>
-  <button class="actuals-upload-btn" onclick="openActualsModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload actuals</span></button>
-  <button class="bitquery-connect-btn" onclick="openBitqueryModal()"><span class="btn-icon">⬡</span><span class="btn-label"> Bitquery</span></button>
-  <button class="settings-btn" onclick="openUploadModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload budget</span></button>
-  <button class="settings-btn" onclick="openAlertSettings()"><span class="btn-icon">⚙</span><span class="btn-label"> Alerts</span></button>
-  <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
+  <div class="nav-actions-desktop">
+    <button class="actuals-upload-btn" onclick="openActualsModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload actuals</span></button>
+    <button class="bitquery-connect-btn" onclick="openBitqueryModal()"><span class="btn-icon">⬡</span><span class="btn-label"> Bitquery</span></button>
+    <button class="settings-btn" onclick="openUploadModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload budget</span></button>
+    <button class="settings-btn" onclick="openAlertSettings()"><span class="btn-icon">⚙</span><span class="btn-label"> Alerts</span></button>
+    <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
+  </div>
+  <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Menu">
+    <span class="ham-line"></span><span class="ham-line"></span><span class="ham-line"></span>
+  </button>
+</div>
+
+<!-- MOBILE NAV DRAWER -->
+<div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="closeMobileNav()"></div>
+<div class="mobile-nav-drawer" id="mobile-nav-drawer">
+  <div class="mnd-header">
+    <span class="logo" style="font-family:var(--display);font-size:16px;color:var(--accent);">BPOS</span>
+    <button class="mnd-close" onclick="closeMobileNav()">×</button>
+  </div>
+  <div class="mnd-body">
+    <button class="mnd-item" onclick="closeMobileNav();openActualsModal()"><span class="mnd-icon">⤒</span> Upload actuals</button>
+    <button class="mnd-item" onclick="closeMobileNav();openBitqueryModal()"><span class="mnd-icon">⬡</span> Bitquery</button>
+    <button class="mnd-item" onclick="closeMobileNav();openUploadModal()"><span class="mnd-icon">⤒</span> Upload budget</button>
+    <button class="mnd-item" onclick="closeMobileNav();openAlertSettings()"><span class="mnd-icon">⚙</span> Alerts</button>
+  </div>
+  <div class="mnd-footer">
+    <span class="module-badge">Module 7 · Operations</span>
+  </div>
 </div>
 
 <div class="page" id="main-page">
@@ -923,26 +986,31 @@ function renderPage() {
       <div class="arp-body ${arpOpen?'open':''}" id="arp-body">
         ${riskProps.length===0
           ? `<div style="padding:16px 0;font-size:13px;color:var(--text3);text-align:center;">All properties tracking to budget. No active alerts.</div>`
-          : `<div class="risk-prop-list">
-              ${riskProps.map(p=>{
+          : (()=>{
+              const isMobile = window.innerWidth <= 768;
+              const MOBILE_LIMIT = 5;
+              const showAll = !isMobile || arpShowAll;
+              const visibleProps = showAll ? riskProps : riskProps.slice(0, MOBILE_LIMIT);
+              const hiddenCount = riskProps.length - MOBILE_LIMIT;
+              return `<div class="risk-prop-list">
+              ${visibleProps.map(p=>{
                 const als=getAlerts(p);
                 return `<div class="risk-prop-card" onclick="selectProp(${p.id})">
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
-                    <span style="font-size:11px;color:var(--text3);">${p.address} · ${p.units} units</span>
-                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                    <span class="rpc-alert-count">${als.length} alert${als.length>1?"s":""}</span>
                   </div>
                   <div class="rpc-alerts">
-                    ${als.slice(0,3).map(al=>`
-                      <div class="alert-chip ${al.sev}">
-                        <span class="chip-icon">${al.icon}</span>
-                        <span class="chip-text">${al.text}</span>
-                      </div>`).join('')}
-                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts — click to view all</div>`:''}
+                    ${als.map(a=>{
+                      const cls = a.severity==="critical"?"chip-red":a.severity==="warning"?"chip-amber":"chip-blue";
+                      return `<span class="alert-chip ${cls}">${a.label}</span>`;
+                    }).join("")}
                   </div>
                 </div>`;
               }).join('')}
-            </div>`}
+              ${isMobile && hiddenCount > 0 ? `<button onclick="toggleArpShowAll()" style="width:100%;padding:10px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;margin-top:4px;">${arpShowAll ? 'Show fewer' : `Show ${hiddenCount} more properties`}</button>` : ''}
+            </div>`;
+            })()}
       </div>
     </div>
 
@@ -1334,6 +1402,36 @@ function toggleArp() {
   const chev=document.getElementById('arp-chev');
   if(body){body.classList.toggle('open',arpOpen);}
   if(chev){chev.classList.toggle('open',arpOpen);}
+}
+
+// ══════════════════════════════════════
+// MOBILE NAV DRAWER
+// ══════════════════════════════════════
+function toggleMobileNav() {
+  const overlay = document.getElementById('mobile-nav-overlay');
+  const drawer = document.getElementById('mobile-nav-drawer');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) { closeMobileNav(); } else {
+    overlay.classList.add('open');
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+function closeMobileNav() {
+  const overlay = document.getElementById('mobile-nav-overlay');
+  const drawer = document.getElementById('mobile-nav-drawer');
+  overlay.classList.remove('open');
+  drawer.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ══════════════════════════════════════
+// MOBILE AT-RISK: show top N with expand
+// ══════════════════════════════════════
+let arpShowAll = false;
+function toggleArpShowAll() {
+  arpShowAll = !arpShowAll;
+  renderPage();
 }
 
 // ══════════════════════════════════════

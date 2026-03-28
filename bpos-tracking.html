@@ -2019,6 +2019,8 @@ function parsePGMSheet(rows, sheetName) {
     if (!currentSection) return;
     const isIncomeSummaryRow = currentSection === 'income' &&
       (labelUp.startsWith('NET ') || labelUp.startsWith('TOTAL'));
+    if (!isIncomeSummaryRow && currentSection !== 'income' &&
+        (labelUp.startsWith('TOTAL') || labelUp.startsWith('NET '))) return;
     const actual2025 = typeof row[1] === 'number' ? row[1] : null;
     const annualColRaw = typeof row[14] === 'number' && isFinite(row[14]) ? row[14] : null;
     let monthlyRaw = null;
@@ -2028,10 +2030,10 @@ function parsePGMSheet(rows, sheetName) {
     }
     if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
     if (monthlyRaw === null && actual2025 !== null && !labelUp.includes('MANAGEMENT FEE')) monthlyRaw = actual2025 / 12;
+    if (isIncomeSummaryRow) return;
     if (currentSection === 'income' && monthlyRaw !== null) {
       incomeSignedSum += monthlyRaw;
     }
-    if (isIncomeSummaryRow) return;
     if (monthlyRaw === null) return;
     const monthly = Math.round(Math.abs(monthlyRaw) * 100) / 100;
     if (monthly === 0) return;

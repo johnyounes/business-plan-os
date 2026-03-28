@@ -393,12 +393,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
    MOBILE RESPONSIVE
 ═══════════════════════ */
 @media (max-width: 768px) {
-  .topnav{height:auto;min-height:48px;padding:8px 12px;flex-wrap:wrap;row-gap:6px;column-gap:6px;}
+  .topnav{height:48px;min-height:48px;padding:0 10px;flex-wrap:nowrap;gap:6px;}
   .nav-brand .sep,.nav-brand .current{display:none;}
   .nav-brand .logo{font-size:16px;}
   .module-badge{display:none;}
-  .topnav-spacer{min-width:100%;height:0;order:1;}
-  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{order:2;padding:7px 10px;font-size:11px;flex:1;justify-content:center;min-width:0;white-space:nowrap;}
+  .topnav-spacer{flex:1;min-width:0;height:auto;} .btn-label{display:none;} .btn-icon{font-size:15px;}
+  .actuals-upload-btn,.bitquery-connect-btn,.settings-btn{padding:7px 10px;font-size:13px;flex:0 0 auto;justify-content:center;min-width:36px;white-space:nowrap;}
   .page{padding:14px 12px 72px;}
   .portfolio-header{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:14px;}
   .ph-right{width:100%;gap:6px;flex-wrap:wrap;}
@@ -408,7 +408,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .pkpi-value{font-size:17px;}
   .pkpi-label{font-size:9px;}
   .alert-log-panel,.at-risk-panel{margin-bottom:14px;border-radius:10px;}
-  .alp-head,.arp-head{padding:12px 14px;}
+  .alp-head,.arp-head{padding:10px 14px;flex-wrap:wrap;gap:6px;} .alp-title,.arp-title{font-size:13px;white-space:nowrap;} .alp-count,.arp-count{font-size:11px;white-space:nowrap;} .arp-icon{display:none;} .rpc-head{flex-wrap:wrap;gap:4px;} .rpc-name{font-size:12px;} .rpc-alert-count{font-size:10px;}
   .alp-body,.arp-body{padding:0 14px 12px;}
   .prop-selector-row{flex-direction:column;align-items:stretch;gap:8px;}
   .prop-select{min-width:unset;width:100%;}
@@ -492,10 +492,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <span class="sep">›</span><span class="current">Budget Tracking</span>
   </div>
   <div class="topnav-spacer"></div>
-  <button class="actuals-upload-btn" onclick="openActualsModal()">⤒ Upload actuals</button>
-  <button class="bitquery-connect-btn" onclick="openBitqueryModal()">⬡ Bitquery</button>
-  <button class="settings-btn" onclick="openUploadModal()">⤒ Upload budget</button>
-  <button class="settings-btn" onclick="openAlertSettings()">⚙ Alert thresholds</button>
+  <button class="actuals-upload-btn" onclick="openActualsModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload actuals</span></button>
+  <button class="bitquery-connect-btn" onclick="openBitqueryModal()"><span class="btn-icon">⬡</span><span class="btn-label"> Bitquery</span></button>
+  <button class="settings-btn" onclick="openUploadModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload budget</span></button>
+  <button class="settings-btn" onclick="openAlertSettings()"><span class="btn-icon">⚙</span><span class="btn-label"> Alerts</span></button>
   <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
 </div>
 
@@ -788,7 +788,7 @@ let properties = [
 
 let selectedPropId = null;
 let budgetModalPropId = null;
-let arpOpen = true;
+let arpOpen = window.innerWidth > 900; // collapsed by default on mobile
 
 // ══════════════════════════════════════
 // ALERT ENGINE

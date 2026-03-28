@@ -1621,7 +1621,7 @@ function apHandleFile(file) {
           for (const sn of wb.SheetNames) {
             const ws = wb.Sheets[sn];
             const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-            const p = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sn);
+            const p = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sn, ws);
             if (p.income.length>0||p.expenses.length>0) { parsed=p; break; }
           }
           if (!parsed) { showToast('No budget data found.',true); return; }
@@ -1968,7 +1968,7 @@ function parseExcelFile(file) {
       wb.SheetNames.forEach(sheetName => {
         const ws = wb.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-        const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName);
+        const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName, ws);
         if (parsed.income.length > 0 || parsed.expenses.length > 0) {
           sheets.push(parsed);
         }
@@ -1989,11 +1989,28 @@ function parseExcelFile(file) {
 
 // ── PGM FORMAT PARSER ──
 // Handles: ▼ section headers, mixed sign income, formula cells, multi-sheet
-function parsePGMSheet(rows, sheetName) {
+function buildFormulaMap(ws) {
+  if (!ws || !ws['!ref']) return {};
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const map = {};
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      if (cell && cell.f && (cell.v === undefined || cell.v === null || (typeof cell.v === 'number' && !isFinite(cell.v)))) {
+        const ri = r - range.s.r;
+        if (!map[ri]) map[ri] = {};
+        map[ri][c - range.s.c] = cell.f;
+      }
+    }
+  }
+  return map;
+}
+function parsePGMSheet(rows, sheetName, ws) {
   const result = { sheetName, displayName: sheetName, year: new Date().getFullYear(),
     income: [], expenses: [], capex: [], nonop: [] };
   let currentSection = null;
   let incomeSignedSum = 0;
+  const formulaMap = ws ? buildFormulaMap(ws) : {};
   const ARROW = '\u25bc';
   rows.forEach((row, rowIdx) => {
     const label = String(row[0] || '').trim();
@@ -2029,6 +2046,10 @@ function parsePGMSheet(rows, sheetName) {
       if (typeof v === 'number' && isFinite(v) && v !== 0) { monthlyRaw = v; break; }
     }
     if (monthlyRaw === null && annualColRaw !== null) monthlyRaw = annualColRaw / 12;
+    if (monthlyRaw === null && incomeSignedSum > 0) {
+      const fml = formulaMap[rowIdx] && formulaMap[rowIdx][2];
+      if (fml) { const m = fml.match(/^=?(\d+\.?\d*)\*[A-Z]+\d+$/i); if (m) monthlyRaw = parseFloat(m[1]) * incomeSignedSum; }
+    }
     if (isIncomeSummaryRow) return;
     if (currentSection === 'income' && monthlyRaw !== null) {
       incomeSignedSum += monthlyRaw;
@@ -2765,7 +2786,7 @@ function actualsHandleFile(file) {
           wb.SheetNames.forEach(sheetName => {
             const ws = wb.Sheets[sheetName];
             const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-            const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName);
+            const parsed = parsePGMSheet(rows.map(r=>r.map(c=>c===null||c===undefined?'':c)), sheetName, ws);
             if (parsed.income.length > 0 || parsed.expenses.length > 0) sheets.push(parsed);
           });
           if (!sheets.length) { showToast('No actuals data found. Check the file format.', true); return; }

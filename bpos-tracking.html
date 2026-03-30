@@ -998,13 +998,15 @@ function renderPage() {
                 return `<div class="risk-prop-card" onclick="selectProp(${p.id})">
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
-                    <span class="rpc-alert-count">${als.length} alert${als.length>1?"s":""}</span>
+                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical \u00b7 ${als.filter(a=>a.sev==='amber').length} warnings</span>
                   </div>
                   <div class="rpc-alerts">
-                    ${als.map(a=>{
-                      const cls = a.severity==="critical"?"chip-red":a.severity==="warning"?"chip-amber":"chip-blue";
-                      return `<span class="alert-chip ${cls}">${a.label}</span>`;
-                    }).join("")}
+                    ${als.slice(0,3).map(al=>`
+                      <div class="alert-chip ${al.sev}">
+                        <span class="chip-icon">${al.icon}</span>
+                        <span class="chip-text">${al.text}</span>
+                      </div>`).join('')}
+                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts \u2014 click to view all</div>`:''}
                   </div>
                 </div>`;
               }).join('')}

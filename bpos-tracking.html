@@ -1204,17 +1204,36 @@ function renderPropDetail(prop) {
         </tbody>
       </table>
     </div>
-    ${ (b && b.nonop && b.nonop.length) ? `
+    ${ (b && b.nonop && b.nonop.length) ? (()=>{
+      // Ensure nonop actuals array exists and matches budget length
+      if (!a.nonop || a.nonop.length !== b.nonop.length) a.nonop = b.nonop.map(()=>0);
+      const nonopRows = b.nonop.map((r,i)=>{
+        const act = a.nonop[i]||0;
+        const vari = act - r.monthly;
+        const pct = r.monthly > 0 ? (act / r.monthly * 100) : 0;
+        const isAlert = vari > r.monthly * 0.1;
+        const barColor = pct <= 100 ? 'var(--green)' : pct <= 115 ? 'var(--amber)' : 'var(--red)';
+        const isCapex = r.label.toLowerCase().includes('capex') || r.label.toLowerCase().includes('capital');
+        return '<tr class="' + (isAlert ? 'alert-row' : '') + '">' +
+          '<td class="lbl">' + r.label + (isCapex ? '<span style="font-size:9px;color:var(--amber);margin-left:6px;">CAPEX</span>' : '') + (isAlert ? '<span class="inline-alert ia-red">Over budget</span>' : '') + '</td>' +
+          '<td class="r">' + fd(r.monthly) + '</td>' +
+          '<td class="r">' + fd(act) + '</td>' +
+          '<td class="li-bar-cell"><div class="li-bar"><div class="li-bar-fill" style="width:' + Math.min(pct,130) + '%;background:' + barColor + ';"></div></div></td>' +
+          '<td class="' + (vari > 0 ? 'bad' : vari < 0 ? 'good' : 'neu') + '">' + (vari > 0 ? '+' : '') + fd(vari) + '</td></tr>';
+      }).join('');
+      const budNonop = b.nonop.reduce((x,l) => x + l.monthly, 0);
+      const actNonop = a.nonop.reduce((x,v) => x + v, 0);
+      return `
     <div class="line-section">
-      <div class="ls-head"><span class="ls-title">NON-OPERATING EXPENSES</span></div>
+      <div class="ls-head"><span class="ls-title">Non-operating expenses (incl. CapEx)</span></div>
       <table class="li-table"><thead><tr>
-        <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th>
+        <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>vs. budget</th><th class="r">Variance</th>
       </tr></thead><tbody>
-        ${b.nonop.map(l => `<tr><td>${l.label}</td><td class="r">${fd(l.monthly)}</td><td class="r">—</td><td></td><td></td></tr>`).join('')}
-        <tr class="tot-row"><td>Total Non-Operating</td><td class="r">${fd(b.nonop.reduce((x,l)=>x+l.monthly,0))}</td><td class="r">—</td><td></td><td></td></tr>
+        ${nonopRows}
+        <tr class="tot-row"><td>Total non-operating</td><td class="r">${fd(budNonop)}</td><td class="r">${fd(actNonop)}</td><td></td><td class="${actNonop<=budNonop?'good':'bad'}">${actNonop>budNonop?'+':''}${fd(actNonop-budNonop)}</td></tr>
       </tbody></table>
-    </div>
-    ` : '' }`;
+    </div>`;
+    })() : '' }`;
 
   // UNIT RENTS
   const unitRentRows = a.unitRents.map(u=>{
@@ -1820,7 +1839,7 @@ function apSave() {
     income:   s.income.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
     expenses: s.expenses.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
     nonop:    s.nonop.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
-    capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.monthly||0)*12,
+    capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(parseFloat(r.monthly)||0)*12,0),
   };
   const id = Date.now();
   properties.push({
@@ -1833,6 +1852,7 @@ function apSave() {
       occupancy:0, collections:0,
       income:  budget.income.map(()=>0),
       expenses:budget.expenses.map(()=>0),
+      nonop:   budget.nonop.map(()=>0),
       capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
     },
     apiConnected:false,
@@ -2315,6 +2335,12 @@ function parsePGMSheet(rows, sheetName) {
     }
   });
 
+  // Merge capex items into nonop so they appear in the Non-Operating Expenses section
+  if (result.capex.length) {
+    result.nonop.push(...result.capex);
+    result.capex = [];
+  }
+
   return result;
 }
 
@@ -2373,7 +2399,7 @@ function confirmSaveBudget() {
       income:   s.income.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
       expenses: s.expenses.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
       nonop:    s.nonop.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
-      capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.annual)||0,
+      capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(r.annual||(r.monthly*12)),0),
     };
 
     if (isNew) {
@@ -2388,6 +2414,7 @@ function confirmSaveBudget() {
           occupancy:0, collections:0,
           income: budget.income.map(()=>0),
           expenses: budget.expenses.map(()=>0),
+          nonop: budget.nonop.map(()=>0),
           capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
         },
         apiConnected:false,
@@ -2406,6 +2433,8 @@ function confirmSaveBudget() {
           prop.actuals.income = budget.income.map(()=>0);
         if (prop.actuals.expenses.length !== budget.expenses.length)
           prop.actuals.expenses = budget.expenses.map(()=>0);
+        if (!prop.actuals.nonop || prop.actuals.nonop.length !== budget.nonop.length)
+          prop.actuals.nonop = budget.nonop.map(()=>0);
         updated++;
       }
     }
@@ -3123,9 +3152,22 @@ function applyActualsToProperty(prop, sheet, dryRun) {
     const idx = matchLine(prop.budget.expenses, line.label);
     if (idx >= 0) prop.actuals.expenses[idx] = line.monthly;
   });
-  // Apply CapEx from nonop if present
-  const capexLine = sheet.nonop?.find(r => r.label.toLowerCase().includes('capex'));
-  if (capexLine) prop.actuals.capexSpent = capexLine.monthly * 12; // annualize for capex tracking
+  // Apply non-operating / CapEx actuals line-by-line
+  if (sheet.nonop && sheet.nonop.length && prop.budget.nonop && prop.budget.nonop.length) {
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== prop.budget.nonop.length)
+      prop.actuals.nonop = prop.budget.nonop.map(()=>0);
+    sheet.nonop.forEach(line => {
+      const idx = matchLine(prop.budget.nonop, line.label);
+      if (idx >= 0) prop.actuals.nonop[idx] = line.monthly;
+    });
+  }
+  // Also set capexSpent total for the summary card (sum of all capex-tagged nonop actuals)
+  const capexTotal = (prop.budget.nonop || []).reduce((sum, r, i) => {
+    const l = r.label.toLowerCase();
+    if (l.includes('capex') || l.includes('capital')) sum += (prop.actuals.nonop?.[i] || 0);
+    return sum;
+  }, 0);
+  if (capexTotal > 0) prop.actuals.capexSpent = capexTotal * 12; // annualize for capex tracking card
   prop.actualsLastUpdated = new Date();
   prop.actualsSource = 'upload';
 }
@@ -3147,6 +3189,8 @@ function confirmApplyActuals() {
       prop.actuals.income = prop.budget.income.map(()=>0);
     if (prop.actuals.expenses.length !== prop.budget.expenses.length)
       prop.actuals.expenses = prop.budget.expenses.map(()=>0);
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== (prop.budget.nonop||[]).length)
+      prop.actuals.nonop = (prop.budget.nonop||[]).map(()=>0);
     applyActualsToProperty(prop, s, false);
     // Apply occupancy and collections if entered in the upload form
     const occ = (actualsState.occupancyMap||{})[s.sheetName];
@@ -3343,6 +3387,29 @@ function applyBQActuals(prop, row) {
       return budTotal > 0 ? Math.round(expense * r.monthly / budTotal * 100) / 100 : 0;
     });
   }
+  // Non-operating / CapEx actuals from BigQuery (if fields available)
+  const capexRaw = parseFloat(row.CAPEX || row.TotalCapex || row.CapExSpent || 0);
+  const nonopRaw = parseFloat(row.TotalNonOperating || row.NonOperatingExpenses || 0);
+  const capexVal = Math.abs(capexRaw);
+  const nonopVal = nonopRaw ? Math.abs(nonopRaw) : capexVal; // fallback to capex if no separate nonop total
+
+  if (nonopVal > 0 && prop.budget.nonop && prop.budget.nonop.length) {
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== prop.budget.nonop.length)
+      prop.actuals.nonop = prop.budget.nonop.map(function(){return 0;});
+    if (prop.budget.nonop.length === 1) {
+      prop.actuals.nonop = [nonopVal];
+    } else {
+      var budNonopTotal = prop.budget.nonop.reduce(function(s,r){return s+r.monthly;},0);
+      prop.actuals.nonop = prop.budget.nonop.map(function(r){
+        return budNonopTotal > 0 ? Math.round(nonopVal * r.monthly / budNonopTotal * 100) / 100 : 0;
+      });
+    }
+  }
+  // Also set capexSpent for the summary card
+  if (capexVal > 0) {
+    prop.actuals.capexSpent = capexVal;
+  }
+
   prop.actualsLastUpdated = Date.now();
   prop.actualsSource = 'bigquery';
   prop.bqActuals = {
@@ -3350,6 +3417,8 @@ function applyBQActuals(prop, row) {
     expense: expense,
     noi: parseFloat(row.NetIncome || 0),
     rentIncome: Math.abs(parseFloat(row.RentIncome || 0)),
+    capex: capexVal,
+    nonop: nonopVal,
     date: row.Date,
   };
 }
@@ -3598,6 +3667,7 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
         collections: act?.collections  || 0,
         income:      act?.income_values  || budget.income.map(() => 0),
         expenses:    act?.expense_values || budget.expenses.map(() => 0),
+        nonop:       act?.nonop_values   || (budget.nonop||[]).map(() => 0),
         capexSpent:  act?.capex_spent  || 0,
         unitRents:   act?.unit_rents   || [],
         monthlyNOI,
@@ -3741,7 +3811,7 @@ async function seedDemo() {
       prop.supabaseId = saved.id;
 
       // Insert budget
-      await sbReq('budgets', {
+      await sbReq('budgets?on_conflict=property_id,year', {
         method: 'POST',
         headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
         body: JSON.stringify({
@@ -3764,6 +3834,7 @@ async function seedDemo() {
           month:          now.getMonth() + 1,
           income_values:  prop.actuals.income,
           expense_values: prop.actuals.expenses,
+          nonop_values:   prop.actuals.nonop || [],
           capex_spent:    prop.actuals.capexSpent || 0,
           occupancy:      prop.actuals.occupancy  || 0,
           collections:    prop.actuals.collections || 0,
@@ -3845,7 +3916,7 @@ async function dbSaveBudget(prop, year, budget) {
   if (!dbOnline || !uuid) return;
   syncBadge('saving', '↑ Saving…');
   try {
-    await sbReq('budgets', {
+    await sbReq('budgets?on_conflict=property_id,year', {
       method:  'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify({
@@ -3879,6 +3950,7 @@ async function dbSaveActuals(prop) {
         month:          now.getMonth() + 1,
         income_values:  prop.actuals.income,
         expense_values: prop.actuals.expenses,
+        nonop_values:   prop.actuals.nonop       || [],
         capex_spent:    prop.actuals.capexSpent  || 0,
         occupancy:      prop.actuals.occupancy   || 0,
         collections:    prop.actuals.collections || 0,

@@ -3845,7 +3845,7 @@ async function dbSaveBudget(prop, year, budget) {
   if (!dbOnline || !uuid) return;
   syncBadge('saving', '↑ Saving…');
   try {
-    await sbReq('budgets', {
+    await sbReq('budgets?on_conflict=property_id,year', {
       method:  'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify({

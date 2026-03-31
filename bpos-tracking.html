@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Budget Tracking — PGM Business Plan OS</title>
+<title>Budget Tracking â PGM Business Plan OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -28,7 +28,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .settings-btn{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:6px 14px;font-size:12px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;}
 .settings-btn:hover{color:var(--text);border-color:var(--accent);background:rgba(61,127,255,.06);}
 
-/* LAYOUT — full width scroll */
+/* LAYOUT â full width scroll */
 .page{flex:1;overflow-y:auto;padding:24px 28px 48px;}
 
 /* PORTFOLIO HEADER */
@@ -334,7 +334,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .year-tab-btn:hover{color:var(--text);}
 .year-tab-btn.active{background:rgba(61,127,255,.12);border-color:var(--accent);color:var(--accent);}
 
-/* ADD PROPERTY MODAL — 3-step */
+/* ADD PROPERTY MODAL â 3-step */
 .ap-steps{display:flex;align-items:center;gap:0;margin-bottom:20px;}
 .ap-step{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);flex-shrink:0;}
 .ap-step.active{color:var(--accent);}
@@ -389,9 +389,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .review-table tr.noi-row td{background:rgba(34,201,122,.04);font-weight:600;font-size:13px;}
 .year-dropdown{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 28px 5px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;transition:border-color .15s;}
 .year-dropdown:focus{border-color:var(--accent);}
-/* ═══════════════════════
+/* âââââââââââââââââââââââ
    DESKTOP NAV ACTIONS
-═══════════════════════ */
+âââââââââââââââââââââââ */
 .nav-actions-desktop{display:flex;align-items:center;gap:14px;}
 .hamburger-btn{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;flex-direction:column;gap:4px;align-items:center;justify-content:center;width:38px;height:38px;transition:border-color .15s;}
 .hamburger-btn:hover{border-color:var(--accent);}
@@ -411,9 +411,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .mnd-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
 .mnd-footer{padding:16px 20px;border-top:1px solid var(--border);}
 
-/* ═══════════════════════
+/* âââââââââââââââââââââââ
    MOBILE RESPONSIVE
-═══════════════════════ */
+âââââââââââââââââââââââ */
 @media (max-width: 768px) {
   /* NAV: hamburger replaces inline buttons */
   .topnav{height:48px;min-height:48px;padding:0 12px;flex-wrap:nowrap;gap:8px;}
@@ -512,7 +512,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2>Edit property</h2>
         <p>Update property details. Unit count changes can be applied retroactively.</p>
       </div>
-      <button class="modal-close" onclick="closeEditProp()">×</button>
+      <button class="modal-close" onclick="closeEditProp()">Ã</button>
     </div>
     <div class="modal-body" id="edit-prop-body"></div>
     <div class="modal-footer" id="edit-prop-footer"></div>
@@ -523,21 +523,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <div class="db-loading-overlay hidden" id="db-loading-overlay">
   <div class="db-spinner"></div>
-  <div style="font-size:13px;color:var(--text2);" id="db-loading-msg">Loading portfolio data…</div>
+  <div style="font-size:13px;color:var(--text2);" id="db-loading-msg">Loading portfolio dataâ¦</div>
 </div>
 
 <div class="topnav">
   <div class="nav-brand">
     <span class="logo">BPOS</span>
-    <span class="sep">›</span><span class="current">Budget Tracking</span>
+    <span class="sep">âº</span><span class="current">Budget Tracking</span>
   </div>
   <div class="topnav-spacer"></div>
   <div class="nav-actions-desktop">
-    <button class="actuals-upload-btn" onclick="openActualsModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload actuals</span></button>
-    <button class="bitquery-connect-btn" onclick="openBitqueryModal()"><span class="btn-icon">⬡</span><span class="btn-label"> Bitquery</span></button>
-    <button class="settings-btn" onclick="openUploadModal()"><span class="btn-icon">⤒</span><span class="btn-label"> Upload budget</span></button>
-    <button class="settings-btn" onclick="openAlertSettings()"><span class="btn-icon">⚙</span><span class="btn-label"> Alerts</span></button>
-    <span class="module-badge" style="margin-left:8px;">Module 7 · Operations</span>
+    <button class="actuals-upload-btn" onclick="openActualsModal()"><span class="btn-icon">â¤</span><span class="btn-label"> Upload actuals</span></button>
+    <button class="bitquery-connect-btn" onclick="openBitqueryModal()"><span class="btn-icon">â¬¡</span><span class="btn-label"> Bitquery</span></button>
+    <button class="settings-btn" onclick="openUploadModal()"><span class="btn-icon">â¤</span><span class="btn-label"> Upload budget</span></button>
+    <button class="settings-btn" onclick="openAlertSettings()"><span class="btn-icon">â</span><span class="btn-label"> Alerts</span></button>
+    <span class="module-badge" style="margin-left:8px;">Module 7 Â· Operations</span>
   </div>
   <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Menu">
     <span class="ham-line"></span><span class="ham-line"></span><span class="ham-line"></span>
@@ -549,16 +549,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="mobile-nav-drawer" id="mobile-nav-drawer">
   <div class="mnd-header">
     <span class="logo" style="font-family:var(--display);font-size:16px;color:var(--accent);">BPOS</span>
-    <button class="mnd-close" onclick="closeMobileNav()">×</button>
+    <button class="mnd-close" onclick="closeMobileNav()">Ã</button>
   </div>
   <div class="mnd-body">
-    <button class="mnd-item" onclick="closeMobileNav();openActualsModal()"><span class="mnd-icon">⤒</span> Upload actuals</button>
-    <button class="mnd-item" onclick="closeMobileNav();openBitqueryModal()"><span class="mnd-icon">⬡</span> Bitquery</button>
-    <button class="mnd-item" onclick="closeMobileNav();openUploadModal()"><span class="mnd-icon">⤒</span> Upload budget</button>
-    <button class="mnd-item" onclick="closeMobileNav();openAlertSettings()"><span class="mnd-icon">⚙</span> Alerts</button>
+    <button class="mnd-item" onclick="closeMobileNav();openActualsModal()"><span class="mnd-icon">â¤</span> Upload actuals</button>
+    <button class="mnd-item" onclick="closeMobileNav();openBitqueryModal()"><span class="mnd-icon">â¬¡</span> Bitquery</button>
+    <button class="mnd-item" onclick="closeMobileNav();openUploadModal()"><span class="mnd-icon">â¤</span> Upload budget</button>
+    <button class="mnd-item" onclick="closeMobileNav();openAlertSettings()"><span class="mnd-icon">â</span> Alerts</button>
   </div>
   <div class="mnd-footer">
-    <span class="module-badge">Module 7 · Operations</span>
+    <span class="module-badge">Module 7 Â· Operations</span>
   </div>
 </div>
 
@@ -574,7 +574,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2>Upload actuals</h2>
         <p id="actuals-modal-sub">Upload your actuals file in PGM format to compare against budgets and trigger alerts.</p>
       </div>
-      <button class="modal-close" onclick="closeActualsModal()">×</button>
+      <button class="modal-close" onclick="closeActualsModal()">Ã</button>
     </div>
     <div class="modal-body" id="actuals-modal-body" style="min-height:300px;"></div>
     <div class="modal-footer" id="actuals-modal-footer"></div>
@@ -589,7 +589,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2>Bitquery Connection</h2>
         <p>Connect your Bitquery data source to pull live actuals automatically.</p>
       </div>
-      <button class="modal-close" onclick="closeBitqueryModal()">×</button>
+      <button class="modal-close" onclick="closeBitqueryModal()">Ã</button>
     </div>
     <div class="modal-body" id="bitquery-modal-body"></div>
     <div class="modal-footer" id="bitquery-modal-footer"></div>
@@ -604,7 +604,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2>Full alert history</h2>
         <p>All threshold breaches logged in this session. Alerts auto-clear when variance is resolved.</p>
       </div>
-      <button class="modal-close" onclick="document.getElementById('alert-log-modal').classList.remove('open')">×</button>
+      <button class="modal-close" onclick="document.getElementById('alert-log-modal').classList.remove('open')">Ã</button>
     </div>
     <div class="modal-body" id="alert-log-modal-body" style="max-height:65vh;overflow-y:auto;"></div>
     <div class="modal-footer">
@@ -620,9 +620,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="modal-header">
       <div class="modal-header-left">
         <h2 id="bm-title">Add / update property budget</h2>
-        <p id="bm-sub">Upload your annual budget file and the app reads it exactly as structured — no manual categorization needed.</p>
+        <p id="bm-sub">Upload your annual budget file and the app reads it exactly as structured â no manual categorization needed.</p>
       </div>
-      <button class="modal-close" onclick="closeBudgetModal()">×</button>
+      <button class="modal-close" onclick="closeBudgetModal()">Ã</button>
     </div>
     <div class="modal-body" id="budget-modal-body" style="min-height:260px;"></div>
     <div class="modal-footer" id="budget-modal-footer"></div>
@@ -635,9 +635,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="modal-header">
       <div class="modal-header-left">
         <h2>Alert thresholds <span class="admin-badge">Admin</span></h2>
-        <p>Set the thresholds that trigger real-time warnings. Alerts fire as soon as a deviation is detected — mid-month or otherwise.</p>
+        <p>Set the thresholds that trigger real-time warnings. Alerts fire as soon as a deviation is detected â mid-month or otherwise.</p>
       </div>
-      <button class="modal-close" onclick="closeAlertSettings()">×</button>
+      <button class="modal-close" onclick="closeAlertSettings()">Ã</button>
     </div>
     <div class="modal-body" id="alert-modal-body"></div>
     <div class="modal-footer">
@@ -647,7 +647,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
-<!-- ADD PROPERTY MODAL — now uses file upload -->
+<!-- ADD PROPERTY MODAL â now uses file upload -->
 <div class="modal-overlay" id="add-prop-modal">
   <div class="modal" style="width:680px;">
     <div class="modal-header">
@@ -655,7 +655,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2 id="ap-modal-title">Add property</h2>
         <p id="ap-modal-sub">Property details, then enter or upload the annual budget.</p>
       </div>
-      <button class="modal-close" onclick="closeAddProp()">×</button>
+      <button class="modal-close" onclick="closeAddProp()">Ã</button>
     </div>
     <div class="modal-body" id="add-prop-body" style="min-height:300px;"></div>
     <div class="modal-footer" id="add-prop-footer"></div>
@@ -670,7 +670,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <h2>Upload budget file</h2>
         <p id="upload-modal-sub">Upload a CSV, Excel, or Google Sheets export. The app will auto-detect property name, income, and expense lines.</p>
       </div>
-      <button class="modal-close" onclick="closeUploadModal()">×</button>
+      <button class="modal-close" onclick="closeUploadModal()">Ã</button>
     </div>
     <div class="modal-body" id="upload-modal-body" style="min-height:300px;"></div>
     <div class="modal-footer" id="upload-modal-footer"></div>
@@ -680,9 +680,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
 
 <script>
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // HELPERS
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 const fd  = v=>'$'+Math.round(v||0).toLocaleString();
 const pd  = v=>parseFloat(String(v).replace(/[$,\s%]/g,''))||0;
 const fp  = v=>(v||0).toFixed(1)+'%';
@@ -693,9 +693,9 @@ const MONTH_PCT      = DAY_OF_MONTH / DAYS_IN_MONTH; // e.g. 0.65 = 65% through 
 const MONTH_LABEL    = now.toLocaleString('default',{month:'long',year:'numeric'});
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // ALERT THRESHOLDS (admin editable)
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let THRESHOLDS = {
   noiMissPct:      {enabled:true,  value:5,   label:'NOI misses budget by more than',  unit:'%'},
   occupancyMin:    {enabled:true,  value:88,  label:'Occupancy drops below',           unit:'%'},
@@ -707,9 +707,9 @@ let THRESHOLDS = {
 };
 const THRESH_DEFAULTS = JSON.parse(JSON.stringify(THRESHOLDS));
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // PROPERTY DATA
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let properties = [
   {
     id:1, name:'Estrella at Kiest', address:'Dallas, TX', units:84,
@@ -853,9 +853,9 @@ let selectedPropId = null;
 let budgetModalPropId = null;
 let arpOpen = window.innerWidth > 900; // collapsed by default on mobile
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // ALERT ENGINE
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function getAlerts(prop) {
   const alerts = [];
   const a = prop.actuals;
@@ -867,11 +867,11 @@ function getAlerts(prop) {
   const actualNOI = (a.income.reduce((s,r)=>s+r,0) - a.expenses.reduce((s,r)=>s+r,0));
   const noiPct = budgetNOI>0?((budgetNOI-actualNOI)/budgetNOI*100):0;
   if (T.noiMissPct.enabled && noiPct > T.noiMissPct.value)
-    alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiPct.toFixed(1)}%`});
+    alerts.push({sev:'red', icon:'â', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} â miss of ${noiPct.toFixed(1)}%`});
 
-  // Occupancy — only fire when we actually have occupancy data (>0 means it was entered)
+  // Occupancy â only fire when we actually have occupancy data (>0 means it was entered)
   if (T.occupancyMin.enabled && a.occupancy > 0 && a.occupancy < T.occupancyMin.value)
-    alerts.push({sev:'red', icon:'◎', text:`Occupancy at <strong>${fp(a.occupancy)}</strong> — below ${T.occupancyMin.value}% threshold`});
+    alerts.push({sev:'red', icon:'â', text:`Occupancy at <strong>${fp(a.occupancy)}</strong> â below ${T.occupancyMin.value}% threshold`});
 
   // Expense pace mid-month
   const budgetExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
@@ -879,31 +879,31 @@ function getAlerts(prop) {
   const expPace   = budgetExp>0?(actualExp/budgetExp*100):0;
   const expectedExpPct = MONTH_PCT*100;
   if (T.expensePacePct.enabled && expPace > T.expensePacePct.value && expPace > expectedExpPct+15)
-    alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
+    alerts.push({sev:'amber', icon:'â', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
 
   // CapEx
   if (T.capexHit.enabled && a.capexSpent >= b.capexBudget)
-    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
+    alerts.push({sev:'red', icon:'â£', text:`CapEx budget hit â <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
   else if (a.capexSpent > b.capexBudget*0.85)
-    alerts.push({sev:'amber', icon:'▣', text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — approaching limit`});
+    alerts.push({sev:'amber', icon:'â£', text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> â approaching limit`});
 
   // Unit rents below budget
   if (T.unitRentBelowPct.enabled) {
     a.unitRents.forEach(u=>{
       const miss = u.budgetRate>0?((u.budgetRate-u.actualRate)/u.budgetRate*100):0;
       if (miss > T.unitRentBelowPct.value)
-        alerts.push({sev:'amber', icon:'◑', text:`${u.type}: renting at <strong>${fd(u.actualRate)}</strong> vs. budget rate ${fd(u.budgetRate)} — ${miss.toFixed(1)}% below`});
+        alerts.push({sev:'amber', icon:'â', text:`${u.type}: renting at <strong>${fd(u.actualRate)}</strong> vs. budget rate ${fd(u.budgetRate)} â ${miss.toFixed(1)}% below`});
     });
   }
 
-  // Collections — only fire when we actually have collections data (>0 means it was entered)
+  // Collections â only fire when we actually have collections data (>0 means it was entered)
   if (T.collectionsMin.enabled && a.collections > 0 && a.collections < T.collectionsMin.value)
-    alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
+    alerts.push({sev:'red', icon:'â', text:`Collections at <strong>${fp(a.collections)}</strong> â below ${T.collectionsMin.value}% threshold`});
 
   // Cash flow negative
-  const cf = actualNOI; // simplified — full model would subtract debt service
+  const cf = actualNOI; // simplified â full model would subtract debt service
   if (T.cfNegative.enabled && cf < 0)
-    alerts.push({sev:'red', icon:'◐', text:`Cash flow is <strong>negative (${fd(cf)}/mo)</strong> — immediate attention required`});
+    alerts.push({sev:'red', icon:'â', text:`Cash flow is <strong>negative (${fd(cf)}/mo)</strong> â immediate attention required`});
 
   return alerts;
 }
@@ -923,9 +923,9 @@ function getPortfolioStats() {
   return {totalUnits,totalBudNOI,totalActNOI,avgOcc,atRisk};
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // RENDER MAIN PAGE
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function renderPage() {
   const stats = getPortfolioStats();
   const riskProps = properties.filter(p=>getAlerts(p).length>0).sort((a,b)=>getAlerts(b).filter(x=>x.sev==='red').length-getAlerts(a).filter(x=>x.sev==='red').length);
@@ -937,11 +937,11 @@ function renderPage() {
     <div class="portfolio-header">
       <div class="ph-left">
         <h1>Portfolio Tracking</h1>
-        <p>${MONTH_LABEL} · ${properties.length} properties · ${stats.totalUnits} units · API connected</p>
+        <p>${MONTH_LABEL} Â· ${properties.length} properties Â· ${stats.totalUnits} units Â· API connected</p>
       </div>
       <div class="ph-right">
         <div class="api-status"><div class="api-dot"></div>Looker Studio connected</div>
-        <button class="btn-ghost" style="font-size:12px;" onclick="showToast('Refreshing all actuals from API…');setTimeout(()=>showToast('All actuals updated.'),1200)">⟳ Refresh all</button>
+        <button class="btn-ghost" style="font-size:12px;" onclick="showToast('Refreshing all actuals from APIâ¦');setTimeout(()=>showToast('All actuals updated.'),1200)">â³ Refresh all</button>
         <button class="btn-add-prop" onclick="openAddProp()">+ Add property</button>
       </div>
     </div>
@@ -951,7 +951,7 @@ function renderPage() {
       <div class="pkpi">
         <div class="pkpi-label">Portfolio NOI / mo</div>
         <div class="pkpi-value ${noiPct>=-5?'good':'bad'}">${fd(stats.totalActNOI)}</div>
-        <div class="pkpi-sub">Budget ${fd(stats.totalBudNOI)} · ${noiPct>=0?'+':''}${noiPct.toFixed(1)}% vs. plan</div>
+        <div class="pkpi-sub">Budget ${fd(stats.totalBudNOI)} Â· ${noiPct>=0?'+':''}${noiPct.toFixed(1)}% vs. plan</div>
       </div>
       <div class="pkpi">
         <div class="pkpi-label">Avg occupancy</div>
@@ -978,10 +978,10 @@ function renderPage() {
     <!-- AT-RISK PANEL -->
     <div class="at-risk-panel">
       <div class="arp-head" onclick="toggleArp()">
-        <span class="arp-icon">⚑</span>
+        <span class="arp-icon">â</span>
         <span class="arp-title">Properties with active alerts</span>
-        <span class="arp-count">${riskProps.length} propert${riskProps.length!==1?'ies':'y'} · ${riskProps.reduce((s,p)=>s+getAlerts(p).filter(a=>a.sev==='red').length,0)} critical</span>
-        <span class="arp-chev ${arpOpen?'open':''}" id="arp-chev">▾</span>
+        <span class="arp-count">${riskProps.length} propert${riskProps.length!==1?'ies':'y'} Â· ${riskProps.reduce((s,p)=>s+getAlerts(p).filter(a=>a.sev==='red').length,0)} critical</span>
+        <span class="arp-chev ${arpOpen?'open':''}" id="arp-chev">â¾</span>
       </div>
       <div class="arp-body ${arpOpen?'open':''}" id="arp-body">
         ${riskProps.length===0
@@ -998,7 +998,7 @@ function renderPage() {
                 return `<div class="risk-prop-card" onclick="selectProp(${p.id})">
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
-                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical Â· ${als.filter(a=>a.sev==='amber').length} warnings</span>
                   </div>
                   <div class="rpc-alerts">
                     ${als.slice(0,3).map(al=>`
@@ -1006,7 +1006,7 @@ function renderPage() {
                         <span class="chip-icon">${al.icon}</span>
                         <span class="chip-text">${al.text}</span>
                       </div>`).join('')}
-                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts — click to view all</div>`:''}
+                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts â click to view all</div>`:''}
                   </div>
                 </div>`;
               }).join('')}
@@ -1020,7 +1020,7 @@ function renderPage() {
     <div class="prop-selector-row">
       <span class="prop-selector-label">View property:</span>
       <select class="prop-select" onchange="selectProp(+this.value)">
-        <option value="">— Select a property —</option>
+        <option value="">â Select a property â</option>
         ${properties.map(p=>`<option value="${p.id}" ${selectedPropId===p.id?'selected':''}>${p.name} (${p.address})</option>`).join('')}
       </select>
       ${selectedPropId?`
@@ -1035,9 +1035,9 @@ function renderPage() {
     </div>`;
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // RENDER PROPERTY DETAIL
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function renderPropDetail(prop) {
   if (!prop) return '';
   const a = prop.actuals;
@@ -1061,7 +1061,7 @@ function renderPropDetail(prop) {
   const monthProgressHtml = `
     <div class="month-progress-wrap">
       <div class="mp-label">
-        <span>${MONTH_LABEL} — Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH}</span>
+        <span>${MONTH_LABEL} â Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH}</span>
         <span>${(MONTH_PCT*100).toFixed(0)}% through month</span>
       </div>
       <div class="mp-bar">
@@ -1090,7 +1090,7 @@ function renderPropDetail(prop) {
       variance:a.occupancy>=88?'On target':`${(88-a.occupancy).toFixed(1)}% below threshold`,
       varCls:a.occupancy>=88?'pos':'neg',
       alert:alerts.find(al=>al.text.includes('Occupancy')),
-      midMonth: a.occupancy<88?`Triggered — currently ${(MONTH_PCT*100).toFixed(0)}% into month`:null,
+      midMonth: a.occupancy<88?`Triggered â currently ${(MONTH_PCT*100).toFixed(0)}% into month`:null,
     },
     {
       label:'Collections rate', budget:fp(THRESHOLDS.collectionsMin.value), actual:fp(a.collections),
@@ -1124,17 +1124,17 @@ function renderPropDetail(prop) {
 
   const metricsHtml = `
     <div class="metrics-section">
-      <div class="ms-title">Key metrics — ${MONTH_LABEL}</div>
+      <div class="ms-title">Key metrics â ${MONTH_LABEL}</div>
       <div class="metrics-grid">
         ${keyMetrics.map(m=>`
           <div class="metric-card ${m.alert?m.alert.sev==='red'?'alert-red':'alert-amber':''}">
-            ${m.alert?`<div class="mc-alert-flag">${m.alert.sev==='red'?'🔴':'🟡'}</div>`:''}
+            ${m.alert?`<div class="mc-alert-flag">${m.alert.sev==='red'?'ð´':'ð¡'}</div>`:''}
             <div class="mc-label">${m.label}</div>
             <div class="mc-budget">Budget: ${m.budget}</div>
             <div class="mc-actual ${m.cls}">${m.actual}</div>
             <div class="mc-bar"><div class="mc-bar-fill" style="width:${Math.min(m.barPct,100)}%;background:${m.barColor};"></div></div>
             <div class="mc-variance ${m.varCls}">${m.variance}</div>
-            ${m.midMonth?`<div class="mc-mid-month-note">⚑ ${m.midMonth}</div>`:''}
+            ${m.midMonth?`<div class="mc-mid-month-note">â ${m.midMonth}</div>`:''}
           </div>`).join('')}
       </div>
     </div>`;
@@ -1204,17 +1204,36 @@ function renderPropDetail(prop) {
         </tbody>
       </table>
     </div>
-    ${ (b && b.nonop && b.nonop.length) ? `
+    ${ (b && b.nonop && b.nonop.length) ? (()=>{
+      // Ensure nonop actuals array exists and matches budget length
+      if (!a.nonop || a.nonop.length !== b.nonop.length) a.nonop = b.nonop.map(()=>0);
+      const nonopRows = b.nonop.map((r,i)=>{
+        const act = a.nonop[i]||0;
+        const vari = act - r.monthly;
+        const pct = r.monthly > 0 ? (act / r.monthly * 100) : 0;
+        const isAlert = vari > r.monthly * 0.1;
+        const barColor = pct <= 100 ? 'var(--green)' : pct <= 115 ? 'var(--amber)' : 'var(--red)';
+        const isCapex = r.label.toLowerCase().includes('capex') || r.label.toLowerCase().includes('capital');
+        return '<tr class="' + (isAlert ? 'alert-row' : '') + '">' +
+          '<td class="lbl">' + r.label + (isCapex ? '<span style="font-size:9px;color:var(--amber);margin-left:6px;">CAPEX</span>' : '') + (isAlert ? '<span class="inline-alert ia-red">Over budget</span>' : '') + '</td>' +
+          '<td class="r">' + fd(r.monthly) + '</td>' +
+          '<td class="r">' + fd(act) + '</td>' +
+          '<td class="li-bar-cell"><div class="li-bar"><div class="li-bar-fill" style="width:' + Math.min(pct,130) + '%;background:' + barColor + ';"></div></div></td>' +
+          '<td class="' + (vari > 0 ? 'bad' : vari < 0 ? 'good' : 'neu') + '">' + (vari > 0 ? '+' : '') + fd(vari) + '</td></tr>';
+      }).join('');
+      const budNonop = b.nonop.reduce((x,l) => x + l.monthly, 0);
+      const actNonop = a.nonop.reduce((x,v) => x + v, 0);
+      return `
     <div class="line-section">
-      <div class="ls-head"><span class="ls-title">NON-OPERATING EXPENSES</span></div>
+      <div class="ls-head"><span class="ls-title">Non-operating expenses (incl. CapEx)</span></div>
       <table class="li-table"><thead><tr>
-        <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>Progress</th><th class="r">Variance</th>
+        <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>vs. budget</th><th class="r">Variance</th>
       </tr></thead><tbody>
-        ${b.nonop.map(l => `<tr><td>${l.label}</td><td class="r">${fd(l.monthly)}</td><td class="r">—</td><td></td><td></td></tr>`).join('')}
-        <tr class="tot-row"><td>Total Non-Operating</td><td class="r">${fd(b.nonop.reduce((x,l)=>x+l.monthly,0))}</td><td class="r">—</td><td></td><td></td></tr>
+        ${nonopRows}
+        <tr class="tot-row"><td>Total non-operating</td><td class="r">${fd(budNonop)}</td><td class="r">${fd(actNonop)}</td><td></td><td class="${actNonop<=budNonop?'good':'bad'}">${actNonop>budNonop?'+':''}${fd(actNonop-budNonop)}</td></tr>
       </tbody></table>
-    </div>
-    ` : '' }`;
+    </div>`;
+    })() : '' }`;
 
   // UNIT RENTS
   const unitRentRows = a.unitRents.map(u=>{
@@ -1244,7 +1263,7 @@ function renderPropDetail(prop) {
   const maxNOI = Math.max(...a.monthlyNOI.filter(v=>v!==null), budNOI*1.1, 1);
   const trendHtml = `
     <div class="trend-section">
-      <div class="ms-title">Monthly NOI trend — ${prop.budgetYear}</div>
+      <div class="ms-title">Monthly NOI trend â ${prop.budgetYear}</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Actual NOI per month vs. annual budget baseline (${fd(budNOI)}/mo)</div>
       <div class="trend-grid">
         ${MONTHS.map((mo,i)=>{
@@ -1253,7 +1272,7 @@ function renderPropDetail(prop) {
           const heightPct=val!==null?(val/maxNOI*100):0;
           const barColor=val===null?'var(--bg4)':val>=budNOI?'var(--green)':val>=budNOI*0.95?'var(--amber)':'var(--red)';
           return `<div class="trend-bar-wrap">
-            ${val!==null?`<div class="trend-value">${val>=1000?(val/1000).toFixed(0)+'k':val}</div>`:'<div class="trend-value" style="color:var(--bg4);">—</div>'}
+            ${val!==null?`<div class="trend-value">${val>=1000?(val/1000).toFixed(0)+'k':val}</div>`:'<div class="trend-value" style="color:var(--bg4);">â</div>'}
             <div class="trend-bar" style="height:${heightPct}%;background:${barColor};opacity:${isCurrent?1:val?0.7:0.3};"></div>
             <div class="trend-month-label" style="color:${isCurrent?'var(--accent)':'var(--text3)'};">${mo}</div>
           </div>`;
@@ -1266,7 +1285,7 @@ function renderPropDetail(prop) {
 
   const budgetBtnHtml = prop.type==='existing'?`
     <div style="margin:16px 22px 0;padding-bottom:16px;border-bottom:1px solid var(--border);">
-      <button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">✎ Edit ${prop.budgetYear} budget</button>
+      <button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">â Edit ${prop.budgetYear} budget</button>
     </div>`:'';
 
   return `
@@ -1274,10 +1293,10 @@ function renderPropDetail(prop) {
       <div class="pd-header">
         <div class="pdh-left">
           <h2>${prop.name}</h2>
-          <p>${prop.address} · ${prop.units} units · ${prop.pm} · ${prop.market||''}</p>
+          <p>${prop.address} Â· ${prop.units} units Â· ${prop.pm} Â· ${prop.market||''}</p>
         </div>
         <div class="pdh-right">
-          <div class="day-progress">Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH} — ${(MONTH_PCT*100).toFixed(0)}% through month</div>
+          <div class="day-progress">Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH} â ${(MONTH_PCT*100).toFixed(0)}% through month</div>
           ${prop.budgetHistory && Object.keys(prop.budgetHistory).length > 0 ? `
             <div style="display:flex;align-items:center;gap:7px;">
               <span style="font-size:11px;color:var(--text3);">Budget:</span>
@@ -1286,15 +1305,15 @@ function renderPropDetail(prop) {
                   <option value="${yr}" ${+yr===prop.budgetYear?'selected':''}>${yr}</option>`).join('')}
               </select>
             </div>` : `<span style="font-size:11px;color:var(--text3);">Budget: ${prop.budgetYear}</span>`}
-          <button class="pd-refresh-btn" onclick="refreshPropActuals(this)">⟳ Refresh actuals</button>
-          <button class="pd-refresh-btn" onclick="openEditProp(${prop.id})">✎ Edit property</button>
-          ${prop.type==='existing'?`<button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">⤒ Update budget</button>`:''}
+          <button class="pd-refresh-btn" onclick="refreshPropActuals(this)">â³ Refresh actuals</button>
+          <button class="pd-refresh-btn" onclick="openEditProp(${prop.id})">â Edit property</button>
+          ${prop.type==='existing'?`<button class="btn-ghost" style="font-size:12px;" onclick="openBudgetModal(${prop.id})">â¤ Update budget</button>`:''}
         </div>
       </div>
       ${monthProgressHtml}
       ${alerts.length>0?`
         <div style="padding:12px 22px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px;">Active alerts — ${alerts.length} total</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px;">Active alerts â ${alerts.length} total</div>
           ${alerts.map(al=>`<div class="alert-chip ${al.sev}"><span class="chip-icon">${al.icon}</span><span class="chip-text">${al.text}</span></div>`).join('')}
         </div>`:''}
       ${metricsHtml}
@@ -1305,7 +1324,7 @@ function renderPropDetail(prop) {
     </div>`;
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function renderUnitTrackerSection(prop) {
   if (!prop.bqOccupancy && (!prop.bqUnits || !prop.bqUnits.length)) {
     return '<div class="unit-tracker-section">'
@@ -1324,7 +1343,7 @@ function renderUnitTrackerSection(prop) {
     ['Vacant', occ.vacant || 0, 'var(--red)'],
     ['MakeReady', occ.makeReady || 0, 'var(--amber)'],
     ['Available', occ.available || 0, 'var(--accent)'],
-    ['Occ%', occ.occPct ? occ.occPct.toFixed(1) + '%' : '—', 'var(--teal)'],
+    ['Occ%', occ.occPct ? occ.occPct.toFixed(1) + '%' : 'â', 'var(--teal)'],
   ];
   let html = '<div class="unit-tracker-section">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
@@ -1356,7 +1375,7 @@ function renderUnitTrackerSection(prop) {
         + '<td style="padding:4px 6px;text-align:right;">' + (u.DaysVacant||0) + '</td>'
         + '<td style="padding:4px 6px;">' + (u.TurnStatus||'') + '</td>'
         + '<td style="padding:4px 6px;text-align:right;">$' + (+u.MarketRent||0).toLocaleString() + '</td>'
-        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? '⚠️' : '') + '</td></tr>';
+        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? 'â ï¸' : '') + '</td></tr>';
     });
     html += '</table></div>';
   }
@@ -1379,7 +1398,7 @@ function renderUnitTrackerSection(prop) {
         + '<td style="padding:4px 6px;color:var(--text3);">' + (u.FloorPlan||'') + '</td>'
         + '<td style="padding:4px 6px;">' + (u.LeaseEndDate||'') + '</td>'
         + '<td style="padding:4px 6px;text-align:right;">$' + (+u.SignedRent||0).toLocaleString() + '</td>'
-        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? '⚠️' : '') + '</td></tr>';
+        + '<td style="padding:4px 6px;text-align:center;">' + (agro ? 'â ï¸' : '') + '</td></tr>';
     });
     html += '</table></div>';
   }
@@ -1388,7 +1407,7 @@ function renderUnitTrackerSection(prop) {
 }
 
 // INTERACTIONS
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function selectProp(id) {
   selectedPropId = id||null;
   renderPage();
@@ -1406,9 +1425,9 @@ function toggleArp() {
   if(chev){chev.classList.toggle('open',arpOpen);}
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // MOBILE NAV DRAWER
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function toggleMobileNav() {
   const overlay = document.getElementById('mobile-nav-overlay');
   const drawer = document.getElementById('mobile-nav-drawer');
@@ -1427,20 +1446,20 @@ function closeMobileNav() {
   document.body.style.overflow = '';
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // MOBILE AT-RISK: show top N with expand
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let arpShowAll = false;
 function toggleArpShowAll() {
   arpShowAll = !arpShowAll;
   renderPage();
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // SINGLE-PROPERTY BUDGET MODAL
 // Used for: Edit budget on existing prop, or Add new property
 // Both use the same file-upload flow
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let bmState = {mode:'edit', propId:null, step:1, parsed:null, fileName:''};
 
 function openBudgetModal(propId) {
@@ -1456,13 +1475,13 @@ function closeBudgetModal() {
 function openAddProp() {
   apState = {
     step: 1,
-    // Step 1 — property details
+    // Step 1 â property details
     name:'', address:'', units:0, pm:'AppFolio', market:'Dallas-Fort Worth (DFW)', budgetYear: new Date().getFullYear(),
-    // Step 2 — budget source + data
+    // Step 2 â budget source + data
     budgetTab: 'upload',   // 'upload' | 'manual'
     freqIsAnnual: false,   // toggle: false=monthly, true=annual
     fileName: '',
-    // Step 3 — review/edit data before save
+    // Step 3 â review/edit data before save
     income: [],
     expenses: [],
     nonop: [],
@@ -1474,7 +1493,7 @@ function closeAddProp() {
   document.getElementById('add-prop-modal').classList.remove('open');
 }
 
-// ── Default manual line items ──
+// ââ Default manual line items ââ
 const DEFAULT_INCOME = [
   {label:'Gross Potential Rent', monthly:0},
   {label:'Vacancy Loss',          monthly:0},
@@ -1493,7 +1512,7 @@ const DEFAULT_EXPENSES = [
 ];
 const DEFAULT_NONOP = [
   {label:'Capital Expenditures (CapEx)', monthly:0},
-  {label:'Debt Service — FIXED',         monthly:0},
+  {label:'Debt Service â FIXED',         monthly:0},
 ];
 
 let apState = {};
@@ -1506,17 +1525,17 @@ function renderAddPropModal() {
   const stepsHtml = `
     <div class="ap-steps">
       <div class="ap-step ${s.step>=1?s.step>1?'done':'active':''}">
-        <div class="ap-step-num">${s.step>1?'✓':'1'}</div><span>Property details</span>
+        <div class="ap-step-num">${s.step>1?'â':'1'}</div><span>Property details</span>
       </div><div class="ap-sep"></div>
       <div class="ap-step ${s.step>=2?s.step>2?'done':'active':''}">
-        <div class="ap-step-num">${s.step>2?'✓':'2'}</div><span>Enter budget</span>
+        <div class="ap-step-num">${s.step>2?'â':'2'}</div><span>Enter budget</span>
       </div><div class="ap-sep"></div>
       <div class="ap-step ${s.step>=3?'active':''}">
         <div class="ap-step-num">3</div><span>Review &amp; save</span>
       </div>
     </div>`;
 
-  // ── STEP 1: Property details ──
+  // ââ STEP 1: Property details ââ
   if (s.step === 1) {
     body.innerHTML = stepsHtml + `
       <div class="modal-grid">
@@ -1547,9 +1566,9 @@ function renderAddPropModal() {
       </div>`;
     footer.innerHTML = `
       <button class="btn-ghost" onclick="closeAddProp()">Cancel</button>
-      <button class="btn-primary" onclick="apStep1Next()">Next: Enter budget →</button>`;
+      <button class="btn-primary" onclick="apStep1Next()">Next: Enter budget â</button>`;
 
-  // ── STEP 2: Upload or manual entry ──
+  // ââ STEP 2: Upload or manual entry ââ
   } else if (s.step === 2) {
     const isManual = s.budgetTab === 'manual';
     const isAnnual = s.freqIsAnnual;
@@ -1563,7 +1582,7 @@ function renderAddPropModal() {
           <input class="me-val-input" type="text" value="${r.monthly>0?(isAnnual?fd(r.monthly*12):fd(r.monthly)):''}"
             placeholder="${isAnnual?'Annual':'Monthly'}"
             onchange="apManualVal('${sectionKey}',${i},this.value)"/>
-          <button class="me-del-btn" onclick="apDelLine('${sectionKey}',${i})">×</button>
+          <button class="me-del-btn" onclick="apDelLine('${sectionKey}',${i})">Ã</button>
         </div>`).join('');
       return `
         <div class="me-section-label">${sectionLabel}
@@ -1575,8 +1594,8 @@ function renderAddPropModal() {
 
     body.innerHTML = stepsHtml + `
       <div class="budget-tabs">
-        <button class="budget-tab ${!isManual?'active':''}" onclick="apState.budgetTab='upload';renderAddPropModal()">⤒ Upload file</button>
-        <button class="budget-tab ${isManual?'active':''}"  onclick="apState.budgetTab='manual';apInitManual();renderAddPropModal()">✎ Enter manually</button>
+        <button class="budget-tab ${!isManual?'active':''}" onclick="apState.budgetTab='upload';renderAddPropModal()">â¤ Upload file</button>
+        <button class="budget-tab ${isManual?'active':''}"  onclick="apState.budgetTab='manual';apInitManual();renderAddPropModal()">â Enter manually</button>
       </div>
 
       ${!isManual ? `
@@ -1585,9 +1604,9 @@ function renderAddPropModal() {
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="apHandleDrop(event)">
-          <div class="udz-icon">⤒</div>
+          <div class="udz-icon">â¤</div>
           <div class="udz-title">Drop the ${s.budgetYear} annual budget file here</div>
-          <div class="udz-sub">Reads ▼ INCOME · ▼ OPERATING EXPENSES · ▼ NON-OPERATING EXPENSES automatically from your PGM format. All line items preserved as-is.</div>
+          <div class="udz-sub">Reads â¼ INCOME Â· â¼ OPERATING EXPENSES Â· â¼ NON-OPERATING EXPENSES automatically from your PGM format. All line items preserved as-is.</div>
           <div class="udz-formats"><span class="fmt-badge">XLSX</span><span class="fmt-badge">XLS</span><span class="fmt-badge">CSV</span></div>
           <input type="file" id="ap-file-input" accept=".csv,.xlsx,.xls" onchange="apHandleFile(this.files[0])"/>
         </label>
@@ -1603,7 +1622,7 @@ function renderAddPropModal() {
             <span class="tp-track"></span><span class="tp-knob"></span>
           </label>
           <span class="${isAnnual?'active-freq':''}">Annual</span>
-          <span style="font-size:11px;color:var(--text3);margin-left:4px;">— enter figures as ${isAnnual?'annual totals (app divides by 12)':'monthly amounts'}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:4px;">â enter figures as ${isAnnual?'annual totals (app divides by 12)':'monthly amounts'}</span>
         </div>
         <div style="max-height:360px;overflow-y:auto;padding-right:4px;">
           ${renderManualSection('income',   'Income',               s.income)}
@@ -1613,12 +1632,12 @@ function renderAddPropModal() {
       `}`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="apState.step=1;renderAddPropModal()">← Back</button>
+      <button class="btn-ghost" onclick="apState.step=1;renderAddPropModal()">â Back</button>
       ${isManual
-        ? `<button class="btn-primary" onclick="apStep2ManualNext()">Review budget →</button>`
+        ? `<button class="btn-primary" onclick="apStep2ManualNext()">Review budget â</button>`
         : `<span style="font-size:12px;color:var(--text3);">Upload a file above to continue</span>`}`;
 
-  // ── STEP 3: Review + edit before saving ──
+  // ââ STEP 3: Review + edit before saving ââ
   } else if (s.step === 3) {
     const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
     const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
@@ -1645,7 +1664,7 @@ function renderAddPropModal() {
         <div style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;">
           <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">New property</div>
           <div style="font-size:14px;font-weight:600;color:var(--text);">${s.name}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.address||'—'} · ${s.units||0} units · ${s.pm} · ${s.budgetYear}${s.fileName?' · '+s.fileName:''}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.address||'â'} Â· ${s.units||0} units Â· ${s.pm} Â· ${s.budgetYear}${s.fileName?' Â· '+s.fileName:''}</div>
         </div>
         <div id="ap-summary-card" style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:160px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;gap:14px;"><span style="color:var(--text3);">Income/mo</span><span style="color:var(--green);font-family:var(--mono);">${fd(incTotal)}</span></div>
@@ -1666,11 +1685,11 @@ function renderAddPropModal() {
             <th class="r">Annual</th>
           </tr></thead>
           <tbody id="ap-review-body">
-            ${s.income.length?`<tr class="sec-hd"><td colspan="3">Income — ${s.income.length} lines</td></tr>${renderReviewRows(s.income,'income','var(--green)')}
+            ${s.income.length?`<tr class="sec-hd"><td colspan="3">Income â ${s.income.length} lines</td></tr>${renderReviewRows(s.income,'income','var(--green)')}
             <tr class="tot-hd"><td>Total income</td><td class="r" style="color:var(--green);font-family:var(--mono);">${fd(incTotal)}</td><td class="r" style="color:var(--text3);font-family:var(--mono);">${fd(incTotal*12)}</td></tr>`:''}
-            ${s.expenses.length?`<tr class="sec-hd"><td colspan="3">Operating Expenses — ${s.expenses.length} lines</td></tr>${renderReviewRows(s.expenses,'expenses','var(--text2)')}
+            ${s.expenses.length?`<tr class="sec-hd"><td colspan="3">Operating Expenses â ${s.expenses.length} lines</td></tr>${renderReviewRows(s.expenses,'expenses','var(--text2)')}
             <tr class="tot-hd"><td>Total expenses</td><td class="r" style="font-family:var(--mono);">${fd(expTotal)}</td><td class="r" style="color:var(--text3);font-family:var(--mono);">${fd(expTotal*12)}</td></tr>`:''}
-            ${s.nonop.length?`<tr class="sec-hd"><td colspan="3">Non-Operating — ${s.nonop.length} lines</td></tr>${renderReviewRows(s.nonop,'nonop','var(--amber)')}`:''}
+            ${s.nonop.length?`<tr class="sec-hd"><td colspan="3">Non-Operating â ${s.nonop.length} lines</td></tr>${renderReviewRows(s.nonop,'nonop','var(--amber)')}`:''}
             <tr class="noi-row"><td>Net operating income</td>
               <td class="r" style="color:${noi>=0?'var(--green)':'var(--red)'};font-family:var(--mono);">${fd(noi)}</td>
               <td class="r" style="color:${noi>=0?'var(--green)':'var(--red)'};font-family:var(--mono);">${fd(noi*12)}</td>
@@ -1680,12 +1699,12 @@ function renderAddPropModal() {
       </div>`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="apState.step=2;renderAddPropModal()">← Back</button>
-      <button class="btn-primary" onclick="apSave()">✓ Save property &amp; budget</button>`;
+      <button class="btn-ghost" onclick="apState.step=2;renderAddPropModal()">â Back</button>
+      <button class="btn-primary" onclick="apSave()">â Save property &amp; budget</button>`;
   }
 }
 
-// ── Step helpers ──
+// ââ Step helpers ââ
 function apStep1Next() {
   const name = document.getElementById('ap-name')?.value?.trim();
   if (!name) { showToast('Property name is required.', true); return; }
@@ -1748,7 +1767,7 @@ function apRecalcReview() {
   if (el) { el.textContent = fd(noi); el.style.color = noi>=0?'var(--green)':'var(--red)'; }
 }
 
-// ── File upload for add property flow ──
+// ââ File upload for add property flow ââ
 function apHandleDrop(e) {
   e.preventDefault();
   document.getElementById('ap-udz')?.classList.remove('drag-over');
@@ -1812,7 +1831,7 @@ function apHandleFile(file) {
   showToast('Please upload XLSX, XLS, or CSV.',true);
 }
 
-// ── Final save ──
+// ââ Final save ââ
 function apSave() {
   const s = apState;
   if (!s.name) { showToast('Property name is required.',true); return; }
@@ -1820,11 +1839,11 @@ function apSave() {
     income:   s.income.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
     expenses: s.expenses.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
     nonop:    s.nonop.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
-    capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.monthly||0)*12,
+    capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(parseFloat(r.monthly)||0)*12,0),
   };
   const id = Date.now();
   properties.push({
-    id, name:s.name, address:s.address||'—', units:s.units||0,
+    id, name:s.name, address:s.address||'â', units:s.units||0,
     pm:s.pm, market:s.market, type:'existing',
     budgetYear: s.budgetYear,
     budget,
@@ -1833,6 +1852,7 @@ function apSave() {
       occupancy:0, collections:0,
       income:  budget.income.map(()=>0),
       expenses:budget.expenses.map(()=>0),
+      nonop:   budget.nonop.map(()=>0),
       capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
     },
     apiConnected:false,
@@ -1847,12 +1867,12 @@ function apSave() {
 function saveBudget(){spConfirmSave('budget');}
 function saveNewProp(){apSave();}
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // ALERT SETTINGS MODAL
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function openAlertSettings() {
   document.getElementById('alert-modal-body').innerHTML = `
-    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Alerts fire immediately when a threshold is crossed — mid-month or otherwise. Toggle off to disable a specific alert type.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Alerts fire immediately when a threshold is crossed â mid-month or otherwise. Toggle off to disable a specific alert type.</div>
     ${Object.entries(THRESHOLDS).map(([key,t])=>`
       <div class="thresh-row">
         <span class="thresh-label">${t.label}</span>
@@ -1881,13 +1901,13 @@ function saveThresholds(){
 function resetThresholds(){THRESHOLDS=JSON.parse(JSON.stringify(THRESH_DEFAULTS));openAlertSettings();showToast('Thresholds reset to defaults.');}
 function closeAlertSettings(){document.getElementById('alert-modal').classList.remove('open');}
 
-// ══════════════════════════════════════
-// BUDGET UPLOAD ENGINE — PGM Format
+// ââââââââââââââââââââââââââââââââââââââ
+// BUDGET UPLOAD ENGINE â PGM Format
 // Handles: multi-sheet XLSX (one tab per property)
 // Format: Property name row 0, header row 3,
-//         ▼ INCOME / ▼ OPERATING EXPENSES / ▼ NON-OPERATING EXPENSES sections
+//         â¼ INCOME / â¼ OPERATING EXPENSES / â¼ NON-OPERATING EXPENSES sections
 //         Col A = Account, Col B = 2025 Actual, Cols C-N = Jan-Dec monthly
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let uploadState = {
   step: 1,
   allSheets: [],      // [{sheetName, displayName, year, income, expenses, nonop}]
@@ -1900,7 +1920,7 @@ let uploadState = {
 const UPLOAD_SKIP = new Set([
   'TOTAL INCOME','TOTAL OPERATING EXPENSES','NET OPERATING INCOME (NOI)',
   'TOTAL NON-OPERATING EXPENSES (INCL. CAPEX)','NET INCOME (LOSS)',
-  'ACCOUNT','2026 ANNUAL BUDGET — MONTHLY BREAKDOWN',
+  'ACCOUNT','2026 ANNUAL BUDGET â MONTHLY BREAKDOWN',
   'NET OPERATING INCOME','NET NON-OPERATING INCOME','NET INCOME',
   'TOTAL INCOME (LOSS)','TOTAL CAPEX','TOTAL NON-OPERATING (EXCL. CAPEX)',
 ]);
@@ -1919,13 +1939,13 @@ function renderUploadStep() {
   const stepsHtml = `
     <div class="upload-steps">
       <div class="upload-step ${step>=1?step>1?'done':'active':''}">
-        <div class="us-num">${step>1?'✓':'1'}</div><span>Upload file</span>
+        <div class="us-num">${step>1?'â':'1'}</div><span>Upload file</span>
       </div><div class="us-sep"></div>
       <div class="upload-step ${step>=2?step>2?'done':'active':''}">
-        <div class="us-num">${step>2?'✓':'2'}</div><span>Select properties</span>
+        <div class="us-num">${step>2?'â':'2'}</div><span>Select properties</span>
       </div><div class="us-sep"></div>
       <div class="upload-step ${step>=3?step>3?'done':'active':''}">
-        <div class="us-num">${step>3?'✓':'3'}</div><span>Match &amp; confirm</span>
+        <div class="us-num">${step>3?'â':'3'}</div><span>Match &amp; confirm</span>
       </div><div class="us-sep"></div>
       <div class="upload-step ${step>=4?'active':''}">
         <div class="us-num">4</div><span>Save</span>
@@ -1935,16 +1955,16 @@ function renderUploadStep() {
   const body   = document.getElementById('upload-modal-body');
   const footer = document.getElementById('upload-modal-footer');
 
-  // ── STEP 1: Drop zone ──
+  // ââ STEP 1: Drop zone ââ
   if (step === 1) {
     body.innerHTML = stepsHtml + `
       <label class="upload-drop-zone" id="udz"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="handleDrop(event)">
-        <div class="udz-icon">⤒</div>
+        <div class="udz-icon">â¤</div>
         <div class="udz-title">Drop your PGM budget file here or click to browse</div>
-        <div class="udz-sub">Reads your annual budget Excel exactly as-is — one tab per property.<br/>Auto-detects all properties, income lines, expense lines, and monthly figures.</div>
+        <div class="udz-sub">Reads your annual budget Excel exactly as-is â one tab per property.<br/>Auto-detects all properties, income lines, expense lines, and monthly figures.</div>
         <div class="udz-formats">
           <span class="fmt-badge">XLSX</span>
           <span class="fmt-badge">XLS</span>
@@ -1956,15 +1976,15 @@ function renderUploadStep() {
       <div style="margin-top:14px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.7;">
         <strong style="color:var(--text2);">PGM format detected automatically.</strong>
         The app reads your standard annual budget format: property name in row 1,
-        <code style="color:var(--accent);">▼ INCOME</code> /
-        <code style="color:var(--accent);">▼ OPERATING EXPENSES</code> /
-        <code style="color:var(--accent);">▼ NON-OPERATING EXPENSES</code> sections,
-        monthly figures in Jan–Dec columns, and 2025 actuals in column B.
+        <code style="color:var(--accent);">â¼ INCOME</code> /
+        <code style="color:var(--accent);">â¼ OPERATING EXPENSES</code> /
+        <code style="color:var(--accent);">â¼ NON-OPERATING EXPENSES</code> sections,
+        monthly figures in JanâDec columns, and 2025 actuals in column B.
         Each tab = one property.
       </div>`;
     footer.innerHTML = `<button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
 
-  // ── STEP 2: Select which sheets to import + choose budget year ──
+  // ââ STEP 2: Select which sheets to import + choose budget year ââ
   } else if (step === 2) {
     const sheets = uploadState.allSheets;
     const selectedCount = Object.values(uploadState.selectedSheets).filter(Boolean).length;
@@ -1990,7 +2010,7 @@ function renderUploadStep() {
                 onchange="toggleSheet('${s.sheetName}',this.checked)"/>
               <span style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</span>
             </label>
-            <span style="font-size:11px;color:var(--text3);">${s.income.length} income · ${s.expenses.length} expense · ${s.nonop.length} non-op</span>
+            <span style="font-size:11px;color:var(--text3);">${s.income.length} income Â· ${s.expenses.length} expense Â· ${s.nonop.length} non-op</span>
             <span style="font-size:12px;font-family:var(--mono);color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo NOI</span>
           </div>
         </div>`;
@@ -2030,12 +2050,12 @@ function renderUploadStep() {
       <div style="max-height:340px;overflow-y:auto;">${sheetRows}</div>`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=1;renderUploadStep()">← Back</button>
+      <button class="btn-ghost" onclick="uploadState.step=1;renderUploadStep()">â Back</button>
       <button class="btn-primary" onclick="uploadState.step=3;renderUploadStep()">
-        Next: Match ${selectedCount} propert${selectedCount!==1?'ies':'y'} →
+        Next: Match ${selectedCount} propert${selectedCount!==1?'ies':'y'} â
       </button>`;
 
-  // ── STEP 3: Match each selected sheet to existing property or create new ──
+  // ââ STEP 3: Match each selected sheet to existing property or create new ââ
   } else if (step === 3) {
     const toImport = uploadState.allSheets.filter(s=>uploadState.selectedSheets[s.sheetName]!==false);
     const allMapped = toImport.every(s=>
@@ -2050,13 +2070,13 @@ function renderUploadStep() {
         ${toImport.map(s=>renderMatchConfirmCard(s)).join('')}
       </div>`;
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
+      <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">â Back</button>
       <button class="btn-primary" ${allMapped?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
         onclick="${allMapped?'uploadState.step=4;renderUploadStep()':''}">
-        Next: Review &amp; save →
+        Next: Review &amp; save â
       </button>`;
 
-    // ── STEP 4: Summary + save ──
+    // ââ STEP 4: Summary + save ââ
   } else if (step === 4) {
     const chosenYear = uploadState.budgetYear;
     const toImport = uploadState.allSheets.filter(s=>
@@ -2079,7 +2099,7 @@ function renderUploadStep() {
         <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);">
           <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${isNew?'var(--accent)':'var(--green)'};"></div>
           <div style="flex:1;font-size:12px;color:var(--text2);">${s.displayName}</div>
-          <div style="font-size:11px;color:var(--text3);">${isNew?'New property':`→ ${matched?.name}`}</div>
+          <div style="font-size:11px;color:var(--text3);">${isNew?'New property':`â ${matched?.name}`}</div>
           <div style="font-size:12px;font-family:var(--mono);color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</div>
           ${willOverwrite?`<span style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:2px 6px;">Replaces ${chosenYear}</span>`:''}
         </div>`;
@@ -2097,7 +2117,7 @@ function renderUploadStep() {
       ${overwriteCount > 0 ? `
         <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
           <div style="font-size:12px;font-weight:600;color:var(--amber);">
-            ⚠ ${overwriteCount} existing ${chosenYear} budget${overwriteCount!==1?'s':''} will be replaced
+            â  ${overwriteCount} existing ${chosenYear} budget${overwriteCount!==1?'s':''} will be replaced
           </div>
         </div>` : ''}
       <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
@@ -2116,12 +2136,12 @@ function renderUploadStep() {
         </div>`:''}`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
-      <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save all budgets</button>`;
+      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">â Back</button>
+      <button class="btn-primary" onclick="confirmSaveBudget()">â Save all budgets</button>`;
   }
 }
 
-// ── FILE HANDLERS ──
+// ââ FILE HANDLERS ââ
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('udz')?.classList.remove('drag-over');
@@ -2204,11 +2224,11 @@ function parseExcelFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-// ── PGM FORMAT PARSER ──
-// Handles: ▼ section headers, formula-based management fees, multi-sheet
-// Management fees have no cached value in Excel — rates are extracted from
-// the plain-text PGM header row (e.g. "PGM | Mgmt=6%×Income | AMF=3%×Income")
-// and computed as rate × accumulated income total.
+// ââ PGM FORMAT PARSER ââ
+// Handles: â¼ section headers, formula-based management fees, multi-sheet
+// Management fees have no cached value in Excel â rates are extracted from
+// the plain-text PGM header row (e.g. "PGM | Mgmt=6%ÃIncome | AMF=3%ÃIncome")
+// and computed as rate Ã accumulated income total.
 function parsePGMSheet(rows, sheetName) {
   const result = {
     sheetName,
@@ -2222,9 +2242,9 @@ function parsePGMSheet(rows, sheetName) {
 
   let currentSection = null;
   let incomeSignedSum = 0; // running total of income for mgmt fee calculation
-  let mgmtRate = 0;        // extracted from PGM header: Mgmt=X%×Income
-  let amfRate  = 0;        // extracted from PGM header: AMF=X%×Income
-  const ARROW = '▼';  // ▼
+  let mgmtRate = 0;        // extracted from PGM header: Mgmt=X%ÃIncome
+  let amfRate  = 0;        // extracted from PGM header: AMF=X%ÃIncome
+  const ARROW = 'â¼';  // â¼
 
   rows.forEach((row, rowIdx) => {
     const label = String(row[0]||'').trim();
@@ -2245,7 +2265,7 @@ function parsePGMSheet(rows, sheetName) {
     }
 
     // PGM header row: extract management fee rates from plain text
-    // e.g. "PGM | Mgmt=6%×Income | AMF=3%×Income | ..."
+    // e.g. "PGM | Mgmt=6%ÃIncome | AMF=3%ÃIncome | ..."
     if (label.startsWith('PGM')) {
       const mgmtM = label.match(/Mgmt=(\d+(?:\.\d+)?)%/);
       if (mgmtM) mgmtRate = parseFloat(mgmtM[1]) / 100;
@@ -2259,9 +2279,9 @@ function parsePGMSheet(rows, sheetName) {
     // Skip any row whose label starts with TOTAL or NET
     if (/^TOTAL\s/i.test(label) || /^NET\s/i.test(label)) return;
 
-    // Section headers (▼ prefix)
-    if (label[0] === ARROW || labelUp.includes('▼')) {
-      const sect = labelUp.replace(/▼/g,'').trim();
+    // Section headers (â¼ prefix)
+    if (label[0] === ARROW || labelUp.includes('â¼')) {
+      const sect = labelUp.replace(/â¼/g,'').trim();
       if      (sect.includes('NON-OPERATING'))      currentSection = 'nonop';
       else if (sect.includes('CAPITAL'))            currentSection = 'capex';
       else if (sect.includes('OPERATING EXPENSES')) currentSection = 'expenses';
@@ -2276,7 +2296,7 @@ function parsePGMSheet(rows, sheetName) {
     const actual2025 = typeof actual2025Raw === 'number' ? actual2025Raw : null;
 
     // Monthly budget: Jan = col C (index 2) through Dec = col N (index 13)
-    // Formula cells with no cached value arrive as '' via defval:'' — not a number, so skipped
+    // Formula cells with no cached value arrive as '' via defval:'' â not a number, so skipped
     let monthlyRaw = null;
     for (let i = 2; i <= 13; i++) {
       const v = row[i];
@@ -2284,7 +2304,7 @@ function parsePGMSheet(rows, sheetName) {
     }
 
     // For management/AMF fee rows with no cached value (Excel formula cells),
-    // compute from rate in PGM header × accumulated income total.
+    // compute from rate in PGM header Ã accumulated income total.
     if (monthlyRaw === null) {
       if ((labelUp === 'MANAGEMENT FEES' || labelUp.includes('MANAGEMENT FEE')) && mgmtRate > 0 && incomeSignedSum > 0) {
         monthlyRaw = mgmtRate * incomeSignedSum;
@@ -2314,6 +2334,12 @@ function parsePGMSheet(rows, sheetName) {
       result[currentSection].push(entry);
     }
   });
+
+  // Merge capex items into nonop so they appear in the Non-Operating Expenses section
+  if (result.capex.length) {
+    result.nonop.push(...result.capex);
+    result.capex = [];
+  }
 
   return result;
 }
@@ -2354,7 +2380,7 @@ function setMatchMap(sheetName, choice) {
   renderUploadStep();
 }
 
-// ── SAVE ──
+// ââ SAVE ââ
 function confirmSaveBudget() {
   const toImport = uploadState.allSheets.filter(s=>
     uploadState.selectedSheets[s.sheetName]!==false &&
@@ -2373,13 +2399,13 @@ function confirmSaveBudget() {
       income:   s.income.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
       expenses: s.expenses.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
       nonop:    s.nonop.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
-      capexBudget: (s.nonop.find(r=>r.label.toLowerCase().includes('capex'))?.annual)||0,
+      capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(r.annual||(r.monthly*12)),0),
     };
 
     if (isNew) {
       const id = Date.now() + Math.random();
       properties.push({
-        id, name: s.displayName, address:'—', units:0,
+        id, name: s.displayName, address:'â', units:0,
         pm:'AppFolio', market:'', type:'existing',
         budgetYear: year,
         budget,
@@ -2388,6 +2414,7 @@ function confirmSaveBudget() {
           occupancy:0, collections:0,
           income: budget.income.map(()=>0),
           expenses: budget.expenses.map(()=>0),
+          nonop: budget.nonop.map(()=>0),
           capexSpent:0, unitRents:[], monthlyNOI:Array(12).fill(null),
         },
         apiConnected:false,
@@ -2406,6 +2433,8 @@ function confirmSaveBudget() {
           prop.actuals.income = budget.income.map(()=>0);
         if (prop.actuals.expenses.length !== budget.expenses.length)
           prop.actuals.expenses = budget.expenses.map(()=>0);
+        if (!prop.actuals.nonop || prop.actuals.nonop.length !== budget.nonop.length)
+          prop.actuals.nonop = budget.nonop.map(()=>0);
         updated++;
       }
     }
@@ -2418,9 +2447,9 @@ function confirmSaveBudget() {
 }
 
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // EDIT PROPERTY
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let editPropId = null;
 
 function openEditProp(propId) {
@@ -2457,7 +2486,7 @@ function openEditProp(propId) {
         </select></div>
     </div>
     <div id="ep-units-notice" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;font-size:12px;color:var(--amber);">
-      <div style="font-weight:600;margin-bottom:6px;">⚑ Unit count changed</div>
+      <div style="font-weight:600;margin-bottom:6px;">â Unit count changed</div>
       <div id="ep-units-notice-text" style="margin-bottom:10px;"></div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
         <input type="checkbox" id="ep-retroactive" style="accent-color:var(--accent);"/>
@@ -2529,10 +2558,10 @@ function saveEditProp() {
   showToast(newName+' updated successfully.');
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // UPLOAD MATCH CONFIRMATION
 // Shown in step 3 when a high-confidence match is found
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function renderMatchConfirmCard(s) {
   // Returns HTML for the match confirmation UI inside the match step
   const name = (s.displayName||s.sheetName).toLowerCase().trim();
@@ -2554,7 +2583,7 @@ function renderMatchConfirmCard(s) {
   const noi = incTotal - expTotal;
   const current = uploadState.matchMap[s.sheetName];
 
-  // High confidence match — show confirmation card prominently
+  // High confidence match â show confirmation card prominently
   const topMatch = scored[0];
   const isHighConfidence = topMatch && topMatch.score >= 80;
   const existingYears = topMatch?.budgetHistory ? Object.keys(topMatch.budgetHistory).sort() : [];
@@ -2564,18 +2593,18 @@ function renderMatchConfirmCard(s) {
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</div>
-          <div style="font-size:11px;color:var(--text3);">${s.income.length} inc · ${s.expenses.length} exp · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span> · Detected year: <span style="color:var(--text2);">${s.year}</span></div>
+          <div style="font-size:11px;color:var(--text3);">${s.income.length} inc Â· ${s.expenses.length} exp Â· NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span> Â· Detected year: <span style="color:var(--text2);">${s.year}</span></div>
         </div>
       </div>
 
       ${isHighConfidence ? `
-        <!-- HIGH CONFIDENCE MATCH — show prominent confirmation -->
+        <!-- HIGH CONFIDENCE MATCH â show prominent confirmation -->
         <div style="background:rgba(61,127,255,.07);border:1px solid rgba(61,127,255,.2);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px;">⬡ Already in your portfolio</div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px;">â¬¡ Already in your portfolio</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">
             We found <strong style="color:var(--text);">${topMatch.name}</strong> (${topMatch.score}% match)
-            ${topMatch.address?`· ${topMatch.address}`:''}
-            ${existingYears.length?`· Budgets on file: <strong style="color:var(--text);">${existingYears.join(', ')}</strong>`:''}
+            ${topMatch.address?`Â· ${topMatch.address}`:''}
+            ${existingYears.length?`Â· Budgets on file: <strong style="color:var(--text);">${existingYears.join(', ')}</strong>`:''}
           </div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">
             Add this budget to the matched property? (You'll choose the budget year in the next step.)
@@ -2583,7 +2612,7 @@ function renderMatchConfirmCard(s) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-primary" style="font-size:12px;padding:7px 16px;"
               onclick="setMatchMap('${s.sheetName}',${topMatch.id})">
-              ✓ Yes — add to ${topMatch.name}
+              â Yes â add to ${topMatch.name}
             </button>
             <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
               onclick="uploadState.matchMap['${s.sheetName}']='__picking__';renderUploadStep()">
@@ -2597,7 +2626,7 @@ function renderMatchConfirmCard(s) {
         </div>
         ${current && current!=='__picking__' && current!=='new' && current!=='skip' ? `
           <div style="font-size:11px;color:var(--green);padding:6px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
-            ✓ Will add budget to <strong>${properties.find(p=>p.id===current)?.name||''}</strong>
+            â Will add budget to <strong>${properties.find(p=>p.id===current)?.name||''}</strong>
           </div>`:''}`
       : ''}
 
@@ -2609,11 +2638,11 @@ function renderMatchConfirmCard(s) {
         <div style="display:flex;flex-direction:column;gap:4px;">
           ${scored.slice(0,3).map(p=>`
             <label class="match-card ${current===p.id?'selected':''}" style="cursor:pointer;" onclick="setMatchMap('${s.sheetName}',${p.id})">
-              <span class="mc-icon">⬡</span>
+              <span class="mc-icon">â¬¡</span>
               <div class="mc-info">
                 <div class="mc-name">${p.name}</div>
-                <div class="mc-sub">${p.address||'—'} · ${p.units} units
-                  ${p.budgetHistory?` · Years: ${Object.keys(p.budgetHistory).join(', ')}`:''}
+                <div class="mc-sub">${p.address||'â'} Â· ${p.units} units
+                  ${p.budgetHistory?` Â· Years: ${Object.keys(p.budgetHistory).join(', ')}`:''}
                 </div>
               </div>
               <span class="mc-score">${p.score}%</span>
@@ -2623,7 +2652,7 @@ function renderMatchConfirmCard(s) {
             <div class="mc-info"><div class="mc-name">Create new: "${s.displayName}"</div><div class="mc-sub">Add as a new property</div></div>
           </label>
           <label class="match-card ${current==='skip'?'selected':''}" style="cursor:pointer;opacity:.7;" onclick="setMatchMap('${s.sheetName}','skip')">
-            <span class="mc-icon" style="color:var(--text3);">○</span>
+            <span class="mc-icon" style="color:var(--text3);">â</span>
             <div class="mc-info"><div class="mc-name" style="color:var(--text3);">Skip this property</div></div>
           </label>
         </div>`:''
@@ -2647,11 +2676,11 @@ async function refreshPropActuals(btn) {
   const prop = properties.find(p=>p.id===selectedPropId);
   if (!prop) return;
   if (!bitqueryConfig.edgeFnReady) {
-    showToast('PointGuard not connected yet — click the ⧡ Bitquery button to connect first.', true);
+    showToast('PointGuard not connected yet â click the â§¡ Bitquery button to connect first.', true);
     return;
   }
-  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
-  showToast('Pulling ' + prop.name + ' actuals from PointGuard…');
+  if (btn) { btn.disabled = true; btn.textContent = 'Refreshingâ¦'; }
+  showToast('Pulling ' + prop.name + ' actuals from PointGuardâ¦');
   try {
     const now = new Date();
     const data = await bqFetch({
@@ -2670,7 +2699,7 @@ async function refreshPropActuals(btn) {
   } catch (err) {
     showToast('Refresh failed: ' + err.message, true);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '⟳ Refresh actuals'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'â³ Refresh actuals'; }
   }
 }
 
@@ -2681,10 +2710,10 @@ function showToast(msg,err=false){
   setTimeout(()=>t.classList.remove('show'),3400);
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // ALERT LOG ENGINE
 // Persistent in-session log of all threshold breaches
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let ALERT_LOG = []; // {id, ts, propId, propName, sev, icon, msg, dismissed}
 let alertLogOpen = false;
 
@@ -2753,10 +2782,10 @@ function renderAlertLogPanel() {
   el.innerHTML = `
     <div class="alert-log-panel">
       <div class="alp-head" onclick="toggleAlertLog()">
-        <span style="font-size:16px;">🔔</span>
-        <span class="alp-title">Alert log — threshold breaches</span>
-        <span class="alp-count">${redCount} critical · ${amberCount} warning</span>
-        <span style="font-size:12px;color:var(--text3);margin-left:auto;" id="alp-chev">${alertLogOpen?'▴':'▾'}</span>
+        <span style="font-size:16px;">ð</span>
+        <span class="alp-title">Alert log â threshold breaches</span>
+        <span class="alp-count">${redCount} critical Â· ${amberCount} warning</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:auto;" id="alp-chev">${alertLogOpen?'â´':'â¾'}</span>
       </div>
       <div class="alp-body ${alertLogOpen?'open':''}" id="alp-body">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -2771,7 +2800,7 @@ function renderAlertLogPanel() {
               <div class="ale-msg">${l.msg}</div>
               <div class="ale-time">${fmtTime(l.ts)}</div>
             </div>
-            <button class="ale-dismiss" onclick="dismissAlert(${l.id})" title="Dismiss">×</button>
+            <button class="ale-dismiss" onclick="dismissAlert(${l.id})" title="Dismiss">Ã</button>
           </div>`).join('')}
       </div>
     </div>`;
@@ -2782,7 +2811,7 @@ function toggleAlertLog() {
   const body = document.getElementById('alp-body');
   const chev = document.getElementById('alp-chev');
   if (body) body.classList.toggle('open', alertLogOpen);
-  if (chev) chev.textContent = alertLogOpen ? '▴' : '▾';
+  if (chev) chev.textContent = alertLogOpen ? 'â´' : 'â¾';
 }
 
 function openAlertLogModal() {
@@ -2807,15 +2836,15 @@ function renderAlertLogModal() {
         <div class="ale-msg">${l.msg}</div>
         <div class="ale-time">${fmtTime(l.ts)}</div>
       </div>
-      <button class="ale-dismiss" onclick="dismissAlert(${l.id});renderAlertLogModal();" title="Dismiss">×</button>
+      <button class="ale-dismiss" onclick="dismissAlert(${l.id});renderAlertLogModal();" title="Dismiss">Ã</button>
     </div>`).join('');
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // ACTUALS UPLOAD ENGINE
-// Same PGM format as budget — reads monthly actuals by line item
+// Same PGM format as budget â reads monthly actuals by line item
 // Matches to existing properties and updates their actuals arrays
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 let actualsState = {
   step: 1,
   allSheets: [],
@@ -2839,10 +2868,10 @@ function renderActualsModal() {
   const stepsHtml = `
     <div class="upload-steps">
       <div class="upload-step ${step>=1?step>1?'done':'active':''}">
-        <div class="us-num">${step>1?'✓':'1'}</div><span>Upload file</span>
+        <div class="us-num">${step>1?'â':'1'}</div><span>Upload file</span>
       </div><div class="us-sep"></div>
       <div class="upload-step ${step>=2?step>2?'done':'active':''}">
-        <div class="us-num">${step>2?'✓':'2'}</div><span>Map properties</span>
+        <div class="us-num">${step>2?'â':'2'}</div><span>Map properties</span>
       </div><div class="us-sep"></div>
       <div class="upload-step ${step>=3?'active':''}">
         <div class="us-num">3</div><span>Review &amp; apply</span>
@@ -2856,17 +2885,17 @@ function renderActualsModal() {
     body.innerHTML = stepsHtml + `
       <div style="margin-bottom:14px;">
         <div class="actuals-source-tabs">
-          <button class="actuals-tab active">⤒ Upload actuals file</button>
-          <button class="actuals-tab" onclick="openBitqueryModal();closeActualsModal()">⬡ Pull from Bitquery</button>
+          <button class="actuals-tab active">â¤ Upload actuals file</button>
+          <button class="actuals-tab" onclick="openBitqueryModal();closeActualsModal()">â¬¡ Pull from Bitquery</button>
         </div>
       </div>
       <label class="upload-drop-zone" id="actuals-udz"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="actualsHandleDrop(event)">
-        <div class="udz-icon">📊</div>
+        <div class="udz-icon">ð</div>
         <div class="udz-title">Drop your actuals file here or click to browse</div>
-        <div class="udz-sub">Same PGM format as budget — one tab per property.<br/>Monthly actuals read from Jan–Dec columns. Compared line-by-line to your budgets.</div>
+        <div class="udz-sub">Same PGM format as budget â one tab per property.<br/>Monthly actuals read from JanâDec columns. Compared line-by-line to your budgets.</div>
         <div class="udz-formats"><span class="fmt-badge">XLSX</span><span class="fmt-badge">XLS</span><span class="fmt-badge">CSV</span></div>
         <input type="file" id="actuals-file-input" accept=".csv,.xlsx,.xls" onchange="actualsHandleFile(this.files[0])"/>
       </label>
@@ -2895,12 +2924,12 @@ function renderActualsModal() {
                 onchange="actualsState.selectedSheets['${s.sheetName}']=this.checked;renderActualsModal()"/>
               <span style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</span>
             </label>
-            <span style="font-size:11px;color:var(--text3);">${s.income.length+s.expenses.length} lines · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span></span>
+            <span style="font-size:11px;color:var(--text3);">${s.income.length+s.expenses.length} lines Â· NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span></span>
           </div>
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;">Map actuals to property:</div>
           <select style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:100%;"
             onchange="actualsState.matchMap['${s.sheetName}']=this.value==='skip'?'skip':+this.value;">
-            <option value="skip" ${!mid||mid==='skip'?'selected':''}>— Skip this property —</option>
+            <option value="skip" ${!mid||mid==='skip'?'selected':''}>â Skip this property â</option>
             ${properties.map(p=>`<option value="${p.id}" ${mid===p.id?'selected':''}>${p.name} (${p.address})</option>`).join('')}
           </select>
           <div style="display:flex;gap:10px;margin-top:8px;">
@@ -2923,7 +2952,7 @@ function renderActualsModal() {
           </div>
           ${matchedProp ? `
             <div style="margin-top:8px;font-size:11px;color:var(--green);padding:5px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
-              ✓ Will update actuals for <strong>${matchedProp.name}</strong> · ${s.income.length} income · ${s.expenses.length} expense lines
+              â Will update actuals for <strong>${matchedProp.name}</strong> Â· ${s.income.length} income Â· ${s.expenses.length} expense lines
             </div>` : ''}
         </div>`;
     }).join('');
@@ -2935,9 +2964,9 @@ function renderActualsModal() {
       </div>
       <div style="max-height:400px;overflow-y:auto;">${cards}</div>`;
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="actualsState.step=1;renderActualsModal()">← Back</button>
+      <button class="btn-ghost" onclick="actualsState.step=1;renderActualsModal()">â Back</button>
       <button class="btn-primary" ${mappedCount>0?'':'disabled style="opacity:.4;"'} onclick="${mappedCount>0?'actualsState.step=3;renderActualsModal()':''}">
-        Review ${mappedCount} update${mappedCount!==1?'s':''} →
+        Review ${mappedCount} update${mappedCount!==1?'s':''} â
       </button>`;
 
   } else if (step === 3) {
@@ -2961,7 +2990,7 @@ function renderActualsModal() {
           <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--green);"></div>
           <div style="flex:1;">
             <div style="font-size:13px;font-weight:600;color:var(--text);">${prop.name}</div>
-            <div style="font-size:11px;color:var(--text3);">${s.income.length} income · ${s.expenses.length} expense lines updated</div>
+            <div style="font-size:11px;color:var(--text3);">${s.income.length} income Â· ${s.expenses.length} expense lines updated</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:12px;font-family:var(--mono);color:${noiActual>=budNOI?'var(--green)':'var(--red)'};">NOI ${fd(noiActual)}/mo</div>
@@ -2982,7 +3011,7 @@ function renderActualsModal() {
       if (!alerts.length) return '';
       return `
         <div style="margin-top:6px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;">${prop.name} — ${alerts.length} alert${alerts.length!==1?'s':''} will fire:</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;">${prop.name} â ${alerts.length} alert${alerts.length!==1?'s':''} will fire:</div>
           ${alerts.slice(0,3).map(al=>`
             <div class="alert-chip ${al.sev}" style="margin-bottom:4px;">
               <span class="chip-icon">${al.icon}</span>
@@ -2993,20 +3022,20 @@ function renderActualsModal() {
 
     body.innerHTML = stepsHtml + `
       <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✓ Ready to apply ${toApply.length} actuals update${toApply.length!==1?'s':''}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">â Ready to apply ${toApply.length} actuals update${toApply.length!==1?'s':''}</div>
         <div style="font-size:12px;color:var(--text2);">Actuals will be applied line-by-line. Alerts fire immediately for any threshold breaches.</div>
       </div>
       ${summaryRows}
       ${alertPreview ? `
         <div style="margin-top:16px;padding:14px 16px;background:rgba(232,80,74,.05);border:1px solid rgba(232,80,74,.15);border-radius:10px;">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin-bottom:10px;">⚑ Alert preview — these will fire on save</div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin-bottom:10px;">â Alert preview â these will fire on save</div>
           ${alertPreview}
         </div>` : `
-        <div style="margin-top:14px;padding:12px 14px;background:rgba(34,201,122,.05);border:1px solid rgba(34,201,122,.15);border-radius:8px;font-size:12px;color:var(--green);">✓ No threshold breaches detected — all actuals are within budget targets.</div>`}`;
+        <div style="margin-top:14px;padding:12px 14px;background:rgba(34,201,122,.05);border:1px solid rgba(34,201,122,.15);border-radius:8px;font-size:12px;color:var(--green);">â No threshold breaches detected â all actuals are within budget targets.</div>`}`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="actualsState.step=2;renderActualsModal()">← Back</button>
-      <button class="btn-primary" onclick="confirmApplyActuals()">✓ Apply actuals &amp; run alerts</button>`;
+      <button class="btn-ghost" onclick="actualsState.step=2;renderActualsModal()">â Back</button>
+      <button class="btn-primary" onclick="confirmApplyActuals()">â Apply actuals &amp; run alerts</button>`;
   }
 }
 
@@ -3123,9 +3152,22 @@ function applyActualsToProperty(prop, sheet, dryRun) {
     const idx = matchLine(prop.budget.expenses, line.label);
     if (idx >= 0) prop.actuals.expenses[idx] = line.monthly;
   });
-  // Apply CapEx from nonop if present
-  const capexLine = sheet.nonop?.find(r => r.label.toLowerCase().includes('capex'));
-  if (capexLine) prop.actuals.capexSpent = capexLine.monthly * 12; // annualize for capex tracking
+  // Apply non-operating / CapEx actuals line-by-line
+  if (sheet.nonop && sheet.nonop.length && prop.budget.nonop && prop.budget.nonop.length) {
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== prop.budget.nonop.length)
+      prop.actuals.nonop = prop.budget.nonop.map(()=>0);
+    sheet.nonop.forEach(line => {
+      const idx = matchLine(prop.budget.nonop, line.label);
+      if (idx >= 0) prop.actuals.nonop[idx] = line.monthly;
+    });
+  }
+  // Also set capexSpent total for the summary card (sum of all capex-tagged nonop actuals)
+  const capexTotal = (prop.budget.nonop || []).reduce((sum, r, i) => {
+    const l = r.label.toLowerCase();
+    if (l.includes('capex') || l.includes('capital')) sum += (prop.actuals.nonop?.[i] || 0);
+    return sum;
+  }, 0);
+  if (capexTotal > 0) prop.actuals.capexSpent = capexTotal * 12; // annualize for capex tracking card
   prop.actualsLastUpdated = new Date();
   prop.actualsSource = 'upload';
 }
@@ -3147,6 +3189,8 @@ function confirmApplyActuals() {
       prop.actuals.income = prop.budget.income.map(()=>0);
     if (prop.actuals.expenses.length !== prop.budget.expenses.length)
       prop.actuals.expenses = prop.budget.expenses.map(()=>0);
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== (prop.budget.nonop||[]).length)
+      prop.actuals.nonop = (prop.budget.nonop||[]).map(()=>0);
     applyActualsToProperty(prop, s, false);
     // Apply occupancy and collections if entered in the upload form
     const occ = (actualsState.occupancyMap||{})[s.sheetName];
@@ -3166,21 +3210,21 @@ function confirmApplyActuals() {
   showToast(`Actuals applied to ${updated} propert${updated!==1?'ies':'y'}. ${newAlerts > 0 ? newAlerts + ' alert' + (newAlerts!==1?'s':'')+' fired.' : 'All within budget.'}`);
 }
 
-// ══════════════════════════════════════
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
+// ââââââââââââââââââââââââââââââââââââââ
 // BIGQUERY / POINTGUARD LIVE ACTUALS
 // Calls Supabase Edge Function bq-actuals as secure proxy
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 
 // Property name mapping: BPOS short name -> BigQuery PropertyName search string
 // BigQuery uses full street addresses. Add entries once you have the full list.
 const BQ_NAME_MAP = {
-  // Maps BPOS short names (lowercase) → BQ search term (matched via LIKE '%term%')
+  // Maps BPOS short names (lowercase) â BQ search term (matched via LIKE '%term%')
   // Only entries that don't auto-match are listed here.
   '1003-1005 ave k':   '1003-1005 Avenue K',   // BQ: "1003-1005 Avenue K - PGO"
   'greenway 1':        'Greenway Townhomes 1',  // BQ: "The Greenway Townhomes 1 - SD - PGO"
   'greenway 2':        'Greenway Townhomes 2',  // BQ: "The Greenway Townhomes 2 - SD - PGO"
-  // '6990 dodge st': '???',                    // Not yet in BigQuery — confirm name with PointGuard
+  // '6990 dodge st': '???',                    // Not yet in BigQuery â confirm name with PointGuard
 };
 
 function bqSearchName(propName) {
@@ -3229,15 +3273,15 @@ function renderBitqueryModal() {
   body.innerHTML = '<div class="bq-status-row ' + (bq.connected ? 'connected' : 'disconnected') + '">'
     + '<div class="api-dot ' + (bq.connected ? '' : 'off') + '"></div>'
     + '<span>' + (bq.connected
-        ? '⧡ PointGuard BigQuery connected' + (syncTime ? ' — last sync: ' + syncTime : '')
-        : 'Not connected — deploy the Edge Function and click Test Connection')
+        ? 'â§¡ PointGuard BigQuery connected' + (syncTime ? ' â last sync: ' + syncTime : '')
+        : 'Not connected â deploy the Edge Function and click Test Connection')
     + '</span></div>'
     + '<div class="bq-steps" style="margin-bottom:14px;">'
     + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;">One-time setup</div>'
     + '<div class="bq-step"><div class="bq-step-num">1</div><span>Ask the PointGuard team to create a service account with <strong>BigQuery Data Viewer</strong> + <strong>BigQuery Job User</strong> roles on project <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">versatile-hull-395101</code> and send you the JSON key file.</span></div>'
     + '<div class="bq-step"><div class="bq-step-num">2</div><span>Deploy the Edge Function: <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase functions deploy bq-actuals</code></span></div>'
     + '<div class="bq-step"><div class="bq-step-num">3</div><span>Set the secret: <code style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase secrets set GOOGLE_SERVICE_ACCOUNT="$(cat key.json)"</code></span></div>'
-    + '<div class="bq-step"><div class="bq-step-num">4</div><span>Click <strong>Test Connection</strong> below — once green, Refresh actuals on any property pulls live PointGuard data automatically.</span></div>'
+    + '<div class="bq-step"><div class="bq-step-num">4</div><span>Click <strong>Test Connection</strong> below â once green, Refresh actuals on any property pulls live PointGuard data automatically.</span></div>'
     + '</div>'
     + '<div style="padding:12px 14px;background:rgba(61,127,255,.06);border:1px solid rgba(61,127,255,.15);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6;">'
     + '<strong style="color:var(--accent);">What gets pulled:</strong> Monthly income, expenses &amp; NOI from PointGuard &bull; rent roll (all units) &bull; unit status from PropUp. All read-only via BigQuery Data Viewer.'
@@ -3251,8 +3295,8 @@ function renderBitqueryModal() {
 
 async function testBigQueryConnection() {
   const btn = document.getElementById('bq-test-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; }
-  showToast('Pinging PointGuard BigQuery…');
+  if (btn) { btn.disabled = true; btn.textContent = 'Testingâ¦'; }
+  showToast('Pinging PointGuard BigQueryâ¦');
   try {
     const now = new Date();
     const data = await bqFetch({
@@ -3273,7 +3317,7 @@ async function testBigQueryConnection() {
 }
 
 async function refreshAllActuals() {
-  showToast('Refreshing actuals for all properties…');
+  showToast('Refreshing actuals for all propertiesâ¦');
   const now = new Date();
   try {
     const [data, occData] = await Promise.all([
@@ -3315,13 +3359,13 @@ async function refreshAllActuals() {
 async function refreshPropUnits(propId) {
   const prop = properties.find(function(p) { return p.id === propId; });
   if (!prop) return;
-  showToast('Loading unit tracker for ' + prop.name + '…');
+  showToast('Loading unit tracker for ' + prop.name + 'â¦');
   try {
     const data = await bqFetch({ type: 'property_units', property: prop.name });
     prop.bqUnits = data.rows || [];
     bitqueryConfig.lastSync = Date.now();
     renderPage();
-    showToast('Unit tracker loaded — ' + prop.bqUnits.length + ' units.');
+    showToast('Unit tracker loaded â ' + prop.bqUnits.length + ' units.');
   } catch (err) { showToast('Unit tracker failed: ' + err.message, true); }
 }
 function applyBQActuals(prop, row) {
@@ -3343,6 +3387,29 @@ function applyBQActuals(prop, row) {
       return budTotal > 0 ? Math.round(expense * r.monthly / budTotal * 100) / 100 : 0;
     });
   }
+  // Non-operating / CapEx actuals from BigQuery (if fields available)
+  const capexRaw = parseFloat(row.CAPEX || row.TotalCapex || row.CapExSpent || 0);
+  const nonopRaw = parseFloat(row.TotalNonOperating || row.NonOperatingExpenses || 0);
+  const capexVal = Math.abs(capexRaw);
+  const nonopVal = nonopRaw ? Math.abs(nonopRaw) : capexVal; // fallback to capex if no separate nonop total
+
+  if (nonopVal > 0 && prop.budget.nonop && prop.budget.nonop.length) {
+    if (!prop.actuals.nonop || prop.actuals.nonop.length !== prop.budget.nonop.length)
+      prop.actuals.nonop = prop.budget.nonop.map(function(){return 0;});
+    if (prop.budget.nonop.length === 1) {
+      prop.actuals.nonop = [nonopVal];
+    } else {
+      var budNonopTotal = prop.budget.nonop.reduce(function(s,r){return s+r.monthly;},0);
+      prop.actuals.nonop = prop.budget.nonop.map(function(r){
+        return budNonopTotal > 0 ? Math.round(nonopVal * r.monthly / budNonopTotal * 100) / 100 : 0;
+      });
+    }
+  }
+  // Also set capexSpent for the summary card
+  if (capexVal > 0) {
+    prop.actuals.capexSpent = capexVal;
+  }
+
   prop.actualsLastUpdated = Date.now();
   prop.actualsSource = 'bigquery';
   prop.bqActuals = {
@@ -3350,15 +3417,17 @@ function applyBQActuals(prop, row) {
     expense: expense,
     noi: parseFloat(row.NetIncome || 0),
     rentIncome: Math.abs(parseFloat(row.RentIncome || 0)),
+    capex: capexVal,
+    nonop: nonopVal,
     date: row.Date,
   };
 }
 
 function saveBitqueryConfig() { closeBitqueryModal(); }
 
-// ══════════════════════════════════════
-// VARIANCE SUMMARY — 3-card strip above key metrics
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
+// VARIANCE SUMMARY â 3-card strip above key metrics
+// ââââââââââââââââââââââââââââââââââââââ
 function getVarianceSummary(prop) {
   const b = prop.budget;
   const a = prop.actuals;
@@ -3399,11 +3468,11 @@ function getVarianceSummary(prop) {
     </div>`;
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // POST-RENDER HOOK
 // Injects alert log panel and actuals status after renderPage()
 // Called from a patched version of renderPage via renderPageFull()
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function postRenderHook() {
   const wrap = document.getElementById('main-page');
   if (!wrap) return;
@@ -3450,12 +3519,12 @@ function postRenderHook() {
           badge.style.color = 'var(--green)';
           badge.style.background = 'rgba(34,201,122,.08)';
           badge.style.border = '1px solid rgba(34,201,122,.2)';
-          badge.innerHTML = `● Actuals: ${prop.actualsSource==='bitquery'?'Bitquery':'Uploaded'} · ${new Date(prop.actualsLastUpdated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
+          badge.innerHTML = `â Actuals: ${prop.actualsSource==='bitquery'?'Bitquery':'Uploaded'} Â· ${new Date(prop.actualsLastUpdated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
         } else {
           badge.style.color = 'var(--text3)';
           badge.style.background = 'var(--bg3)';
           badge.style.border = '1px solid var(--border2)';
-          badge.innerHTML = `○ No actuals — <button onclick="openActualsModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font);font-size:10px;padding:0;">upload</button>`;
+          badge.innerHTML = `â No actuals â <button onclick="openActualsModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:var(--font);font-size:10px;padding:0;">upload</button>`;
         }
         refreshBtns[0].parentNode.insertBefore(badge, refreshBtns[0].nextSibling);
       }
@@ -3463,34 +3532,34 @@ function postRenderHook() {
   }
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // OVERRIDE renderPage to run post-render hook
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 const _baseRenderPage = renderPage;
 renderPage = function() {
   _baseRenderPage();
   postRenderHook();
 };
 
-// ══════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // SUPABASE INTEGRATION
 // Key design decision: numeric `id` drives ALL UI (selectProp,
 // openEditProp, etc). `supabaseId` is the UUID stored separately
 // and used ONLY for DB calls. On hydrate we assign stable numeric
 // IDs based on array index so all existing event handlers work.
-// ══════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTI3NTQsImV4cCI6MjA5MDAyODc1NH0.xAjHM7s6IphX_oOA_Qma4sspmlLywX209EssAursr0w';
 
 let dbOnline = false;
 let _syncEl  = null;
-// Map numeric id → supabase UUID, rebuilt on every hydrate
+// Map numeric id â supabase UUID, rebuilt on every hydrate
 let _idToUuid = {};
 // Track which alert keys we've already persisted this session
 let _persistedAlertKeys = new Set();
 
-// ── Raw fetch ────────────────────────────────────────────────
+// ââ Raw fetch ââââââââââââââââââââââââââââââââââââââââââââââââ
 async function sbReq(path, opts = {}) {
   const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
     ...opts,
@@ -3510,7 +3579,7 @@ async function sbReq(path, opts = {}) {
   return txt ? JSON.parse(txt) : [];
 }
 
-// ── Sync badge in nav ────────────────────────────────────────
+// ââ Sync badge in nav ââââââââââââââââââââââââââââââââââââââââ
 function syncBadge(state, label) {
   if (!_syncEl) {
     _syncEl = document.createElement('span');
@@ -3528,15 +3597,15 @@ function syncBadge(state, label) {
   _syncEl.style.cssText += styles[state] || styles.offline;
   _syncEl.textContent = label;
   if (state === 'saved') {
-    setTimeout(() => { if (_syncEl) { _syncEl.style.cssText = _syncEl.style.cssText; _syncEl.textContent = '● Live'; } }, 2000);
+    setTimeout(() => { if (_syncEl) { _syncEl.style.cssText = _syncEl.style.cssText; _syncEl.textContent = 'â Live'; } }, 2000);
   }
 }
 
-// ══════════════════════════════════════
-// HYDRATE — Supabase rows → in-memory properties
-// Assigns stable numeric IDs (1, 2, 3…) for UI compatibility
+// ââââââââââââââââââââââââââââââââââââââ
+// HYDRATE â Supabase rows â in-memory properties
+// Assigns stable numeric IDs (1, 2, 3â¦) for UI compatibility
 // Stores UUID in supabaseId for all DB operations
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
   _idToUuid = {};
   const curYear  = new Date().getFullYear();
@@ -3582,10 +3651,10 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
       .forEach(n => { monthlyNOI[n.month - 1] = n.noi; });
 
     return {
-      id:          numId,           // numeric — used by all UI handlers
-      supabaseId:  uuid,            // UUID — used only for DB calls
+      id:          numId,           // numeric â used by all UI handlers
+      supabaseId:  uuid,            // UUID â used only for DB calls
       name:        row.name,
-      address:     row.address || '—',
+      address:     row.address || 'â',
       units:       row.units   || 0,
       pm:          row.pm      || 'AppFolio',
       market:      row.market  || '',
@@ -3598,6 +3667,7 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
         collections: act?.collections  || 0,
         income:      act?.income_values  || budget.income.map(() => 0),
         expenses:    act?.expense_values || budget.expenses.map(() => 0),
+        nonop:       act?.nonop_values   || (budget.nonop||[]).map(() => 0),
         capexSpent:  act?.capex_spent  || 0,
         unitRents:   act?.unit_rents   || [],
         monthlyNOI,
@@ -3609,9 +3679,9 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
   });
 }
 
-// ══════════════════════════════════════
-// BOOT — loads everything on page load
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
+// BOOT â loads everything on page load
+// ââââââââââââââââââââââââââââââââââââââ
 async function boot() {
   // Show loading overlay
   const overlay = document.getElementById('db-loading-overlay');
@@ -3619,27 +3689,27 @@ async function boot() {
   if (overlay) overlay.classList.remove('hidden');
 
   try {
-    if (msgEl) msgEl.textContent = 'Connecting to database…';
+    if (msgEl) msgEl.textContent = 'Connecting to databaseâ¦';
 
     // Quick connection test
     await sbReq('properties?select=id&limit=1');
     dbOnline = true;
 
-    if (msgEl) msgEl.textContent = 'Loading portfolio…';
+    if (msgEl) msgEl.textContent = 'Loading portfolioâ¦';
     const propRows = await sbReq('properties?select=*&order=name.asc');
 
     if (!propRows || propRows.length === 0) {
-      // First run — seed demo properties into DB
-      if (msgEl) msgEl.textContent = 'First launch — saving demo portfolio…';
+      // First run â seed demo properties into DB
+      if (msgEl) msgEl.textContent = 'First launch â saving demo portfolioâ¦';
       await seedDemo();
       if (overlay) overlay.classList.add('hidden');
-      try { syncBadge('saved', '● Live'); } catch (_) {}
+      try { syncBadge('saved', 'â Live'); } catch (_) {}
       renderPage();
       return;
     }
 
     // Load budgets, actuals, NOI for all properties in parallel
-    if (msgEl) msgEl.textContent = 'Loading budgets & actuals…';
+    if (msgEl) msgEl.textContent = 'Loading budgets & actualsâ¦';
     const ids = propRows.map(p => p.id);
 
     const [budgetRows, actualRows, noiRows, threshRow, alertRows] = await Promise.all([
@@ -3700,10 +3770,10 @@ async function boot() {
       ALERT_LOG.forEach(a => _persistedAlertKeys.add(a.key));
     }
 
-    // ── DB load complete — render UI (errors here must NOT disable DB) ──
+    // ââ DB load complete â render UI (errors here must NOT disable DB) ââ
     if (overlay) overlay.classList.add('hidden');
     try {
-      syncBadge('saved', '● Live');
+      syncBadge('saved', 'â Live');
       renderPage();
     } catch (renderErr) {
       console.warn('[BPOS] Render error (DB still online):', renderErr.message);
@@ -3716,14 +3786,14 @@ async function boot() {
     console.warn('[BPOS] DB offline, using demo data:', err.message);
     dbOnline = false;
     if (overlay) overlay.classList.add('hidden');
-    try { syncBadge('offline', '○ Offline — data won\'t save'); } catch (_) {}
+    try { syncBadge('offline', 'â Offline â data won\'t save'); } catch (_) {}
     renderPage();
   }
 }
 
-// ══════════════════════════════════════
-// SEED — writes demo data to fresh DB
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
+// SEED â writes demo data to fresh DB
+// ââââââââââââââââââââââââââââââââââââââ
 async function seedDemo() {
   const now = new Date();
   for (const prop of properties) {
@@ -3764,6 +3834,7 @@ async function seedDemo() {
           month:          now.getMonth() + 1,
           income_values:  prop.actuals.income,
           expense_values: prop.actuals.expenses,
+          nonop_values:   prop.actuals.nonop || [],
           capex_spent:    prop.actuals.capexSpent || 0,
           occupancy:      prop.actuals.occupancy  || 0,
           collections:    prop.actuals.collections || 0,
@@ -3794,11 +3865,11 @@ async function seedDemo() {
   }
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // DB SAVE HELPERS
 // Each checks dbOnline before attempting, silently skips if offline
-// Uses _idToUuid to resolve numeric prop.id → Supabase UUID
-// ══════════════════════════════════════
+// Uses _idToUuid to resolve numeric prop.id â Supabase UUID
+// ââââââââââââââââââââââââââââââââââââââ
 
 function getUuid(prop) {
   // Works whether prop has supabaseId set or we look it up from map
@@ -3808,7 +3879,7 @@ function getUuid(prop) {
 async function dbSaveProp(prop) {
   if (!dbOnline) return;
   const uuid = getUuid(prop);
-  syncBadge('saving', '↑ Saving…');
+  syncBadge('saving', 'â Savingâ¦');
   try {
     if (uuid) {
       await sbReq('properties?id=eq.' + uuid, {
@@ -3823,7 +3894,7 @@ async function dbSaveProp(prop) {
       const [saved] = await sbReq('properties', {
         method: 'POST',
         body: JSON.stringify({
-          name: prop.name, address: prop.address || '—',
+          name: prop.name, address: prop.address || 'â',
           units: prop.units || 0, pm: prop.pm || 'AppFolio',
           market: prop.market || '', type: prop.type || 'existing',
         }),
@@ -3833,9 +3904,9 @@ async function dbSaveProp(prop) {
         _idToUuid[prop.id] = saved.id;
       }
     }
-    syncBadge('saved', '● Saved');
+    syncBadge('saved', 'â Saved');
   } catch (e) {
-    syncBadge('error', '✕ Error');
+    syncBadge('error', 'â Error');
     console.error('[BPOS] dbSaveProp:', e.message);
   }
 }
@@ -3843,7 +3914,7 @@ async function dbSaveProp(prop) {
 async function dbSaveBudget(prop, year, budget) {
   const uuid = getUuid(prop);
   if (!dbOnline || !uuid) return;
-  syncBadge('saving', '↑ Saving…');
+  syncBadge('saving', 'â Savingâ¦');
   try {
     await sbReq('budgets?on_conflict=property_id,year', {
       method:  'POST',
@@ -3857,9 +3928,9 @@ async function dbSaveBudget(prop, year, budget) {
         capex_budget:  budget.capexBudget || 0,
       }),
     });
-    syncBadge('saved', '● Saved');
+    syncBadge('saved', 'â Saved');
   } catch (e) {
-    syncBadge('error', '✕ Error');
+    syncBadge('error', 'â Error');
     console.error('[BPOS] dbSaveBudget:', e.message);
   }
 }
@@ -3868,7 +3939,7 @@ async function dbSaveActuals(prop) {
   const uuid = getUuid(prop);
   if (!dbOnline || !uuid) return;
   const now = new Date();
-  syncBadge('saving', '↑ Saving actuals…');
+  syncBadge('saving', 'â Saving actualsâ¦');
   try {
     await sbReq('actuals', {
       method:  'POST',
@@ -3879,6 +3950,7 @@ async function dbSaveActuals(prop) {
         month:          now.getMonth() + 1,
         income_values:  prop.actuals.income,
         expense_values: prop.actuals.expenses,
+        nonop_values:   prop.actuals.nonop       || [],
         capex_spent:    prop.actuals.capexSpent  || 0,
         occupancy:      prop.actuals.occupancy   || 0,
         collections:    prop.actuals.collections || 0,
@@ -3899,9 +3971,9 @@ async function dbSaveActuals(prop) {
         noi:   actInc - actExp,
       }),
     });
-    syncBadge('saved', '● Saved');
+    syncBadge('saved', 'â Saved');
   } catch (e) {
-    syncBadge('error', '✕ Error');
+    syncBadge('error', 'â Error');
     console.error('[BPOS] dbSaveActuals:', e.message);
   }
 }
@@ -3973,12 +4045,12 @@ async function dbClearAlerts() {
   } catch (e) { console.warn('[BPOS] dbClearAlerts:', e.message); }
 }
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // PATCH existing functions to persist to DB
-// All patches are additive — original function still runs first
-// ══════════════════════════════════════
+// All patches are additive â original function still runs first
+// ââââââââââââââââââââââââââââââââââââââ
 
-// confirmApplyActuals → save actuals to DB after applying in-memory
+// confirmApplyActuals â save actuals to DB after applying in-memory
 const __confirmApplyActuals = confirmApplyActuals;
 confirmApplyActuals = async function() {
   __confirmApplyActuals();
@@ -3995,7 +4067,7 @@ confirmApplyActuals = async function() {
   }
 };
 
-// confirmSaveBudget � save budgets to DB
+// confirmSaveBudget ï¿½ save budgets to DB
 const __confirmSaveBudget = confirmSaveBudget;
 confirmSaveBudget = async function() {
   const prevLen = properties.length;
@@ -4023,7 +4095,7 @@ confirmSaveBudget = async function() {
   }
 };
 
-// apSave (add property) → persist new property + budget
+// apSave (add property) â persist new property + budget
 const __apSave = apSave;
 apSave = async function() {
   const prevLen = properties.length;
@@ -4036,7 +4108,7 @@ apSave = async function() {
   }
 };
 
-// saveEditProp → persist property edits
+// saveEditProp â persist property edits
 const __saveEditProp = saveEditProp;
 saveEditProp = function() {
   __saveEditProp();
@@ -4044,14 +4116,14 @@ saveEditProp = function() {
   if (prop) dbSaveProp(prop);
 };
 
-// saveThresholds → persist threshold changes
+// saveThresholds â persist threshold changes
 const __saveThresholds = saveThresholds;
 saveThresholds = function() {
   __saveThresholds();
   dbSaveThresholds();
 };
 
-// dismissAlert → persist dismiss to DB
+// dismissAlert â persist dismiss to DB
 const __dismissAlert = dismissAlert;
 dismissAlert = function(id) {
   const entry = ALERT_LOG.find(l => l.id === id);
@@ -4059,14 +4131,14 @@ dismissAlert = function(id) {
   if (entry) dbDismissAlert(entry);
 };
 
-// clearAllAlerts → persist clears to DB
+// clearAllAlerts â persist clears to DB
 const __clearAllAlerts = clearAllAlerts;
 clearAllAlerts = function() {
   __clearAllAlerts();
   dbClearAlerts();
 };
 
-// checkAndLogAlerts → persist new alerts to DB
+// checkAndLogAlerts â persist new alerts to DB
 const __checkAndLogAlerts = checkAndLogAlerts;
 checkAndLogAlerts = function() {
   const prevLen = ALERT_LOG.length;
@@ -4080,9 +4152,9 @@ checkAndLogAlerts = function() {
   }
 };
 
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 // INIT
-// ══════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââ
 boot();
 </script>
 </body>

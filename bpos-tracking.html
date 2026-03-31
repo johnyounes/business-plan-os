@@ -1927,11 +1927,8 @@ function renderUploadStep() {
       <div class="upload-step ${step>=3?step>3?'done':'active':''}">
         <div class="us-num">${step>3?'✓':'3'}</div><span>Match &amp; confirm</span>
       </div><div class="us-sep"></div>
-      <div class="upload-step ${step>=4?step>4?'done':'active':''}">
-        <div class="us-num">${step>4?'✓':'4'}</div><span>Budget year</span>
-      </div><div class="us-sep"></div>
-      <div class="upload-step ${step>=5?'active':''}">
-        <div class="us-num">5</div><span>Save</span>
+      <div class="upload-step ${step>=4?'active':''}">
+        <div class="us-num">4</div><span>Save</span>
       </div>
     </div>`;
 
@@ -1967,10 +1964,18 @@ function renderUploadStep() {
       </div>`;
     footer.innerHTML = `<button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
 
-  // ── STEP 2: Select which sheets to import ──
+  // ── STEP 2: Select which sheets to import + choose budget year ──
   } else if (step === 2) {
     const sheets = uploadState.allSheets;
     const selectedCount = Object.values(uploadState.selectedSheets).filter(Boolean).length;
+
+    // Default budget year from file detection if not yet set
+    if (uploadState.budgetYear === null) {
+      const firstSheet = sheets[0];
+      uploadState.budgetYear = firstSheet ? firstSheet.year : new Date().getFullYear();
+    }
+    const detectedYear = sheets[0]?.year || new Date().getFullYear();
+    const chosenYear = uploadState.budgetYear;
 
     const sheetRows = sheets.map(s => {
       const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
@@ -1992,6 +1997,26 @@ function renderUploadStep() {
     }).join('');
 
     body.innerHTML = stepsHtml + `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Budget year</div>
+            <div style="font-size:11px;color:var(--text3);">Detected <strong style="color:var(--text2);">${detectedYear}</strong> from file. Change if needed.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" id="budget-year-input" value="${chosenYear}" min="2020" max="2040"
+              style="width:90px;padding:8px 10px;font-size:16px;font-weight:700;font-family:var(--mono);
+              border:2px solid var(--accent);border-radius:8px;background:var(--bg2);color:var(--text);
+              text-align:center;outline:none;"
+              oninput="uploadState.budgetYear=+this.value"/>
+            ${[detectedYear, new Date().getFullYear(), new Date().getFullYear()+1].filter((v,i,a)=>a.indexOf(v)===i).map(y=>`
+              <button class="btn-ghost" style="font-size:11px;padding:5px 12px;${y===chosenYear?'border-color:var(--accent);color:var(--accent);font-weight:600;':''}"
+                onclick="uploadState.budgetYear=${y};document.getElementById('budget-year-input').value=${y};renderUploadStep()">
+                ${y}
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <div style="font-size:13px;color:var(--text2);">
           <strong style="color:var(--text);">${sheets.length} properties</strong> found in <strong style="color:var(--text);">${uploadState.fileName}</strong>.
@@ -2002,7 +2027,7 @@ function renderUploadStep() {
           <button class="btn-ghost" style="font-size:11px;padding:5px 12px;" onclick="selectAllSheets(false)">Deselect all</button>
         </div>
       </div>
-      <div style="max-height:400px;overflow-y:auto;">${sheetRows}</div>`;
+      <div style="max-height:340px;overflow-y:auto;">${sheetRows}</div>`;
 
     footer.innerHTML = `
       <button class="btn-ghost" onclick="uploadState.step=1;renderUploadStep()">← Back</button>
@@ -2028,81 +2053,11 @@ function renderUploadStep() {
       <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
       <button class="btn-primary" ${allMapped?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
         onclick="${allMapped?'uploadState.step=4;renderUploadStep()':''}">
-        Next: Choose budget year →
-      </button>`;
-
-    // ── STEP 4: Choose budget year ──
-  } else if (step === 4) {
-    // Default to detected year from first selected sheet if not yet set
-    if (uploadState.budgetYear === null) {
-      const firstSelected = uploadState.allSheets.find(s=>uploadState.selectedSheets[s.sheetName]!==false);
-      uploadState.budgetYear = firstSelected ? firstSelected.year : new Date().getFullYear();
-    }
-    const detectedYear = uploadState.allSheets.find(s=>uploadState.selectedSheets[s.sheetName]!==false)?.year || new Date().getFullYear();
-    const chosenYear = uploadState.budgetYear;
-
-    // Check which properties will be overwritten at the chosen year
-    const toImport = uploadState.allSheets.filter(s=>
-      uploadState.selectedSheets[s.sheetName]!==false &&
-      uploadState.matchMap[s.sheetName] &&
-      uploadState.matchMap[s.sheetName]!=='skip'
-    );
-    const overwrites = toImport.filter(s=>{
-      const mid = uploadState.matchMap[s.sheetName];
-      if (mid==='new') return false;
-      const prop = properties.find(p=>p.id===mid);
-      return prop?.budgetHistory?.[chosenYear];
-    });
-
-    body.innerHTML = stepsHtml + `
-      <div style="margin-bottom:18px;">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">What year are these budgets for?</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
-          The file detected <strong style="color:var(--text2);">${detectedYear}</strong> from the spreadsheet headers.
-          You can change this if the budgets are for a different year.
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <input type="number" id="budget-year-input" value="${chosenYear}" min="2020" max="2040"
-            style="width:120px;padding:10px 14px;font-size:18px;font-weight:700;font-family:var(--mono);
-            border:2px solid var(--accent);border-radius:8px;background:var(--bg2);color:var(--text);
-            text-align:center;outline:none;"
-            oninput="uploadState.budgetYear=+this.value;renderUploadStep()"/>
-          <div style="display:flex;gap:6px;">
-            ${[detectedYear, new Date().getFullYear(), new Date().getFullYear()+1].filter((v,i,a)=>a.indexOf(v)===i).map(y=>`
-              <button class="btn-ghost" style="font-size:12px;padding:6px 14px;${y===chosenYear?'border-color:var(--accent);color:var(--accent);font-weight:600;':''}"
-                onclick="uploadState.budgetYear=${y};document.getElementById('budget-year-input').value=${y};renderUploadStep()">
-                ${y}
-              </button>`).join('')}
-          </div>
-        </div>
-      </div>
-      ${overwrites.length > 0 ? `
-        <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:14px 16px;margin-bottom:12px;">
-          <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px;">
-            ⚠ ${overwrites.length} propert${overwrites.length!==1?'ies':'y'} already ${overwrites.length!==1?'have':'has'} a ${chosenYear} budget on file
-          </div>
-          <div style="font-size:11px;color:var(--text3);line-height:1.6;">
-            ${overwrites.map(s=>{
-              const prop = properties.find(p=>p.id===uploadState.matchMap[s.sheetName]);
-              return `<span style="color:var(--text2);">${prop?.name||s.displayName}</span>`;
-            }).join(' · ')}
-            <br/>Uploading will replace the existing ${chosenYear} budget data for ${overwrites.length===1?'this property':'these properties'}.
-          </div>
-        </div>` : `
-        <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:14px 16px;">
-          <div style="font-size:12px;color:var(--green);">
-            ✓ No existing ${chosenYear} budgets will be overwritten.
-          </div>
-        </div>`}`;
-
-    footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
-      <button class="btn-primary" onclick="uploadState.step=5;renderUploadStep()">
         Next: Review &amp; save →
       </button>`;
 
-    // ── STEP 5: Summary + save ──
-  } else if (step === 5) {
+    // ── STEP 4: Summary + save ──
+  } else if (step === 4) {
     const chosenYear = uploadState.budgetYear;
     const toImport = uploadState.allSheets.filter(s=>
       uploadState.selectedSheets[s.sheetName]!==false &&
@@ -2161,7 +2116,7 @@ function renderUploadStep() {
         </div>`:''}`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=4;renderUploadStep()">← Back</button>
+      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
       <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save all budgets</button>`;
   }
 }

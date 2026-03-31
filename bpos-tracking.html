@@ -13,7 +13,7 @@
   --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
   --accent:#3d7fff;--accent2:#1a5ce8;
   --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
-  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;-display:'Playfair Display',seri
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -3474,7 +3474,7 @@ function syncBadge(state, label) {
     _syncEl.style.cssText = 'font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;margin-right:6px;';
     const nav = document.querySelector('.topnav');
     const first = nav && nav.querySelector('.actuals-upload-btn, .settings-btn, .bitquery-connect-btn');
-    if (nav && first) nav.insertBefore(_syncEl, first);
+    if (nav && first) first.parentNode.insertBefore(_syncEl, first);
   }
   const styles = {
     saving:  'background:rgba(245,166,35,.12);color:#f5a623;border:1px solid rgba(245,166,35,.25);',

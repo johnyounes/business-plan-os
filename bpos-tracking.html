@@ -13,7 +13,7 @@
   --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
   --accent:#3d7fff;--accent2:#1a5ce8;
   --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
-  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;-display:'Playfair Display',seri
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -998,7 +998,7 @@ function renderPage() {
                 return `<div class="risk-prop-card" onclick="selectProp(${p.id})">
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
-                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical \u00b7 ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                    <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
                   </div>
                   <div class="rpc-alerts">
                     ${als.slice(0,3).map(al=>`
@@ -1006,7 +1006,7 @@ function renderPage() {
                         <span class="chip-icon">${al.icon}</span>
                         <span class="chip-text">${al.text}</span>
                       </div>`).join('')}
-                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts \u2014 click to view all</div>`:''}
+                    ${als.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 10px;">+${als.length-3} more alerts — click to view all</div>`:''}
                   </div>
                 </div>`;
               }).join('')}
@@ -1894,6 +1894,7 @@ let uploadState = {
   selectedSheets: {}, // {sheetName: true/false}
   matchMap: {},       // {sheetName: propId|'new'|'skip'}
   fileName: '',
+  budgetYear: null,   // user-chosen year (set in Step 4)
 };
 
 const UPLOAD_SKIP = new Set([
@@ -1905,7 +1906,7 @@ const UPLOAD_SKIP = new Set([
 ]);
 
 function openUploadModal() {
-  uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:''};
+  uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:'', budgetYear:null};
   document.getElementById('upload-modal').classList.add('open');
   renderUploadStep();
 }
@@ -1926,8 +1927,11 @@ function renderUploadStep() {
       <div class="upload-step ${step>=3?step>3?'done':'active':''}">
         <div class="us-num">${step>3?'✓':'3'}</div><span>Match &amp; confirm</span>
       </div><div class="us-sep"></div>
-      <div class="upload-step ${step>=4?'active':''}">
-        <div class="us-num">4</div><span>Save</span>
+      <div class="upload-step ${step>=4?step>4?'done':'active':''}">
+        <div class="us-num">${step>4?'✓':'4'}</div><span>Budget year</span>
+      </div><div class="us-sep"></div>
+      <div class="upload-step ${step>=5?'active':''}">
+        <div class="us-num">5</div><span>Save</span>
       </div>
     </div>`;
 
@@ -2024,11 +2028,82 @@ function renderUploadStep() {
       <button class="btn-ghost" onclick="uploadState.step=2;renderUploadStep()">← Back</button>
       <button class="btn-primary" ${allMapped?'':'disabled style="opacity:.4;cursor:not-allowed;"'}
         onclick="${allMapped?'uploadState.step=4;renderUploadStep()':''}">
+        Next: Choose budget year →
+      </button>`;
+
+    // ── STEP 4: Choose budget year ──
+  } else if (step === 4) {
+    // Default to detected year from first selected sheet if not yet set
+    if (uploadState.budgetYear === null) {
+      const firstSelected = uploadState.allSheets.find(s=>uploadState.selectedSheets[s.sheetName]!==false);
+      uploadState.budgetYear = firstSelected ? firstSelected.year : new Date().getFullYear();
+    }
+    const detectedYear = uploadState.allSheets.find(s=>uploadState.selectedSheets[s.sheetName]!==false)?.year || new Date().getFullYear();
+    const chosenYear = uploadState.budgetYear;
+
+    // Check which properties will be overwritten at the chosen year
+    const toImport = uploadState.allSheets.filter(s=>
+      uploadState.selectedSheets[s.sheetName]!==false &&
+      uploadState.matchMap[s.sheetName] &&
+      uploadState.matchMap[s.sheetName]!=='skip'
+    );
+    const overwrites = toImport.filter(s=>{
+      const mid = uploadState.matchMap[s.sheetName];
+      if (mid==='new') return false;
+      const prop = properties.find(p=>p.id===mid);
+      return prop?.budgetHistory?.[chosenYear];
+    });
+
+    body.innerHTML = stepsHtml + `
+      <div style="margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">What year are these budgets for?</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
+          The file detected <strong style="color:var(--text2);">${detectedYear}</strong> from the spreadsheet headers.
+          You can change this if the budgets are for a different year.
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input type="number" id="budget-year-input" value="${chosenYear}" min="2020" max="2040"
+            style="width:120px;padding:10px 14px;font-size:18px;font-weight:700;font-family:var(--mono);
+            border:2px solid var(--accent);border-radius:8px;background:var(--bg2);color:var(--text);
+            text-align:center;outline:none;"
+            oninput="uploadState.budgetYear=+this.value;renderUploadStep()"/>
+          <div style="display:flex;gap:6px;">
+            ${[detectedYear, new Date().getFullYear(), new Date().getFullYear()+1].filter((v,i,a)=>a.indexOf(v)===i).map(y=>`
+              <button class="btn-ghost" style="font-size:12px;padding:6px 14px;${y===chosenYear?'border-color:var(--accent);color:var(--accent);font-weight:600;':''}"
+                onclick="uploadState.budgetYear=${y};document.getElementById('budget-year-input').value=${y};renderUploadStep()">
+                ${y}
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
+      ${overwrites.length > 0 ? `
+        <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:14px 16px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px;">
+            ⚠ ${overwrites.length} propert${overwrites.length!==1?'ies':'y'} already ${overwrites.length!==1?'have':'has'} a ${chosenYear} budget on file
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.6;">
+            ${overwrites.map(s=>{
+              const prop = properties.find(p=>p.id===uploadState.matchMap[s.sheetName]);
+              return `<span style="color:var(--text2);">${prop?.name||s.displayName}</span>`;
+            }).join(' · ')}
+            <br/>Uploading will replace the existing ${chosenYear} budget data for ${overwrites.length===1?'this property':'these properties'}.
+          </div>
+        </div>` : `
+        <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;color:var(--green);">
+            ✓ No existing ${chosenYear} budgets will be overwritten.
+          </div>
+        </div>`}`;
+
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
+      <button class="btn-primary" onclick="uploadState.step=5;renderUploadStep()">
         Next: Review &amp; save →
       </button>`;
 
-    // ── STEP 4: Summary + save ──
-  } else if (step === 4) {
+    // ── STEP 5: Summary + save ──
+  } else if (step === 5) {
+    const chosenYear = uploadState.budgetYear;
     const toImport = uploadState.allSheets.filter(s=>
       uploadState.selectedSheets[s.sheetName]!==false &&
       uploadState.matchMap[s.sheetName] &&
@@ -2044,21 +2119,35 @@ function renderUploadStep() {
       const incTotal = s.income.reduce((t,r)=>t+r.monthly,0);
       const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
       const noi = incTotal-expTotal;
-      const willOverwrite = matched?.budgetHistory?.[s.year];
+      const willOverwrite = matched?.budgetHistory?.[chosenYear];
       return `
         <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);">
           <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${isNew?'var(--accent)':'var(--green)'};"></div>
           <div style="flex:1;font-size:12px;color:var(--text2);">${s.displayName}</div>
           <div style="font-size:11px;color:var(--text3);">${isNew?'New property':`→ ${matched?.name}`}</div>
           <div style="font-size:12px;font-family:var(--mono);color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</div>
-          ${willOverwrite?`<span style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:2px 6px;">Overwrites ${s.year}</span>`:''}
+          ${willOverwrite?`<span style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:2px 6px;">Replaces ${chosenYear}</span>`:''}
         </div>`;
     }).join('');
 
+    // Count overwrites for the warning banner
+    const overwriteCount = toImport.filter(s=>{
+      const mid = uploadState.matchMap[s.sheetName];
+      if (mid==='new') return false;
+      const prop = properties.find(p=>p.id===mid);
+      return prop?.budgetHistory?.[chosenYear];
+    }).length;
+
     body.innerHTML = stepsHtml + `
+      ${overwriteCount > 0 ? `
+        <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--amber);">
+            ⚠ ${overwriteCount} existing ${chosenYear} budget${overwriteCount!==1?'s':''} will be replaced
+          </div>
+        </div>` : ''}
       <div style="background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.2);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
         <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">
-          Ready to save ${toImport.length} budget${toImport.length!==1?'s':''}
+          Ready to save ${toImport.length} budget${toImport.length!==1?'s':''} for ${chosenYear}
         </div>
         <div style="font-size:12px;color:var(--text2);">
           ${creates>0?`${creates} new propert${creates!==1?'ies':'y'} will be created. `:''}
@@ -2072,7 +2161,7 @@ function renderUploadStep() {
         </div>`:''}`;
 
     footer.innerHTML = `
-      <button class="btn-ghost" onclick="uploadState.step=3;renderUploadStep()">← Back</button>
+      <button class="btn-ghost" onclick="uploadState.step=4;renderUploadStep()">← Back</button>
       <button class="btn-primary" onclick="confirmSaveBudget()">✓ Save all budgets</button>`;
   }
 }
@@ -2323,7 +2412,7 @@ function confirmSaveBudget() {
   toImport.forEach(s => {
     const mid = uploadState.matchMap[s.sheetName];
     const isNew = mid==='new';
-    const year = s.year;
+    const year = uploadState.budgetYear || s.year;
 
     const budget = {
       income:   s.income.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
@@ -2369,7 +2458,8 @@ function confirmSaveBudget() {
 
   closeUploadModal();
   renderPage();
-  showToast(`Imported: ${created} new, ${updated} updated. Budgets saved.`);
+  const yr = uploadState.budgetYear || new Date().getFullYear();
+  showToast(`Imported ${yr} budgets: ${created} new, ${updated} updated.`);
 }
 
 
@@ -2513,14 +2603,13 @@ function renderMatchConfirmCard(s) {
   const topMatch = scored[0];
   const isHighConfidence = topMatch && topMatch.score >= 80;
   const existingYears = topMatch?.budgetHistory ? Object.keys(topMatch.budgetHistory).sort() : [];
-  const yearConflict  = existingYears.includes(String(s.year));
 
   return `
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:600;color:var(--text);">${s.displayName}</div>
-          <div style="font-size:11px;color:var(--text3);">${s.income.length} inc · ${s.expenses.length} exp · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span> · Budget year: <strong style="color:var(--text);">${s.year}</strong></div>
+          <div style="font-size:11px;color:var(--text3);">${s.income.length} inc · ${s.expenses.length} exp · NOI <span style="color:${noi>=0?'var(--green)':'var(--red)'};">${fd(noi)}/mo</span> · Detected year: <span style="color:var(--text2);">${s.year}</span></div>
         </div>
       </div>
 
@@ -2533,9 +2622,8 @@ function renderMatchConfirmCard(s) {
             ${topMatch.address?`· ${topMatch.address}`:''}
             ${existingYears.length?`· Budgets on file: <strong style="color:var(--text);">${existingYears.join(', ')}</strong>`:''}
           </div>
-          ${yearConflict?`<div style="font-size:11px;color:var(--amber);margin-bottom:8px;">⚑ A ${s.year} budget already exists — uploading will overwrite it.</div>`:''}
           <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">
-            Add <strong style="color:var(--text);">${s.year}</strong> as a new budget year for this property?
+            Add this budget to the matched property? (You'll choose the budget year in the next step.)
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-primary" style="font-size:12px;padding:7px 16px;"
@@ -2554,7 +2642,7 @@ function renderMatchConfirmCard(s) {
         </div>
         ${current && current!=='__picking__' && current!=='new' && current!=='skip' ? `
           <div style="font-size:11px;color:var(--green);padding:6px 10px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.15);border-radius:6px;">
-            ✓ Will add ${s.year} budget to <strong>${properties.find(p=>p.id===current)?.name||''}</strong>
+            ✓ Will add budget to <strong>${properties.find(p=>p.id===current)?.name||''}</strong>
           </div>`:''}`
       : ''}
 
@@ -3590,7 +3678,7 @@ async function boot() {
       if (msgEl) msgEl.textContent = 'First launch — saving demo portfolio…';
       await seedDemo();
       if (overlay) overlay.classList.add('hidden');
-      syncBadge('saved', '● Live');
+      try { syncBadge('saved', '● Live'); } catch (_) {}
       renderPage();
       return;
     }
@@ -3657,9 +3745,15 @@ async function boot() {
       ALERT_LOG.forEach(a => _persistedAlertKeys.add(a.key));
     }
 
+    // ── DB load complete — render UI (errors here must NOT disable DB) ──
     if (overlay) overlay.classList.add('hidden');
-    syncBadge('saved', '● Live');
-    renderPage();
+    try {
+      syncBadge('saved', '● Live');
+      renderPage();
+    } catch (renderErr) {
+      console.warn('[BPOS] Render error (DB still online):', renderErr.message);
+      renderPage();  // retry without badge
+    }
     bitqueryConfig.connected = true;
     setTimeout(function() { refreshAllActuals().catch(function(e){ console.warn('BQ auto-refresh:', e.message); }); }, 1500);
 
@@ -3667,7 +3761,7 @@ async function boot() {
     console.warn('[BPOS] DB offline, using demo data:', err.message);
     dbOnline = false;
     if (overlay) overlay.classList.add('hidden');
-    syncBadge('offline', '○ Offline — data won\'t save');
+    try { syncBadge('offline', '○ Offline — data won\'t save'); } catch (_) {}
     renderPage();
   }
 }
@@ -3970,7 +4064,7 @@ confirmSaveBudget = async function() {
   for (const s of toUpdate) {
     const mid  = uploadState.matchMap[s.sheetName];
     const prop = properties.find(p => p.id === mid || p.id === +mid);
-    if (prop && prop.budget) await dbSaveBudget(prop, s.year || prop.budgetYear, prop.budget);
+    if (prop && prop.budget) await dbSaveBudget(prop, uploadState.budgetYear || s.year || prop.budgetYear, prop.budget);
   }
 };
 

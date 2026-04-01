@@ -707,7 +707,6 @@ let THRESHOLDS = {
   capexHit:        {enabled:true,  value:100, label:'CapEx budget reached or exceeded',unit:'%'},
   capexPace:       {enabled:true,  value:5,   label:'CapEx exceeds expected annual pace by more than', unit:'%'},
   unitRentBelowPct:{enabled:true,  value:5,   label:'Unit rented below budget rate by more than',unit:'%'},
-  collectionsMin:  {enabled:true,  value:95,  label:'Collections rate drops below',    unit:'%'},
   cfNegative:      {enabled:true,  value:0,   label:'Cash flow goes negative',         unit:'$'},
 };
 const THRESH_DEFAULTS = JSON.parse(JSON.stringify(THRESHOLDS));
@@ -997,10 +996,6 @@ function getAlerts(prop) {
     });
   }
 
-  // ── Collections ──
-  if (T.collectionsMin.enabled && a.collections > 0 && a.collections < T.collectionsMin.value)
-    alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
-
   // ── Cash flow negative ──
   const cf = actualNOI;
   if (T.cfNegative.enabled && cf < 0)
@@ -1221,15 +1216,6 @@ function renderPropDetail(prop) {
       varCls:incPace>=expPaceExpected-5?'pos':'neg',
       alert:alerts.find(al=>al.text.includes('Income')),
       midMonth:incPace<expPaceExpected-5?`${incPace.toFixed(0)}% collected with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
-    },
-    {
-      label:'Collections rate', budget:fp(THRESHOLDS.collectionsMin.value), actual:fp(a.collections),
-      cls:a.collections>=95?'on-track':a.collections>=90?'warn':'bad',
-      barPct:Math.min(a.collections,100),
-      barColor:a.collections>=95?'var(--green)':a.collections>=90?'var(--amber)':'var(--red)',
-      variance:a.collections>=95?'On target':`${(THRESHOLDS.collectionsMin.value-a.collections).toFixed(1)}% below threshold`,
-      varCls:a.collections>=95?'pos':'neg',
-      alert:alerts.find(al=>al.text.includes('Collections')),
     },
     {
       label:'Expense pace', budget:`${expPaceExpected.toFixed(0)}% expected`, actual:`${expPace.toFixed(0)}% of budget`,
@@ -4045,10 +4031,19 @@ async function boot() {
       THRESHOLDS.capexPace.enabled         = t.capex_pace_enabled ?? true;
       THRESHOLDS.unitRentBelowPct.value    = t.unit_rent_below_pct ?? 5;
       THRESHOLDS.unitRentBelowPct.enabled  = t.unit_rent_enabled  ?? true;
-      THRESHOLDS.collectionsMin.value      = t.collections_min    ?? 95;
-      THRESHOLDS.collectionsMin.enabled    = t.collections_enabled ?? true;
       THRESHOLDS.cfNegative.enabled        = t.cf_negative_enabled ?? true;
     }
+
+    // Re-apply localStorage overrides so locally-saved user changes always win
+    try {
+      const localThresh = localStorage.getItem('bpos_thresholds');
+      if (localThresh) {
+        const parsed = JSON.parse(localThresh);
+        Object.keys(parsed).forEach(k => {
+          if (THRESHOLDS[k]) Object.assign(THRESHOLDS[k], parsed[k]);
+        });
+      }
+    } catch(e) { /* ignore */ }
 
     // Hydrate in-memory properties with stable numeric IDs
     properties = hydrate(propRows, budgetsByProp, actualsByProp, noiByProp);
@@ -4312,8 +4307,6 @@ async function dbSaveThresholds() {
         capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
         unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
         unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
-        collections_min:      THRESHOLDS.collectionsMin.value,
-        collections_enabled:  THRESHOLDS.collectionsMin.enabled,
         cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
       }),
     });

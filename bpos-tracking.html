@@ -3358,7 +3358,20 @@ let bitqueryConfig = {
 };
 
 // Match a BQ property name (e.g. "Park Place - Manhattan - PGO") to a local property
+// Manual overrides: BQ name fragment -> local property name (case-insensitive)
+var BQ_NAME_OVERRIDES = {
+  '504-604 cordes': 'CORDES',
+};
 function matchBQProp(bqName, props) {
+  // Check manual overrides first
+  var bqLower = bqName.toLowerCase();
+  for (var key in BQ_NAME_OVERRIDES) {
+    if (bqLower.indexOf(key) >= 0) {
+      var target = BQ_NAME_OVERRIDES[key].toLowerCase();
+      var found = props.find(function(p) { return p.name.toLowerCase() === target; });
+      if (found) return found;
+    }
+  }
   var stopWords = ['the','a','an','of','at','in','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan'];
   function sigWords(s) {
     return s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 1 && stopWords.indexOf(w) === -1; });

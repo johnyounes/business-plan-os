@@ -1986,6 +1986,7 @@ const UPLOAD_SKIP = new Set([
   'NET OPERATING INCOME','NET NON-OPERATING INCOME','NET INCOME',
   'TOTAL INCOME (LOSS)','TOTAL CAPEX','TOTAL NON-OPERATING (EXCL. CAPEX)',
   'TOTAL NON-OPERATING EXPENSE','TOTAL EXPENSE',
+  'TOTAL FOR CAPITAL IMPROVEMENTS','TOTAL FOR MORTGAGE PAYMENT',
 ]);
 
 // ── Non-operating item category classification ──
@@ -2385,9 +2386,9 @@ function parsePGMSheet(rows, sheetName) {
           if (labelUp.includes('MORTGAGE PAYMENT') || labelUp === 'MORTGAGE PAYMENT' || labelUp.includes('DEBT SERVICE')) {
             nonopSubCat = 'debt'; return;
           }
-          if (labelUp.includes('PARENT COMPANY')) {
-            nonopSubCat = 'parent'; return;
-          }
+          // Note: 'Parent Company' is treated as a line item (not a sub-header)
+          // because it's typically a single entry, not a group with sub-items.
+          // categorizeNonopLabel() handles its category assignment.
         }
       }
     }

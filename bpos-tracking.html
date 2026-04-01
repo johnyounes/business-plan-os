@@ -1990,14 +1990,14 @@ const UPLOAD_SKIP = new Set([
 ]);
 
 // ── Non-operating item category classification ──
-// Maps each nonop line item to a display group: amf, capex, debt, parent, other
+// Maps each nonop line item to a display group: amf, capex, debt, parent
+// In real estate, nonop = AMF + debt/mortgage + parent company + CAPEX (everything else)
 function categorizeNonopLabel(label) {
   const l = label.toLowerCase();
   if (l.includes('asset management')) return 'amf';
   if (l.includes('mortgage') || l.includes('debt service') || l.includes('seller carry') || l.includes('loan payment') || l.includes('loan interest')) return 'debt';
   if (l.includes('parent company')) return 'parent';
-  if (l.includes('capex') || l.includes('capital expenditure') || l.includes('capital improvement') || l.includes('capital expenditures')) return 'capex';
-  return 'other';
+  return 'capex';  // All other nonop items are capital improvements
 }
 // Ensure all nonop items have a category field (backward compat)
 function ensureNonopCategories(nonopArr) {

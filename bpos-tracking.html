@@ -1397,13 +1397,16 @@ function renderUnitTrackerSection(prop) {
   }
   const occ = prop.bqOccupancy || {};
   const units = prop.bqUnits || [];
+  const preleasePct = occ.total > 0 ? ((occ.occupied + (occ.preleased||0)) / occ.total * 100) : 0;
   const pills = [
     ['Total', occ.total || 0, '#444'],
     ['Occupied', occ.occupied || 0, 'var(--green)'],
     ['Vacant', occ.vacant || 0, 'var(--red)'],
     ['MakeReady', occ.makeReady || 0, 'var(--amber)'],
     ['Available', occ.available || 0, 'var(--accent)'],
+    ['Preleased', occ.preleased || 0, 'var(--purple)'],
     ['Occ%', occ.occPct ? occ.occPct.toFixed(1) + '%' : '—', 'var(--teal)'],
+    ['Prelease%', (occ.preleased||0) > 0 ? preleasePct.toFixed(1) + '%' : '—', 'var(--purple)'],
   ];
   let html = '<div class="unit-tracker-section">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
@@ -3462,6 +3465,7 @@ async function refreshAllActuals() {
         total: +row.TotalUnits||0, occupied: +row.Occupied||0,
         vacant: +row.Vacant||0, makeReady: +row.MakeReady||0,
         available: +row.Available||0, occPct: +row.OccupancyPct||0,
+        preleased: +row.Preleased||+row.PreLeased||+row.PreleaseCount||0,
         leasesExp30d: +row.LeasesExpiring30d||0, leasesExp60d: +row.LeasesExpiring60d||0
       };
     });

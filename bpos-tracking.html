@@ -205,6 +205,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .li-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
 .li-bar-fill{height:100%;border-radius:2px;}
 .tot-row td{font-weight:600;border-top:1px solid var(--border2);color:var(--text);}
+.nonop-subhd td{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:14px 10px 5px;border-bottom:none;}
+.subtot-row td{font-weight:500;border-top:1px solid var(--border);color:var(--text2);font-size:12px;background:rgba(255,255,255,.015);}
 .alert-row td{background:rgba(232,80,74,.04);}
 .alert-row-amber td{background:rgba(245,166,35,.04);}
 .inline-alert{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:6px;}
@@ -1207,30 +1209,88 @@ function renderPropDetail(prop) {
     ${ (b && b.nonop && b.nonop.length) ? (()=>{
       // Ensure nonop actuals array exists and matches budget length
       if (!a.nonop || a.nonop.length !== b.nonop.length) a.nonop = b.nonop.map(()=>0);
-      const nonopRows = b.nonop.map((r,i)=>{
-        const act = a.nonop[i]||0;
+      ensureNonopCategories(b.nonop);
+
+      // Group nonop items by category, preserving original indices
+      const groups = { amf:[], capex:[], debt:[], parent:[], other:[] };
+      b.nonop.forEach((r,i) => {
+        const cat = r.category || categorizeNonopLabel(r.label);
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push({ ...r, idx: i });
+      });
+
+      // Helper: render a single data row
+      const mkRow = (r) => {
+        const act = a.nonop[r.idx]||0;
         const vari = act - r.monthly;
         const pct = r.monthly > 0 ? (act / r.monthly * 100) : 0;
         const isAlert = vari > r.monthly * 0.1;
         const barColor = pct <= 100 ? 'var(--green)' : pct <= 115 ? 'var(--amber)' : 'var(--red)';
-        const isCapex = r.label.toLowerCase().includes('capex') || r.label.toLowerCase().includes('capital');
         return '<tr class="' + (isAlert ? 'alert-row' : '') + '">' +
-          '<td class="lbl">' + r.label + (isCapex ? '<span style="font-size:9px;color:var(--amber);margin-left:6px;">CAPEX</span>' : '') + (isAlert ? '<span class="inline-alert ia-red">Over budget</span>' : '') + '</td>' +
+          '<td class="lbl">' + r.label + (isAlert ? '<span class="inline-alert ia-red">Over budget</span>' : '') + '</td>' +
           '<td class="r">' + fd(r.monthly) + '</td>' +
           '<td class="r">' + fd(act) + '</td>' +
           '<td class="li-bar-cell"><div class="li-bar"><div class="li-bar-fill" style="width:' + Math.min(pct,130) + '%;background:' + barColor + ';"></div></div></td>' +
           '<td class="' + (vari > 0 ? 'bad' : vari < 0 ? 'good' : 'neu') + '">' + (vari > 0 ? '+' : '') + fd(vari) + '</td></tr>';
-      }).join('');
+      };
+
+      // Helper: render a subtotal row
+      const mkSubtotal = (label, items) => {
+        const budSub = items.reduce((t,r) => t + r.monthly, 0);
+        const actSub = items.reduce((t,r) => t + (a.nonop[r.idx]||0), 0);
+        const vari = actSub - budSub;
+        return '<tr class="subtot-row"><td>' + label + '</td>' +
+          '<td class="r">' + fd(budSub) + '</td>' +
+          '<td class="r">' + fd(actSub) + '</td><td></td>' +
+          '<td class="' + (vari > 0 ? 'bad' : vari <= 0 ? 'good' : 'neu') + '">' + (vari > 0 ? '+' : '') + fd(vari) + '</td></tr>';
+      };
+
+      // Helper: render a sub-section header
+      const mkSubHd = (label) => '<tr class="nonop-subhd"><td colspan="5">' + label + '</td></tr>';
+
+      // Build grouped rows
+      let allRows = '';
+
+      // 1. Asset Management Fees
+      if (groups.amf.length) {
+        allRows += groups.amf.map(mkRow).join('');
+      }
+
+      // 2. CAPEX section with sub-header and subtotal
+      if (groups.capex.length) {
+        allRows += mkSubHd('Capital Expenditures (CAPEX)');
+        allRows += groups.capex.map(mkRow).join('');
+        allRows += mkSubtotal('Total CAPEX', groups.capex);
+      }
+
+      // 3. Debt Service section with sub-header and subtotal
+      if (groups.debt.length) {
+        allRows += mkSubHd('Debt Service');
+        allRows += groups.debt.map(mkRow).join('');
+        allRows += mkSubtotal('Total Mortgage Payment', groups.debt);
+      }
+
+      // 4. Parent Company Expenses
+      if (groups.parent.length) {
+        allRows += groups.parent.map(mkRow).join('');
+      }
+
+      // 5. Other / uncategorized
+      if (groups.other.length) {
+        allRows += groups.other.map(mkRow).join('');
+      }
+
+      // Grand totals
       const budNonop = b.nonop.reduce((x,l) => x + l.monthly, 0);
       const actNonop = a.nonop.reduce((x,v) => x + v, 0);
       return `
     <div class="line-section">
-      <div class="ls-head"><span class="ls-title">Non-operating expenses (incl. CapEx)</span></div>
+      <div class="ls-head"><span class="ls-title">Non-operating expenses</span></div>
       <table class="li-table"><thead><tr>
         <th style="width:40%">Line item</th><th class="r">Budget/mo</th><th class="r">Actual/mo</th><th>vs. budget</th><th class="r">Variance</th>
       </tr></thead><tbody>
-        ${nonopRows}
-        <tr class="tot-row"><td>Total non-operating</td><td class="r">${fd(budNonop)}</td><td class="r">${fd(actNonop)}</td><td></td><td class="${actNonop<=budNonop?'good':'bad'}">${actNonop>budNonop?'+':''}${fd(actNonop-budNonop)}</td></tr>
+        ${allRows}
+        <tr class="tot-row"><td>Total non-operating expense</td><td class="r">${fd(budNonop)}</td><td class="r">${fd(actNonop)}</td><td></td><td class="${actNonop<=budNonop?'good':'bad'}">${actNonop>budNonop?'+':''}${fd(actNonop-budNonop)}</td></tr>
       </tbody></table>
     </div>`;
     })() : '' }`;
@@ -1511,8 +1571,10 @@ const DEFAULT_EXPENSES = [
   {label:'Reserves',               monthly:0},
 ];
 const DEFAULT_NONOP = [
-  {label:'Capital Expenditures (CapEx)', monthly:0},
-  {label:'Debt Service — FIXED',         monthly:0},
+  {label:'Asset Management Fee',     monthly:0, category:'amf'},
+  {label:'Capital Expenditures (CapEx)', monthly:0, category:'capex'},
+  {label:'Mortgage Payment',         monthly:0, category:'debt'},
+  {label:'Parent Company Expenses',  monthly:0, category:'parent'},
 ];
 
 let apState = {};
@@ -1643,7 +1705,7 @@ function renderAddPropModal() {
     const expTotal = s.expenses.reduce((t,r)=>t+r.monthly,0);
     const noi = incTotal - expTotal;
     const nonopTotal = s.nonop.reduce((t,r)=>t+r.monthly,0);
-    const capexLine = s.nonop.find(r=>r.label.toLowerCase().includes('capex'));
+    const capexLine = s.nonop.find(r=>{ const cat = r.category || categorizeNonopLabel(r.label); return cat === 'capex'; });
 
     const renderReviewRows = (arr, sectionKey, color) => arr.map((r,i)=>`
       <tr>
@@ -1838,8 +1900,8 @@ function apSave() {
   const budget = {
     income:   s.income.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
     expenses: s.expenses.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
-    nonop:    s.nonop.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null})),
-    capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(parseFloat(r.monthly)||0)*12,0),
+    nonop:    s.nonop.map(r=>({label:r.label, monthly:parseFloat(r.monthly)||0, annual:(parseFloat(r.monthly)||0)*12, actual2025:r.actual2025||null, category:r.category||categorizeNonopLabel(r.label)})),
+    capexBudget: s.nonop.filter(r=>{ const cat = r.category || categorizeNonopLabel(r.label); return cat === 'capex'; }).reduce((t,r)=>t+(parseFloat(r.monthly)||0)*12,0),
   };
   const id = Date.now();
   properties.push({
@@ -1923,7 +1985,24 @@ const UPLOAD_SKIP = new Set([
   'ACCOUNT','2026 ANNUAL BUDGET — MONTHLY BREAKDOWN',
   'NET OPERATING INCOME','NET NON-OPERATING INCOME','NET INCOME',
   'TOTAL INCOME (LOSS)','TOTAL CAPEX','TOTAL NON-OPERATING (EXCL. CAPEX)',
+  'TOTAL NON-OPERATING EXPENSE','TOTAL EXPENSE',
 ]);
+
+// ── Non-operating item category classification ──
+// Maps each nonop line item to a display group: amf, capex, debt, parent, other
+function categorizeNonopLabel(label) {
+  const l = label.toLowerCase();
+  if (l.includes('asset management')) return 'amf';
+  if (l.includes('mortgage') || l.includes('debt service') || l.includes('seller carry') || l.includes('loan payment') || l.includes('loan interest')) return 'debt';
+  if (l.includes('parent company')) return 'parent';
+  if (l.includes('capex') || l.includes('capital expenditure') || l.includes('capital improvement') || l.includes('capital expenditures')) return 'capex';
+  return 'other';
+}
+// Ensure all nonop items have a category field (backward compat)
+function ensureNonopCategories(nonopArr) {
+  if (!nonopArr) return;
+  nonopArr.forEach(r => { if (!r.category) r.category = categorizeNonopLabel(r.label); });
+}
 
 function openUploadModal() {
   uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:'', budgetYear:null};
@@ -2241,6 +2320,7 @@ function parsePGMSheet(rows, sheetName) {
   };
 
   let currentSection = null;
+  let nonopSubCat = null;  // tracks sub-category within nonop: 'capex', 'debt', or null
   let incomeSignedSum = 0; // running total of income for mgmt fee calculation
   let mgmtRate = 0;        // extracted from PGM header: Mgmt=X%×Income
   let amfRate  = 0;        // extracted from PGM header: AMF=X%×Income
@@ -2282,11 +2362,34 @@ function parsePGMSheet(rows, sheetName) {
     // Section headers (▼ prefix)
     if (label[0] === ARROW || labelUp.includes('▼')) {
       const sect = labelUp.replace(/▼/g,'').trim();
-      if      (sect.includes('NON-OPERATING'))      currentSection = 'nonop';
+      if      (sect.includes('NON-OPERATING'))      { currentSection = 'nonop'; nonopSubCat = null; }
       else if (sect.includes('CAPITAL'))            currentSection = 'capex';
       else if (sect.includes('OPERATING EXPENSES')) currentSection = 'expenses';
       else if (sect.includes('INCOME'))             currentSection = 'income';
       return;
+    }
+
+    // Non-▼ section headers (income statement / PM software format)
+    // Detect rows like "Income", "Expense", "Non-operating Expense" with no numeric data
+    {
+      const hasNumeric = row.slice(1).some(v => typeof v === 'number' && isFinite(v) && v !== 0);
+      if (!hasNumeric) {
+        if (labelUp === 'NON-OPERATING EXPENSE' || labelUp === 'NON-OPERATING EXPENSES') { currentSection = 'nonop'; nonopSubCat = null; return; }
+        if (labelUp === 'EXPENSE' || labelUp === 'EXPENSES')         { currentSection = 'expenses'; return; }
+        if (labelUp === 'INCOME')                                     { currentSection = 'income'; return; }
+        // Sub-category headers within nonop (PM income statement format)
+        if (currentSection === 'nonop') {
+          if (labelUp.includes('CAPITAL IMPROVEMENT') || labelUp === 'CAPITAL IMPROVEMENTS' || labelUp === 'CAPEX') {
+            nonopSubCat = 'capex'; return;
+          }
+          if (labelUp.includes('MORTGAGE PAYMENT') || labelUp === 'MORTGAGE PAYMENT' || labelUp.includes('DEBT SERVICE')) {
+            nonopSubCat = 'debt'; return;
+          }
+          if (labelUp.includes('PARENT COMPANY')) {
+            nonopSubCat = 'parent'; return;
+          }
+        }
+      }
     }
 
     if (!currentSection) return;
@@ -2330,6 +2433,15 @@ function parsePGMSheet(rows, sheetName) {
       actual2025: actual2025 !== null ? Math.round(actual2025 * 100) / 100 : null,
     };
 
+    // Add category for nonop items (used for grouped display)
+    // Label-based match takes priority; sub-section state is fallback for generic labels
+    if (currentSection === 'nonop') {
+      const labelCat = categorizeNonopLabel(label);
+      entry.category = (labelCat !== 'other') ? labelCat : (nonopSubCat || 'other');
+    } else if (currentSection === 'capex') {
+      entry.category = 'capex';
+    }
+
     if (result[currentSection]) {
       result[currentSection].push(entry);
     }
@@ -2337,9 +2449,12 @@ function parsePGMSheet(rows, sheetName) {
 
   // Merge capex items into nonop so they appear in the Non-Operating Expenses section
   if (result.capex.length) {
+    result.capex.forEach(r => { if (!r.category) r.category = 'capex'; });
     result.nonop.push(...result.capex);
     result.capex = [];
   }
+  // Ensure all nonop items have a category
+  ensureNonopCategories(result.nonop);
 
   return result;
 }
@@ -2398,8 +2513,8 @@ function confirmSaveBudget() {
     const budget = {
       income:   s.income.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
       expenses: s.expenses.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
-      nonop:    s.nonop.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
-      capexBudget: s.nonop.filter(r=>{const l=r.label.toLowerCase();return l.includes('capex')||l.includes('capital');}).reduce((t,r)=>t+(r.annual||(r.monthly*12)),0),
+      nonop:    s.nonop.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025, category:r.category||categorizeNonopLabel(r.label)})),
+      capexBudget: s.nonop.filter(r=>{ const cat = r.category || categorizeNonopLabel(r.label); return cat === 'capex'; }).reduce((t,r)=>t+(r.annual||(r.monthly*12)),0),
     };
 
     if (isNew) {
@@ -3161,10 +3276,10 @@ function applyActualsToProperty(prop, sheet, dryRun) {
       if (idx >= 0) prop.actuals.nonop[idx] = line.monthly;
     });
   }
-  // Also set capexSpent total for the summary card (sum of all capex-tagged nonop actuals)
+  // Also set capexSpent total for the summary card (sum of all capex-category nonop actuals)
   const capexTotal = (prop.budget.nonop || []).reduce((sum, r, i) => {
-    const l = r.label.toLowerCase();
-    if (l.includes('capex') || l.includes('capital')) sum += (prop.actuals.nonop?.[i] || 0);
+    const cat = r.category || categorizeNonopLabel(r.label);
+    if (cat === 'capex') sum += (prop.actuals.nonop?.[i] || 0);
     return sum;
   }, 0);
   if (capexTotal > 0) prop.actuals.capexSpent = capexTotal * 12; // annualize for capex tracking card
@@ -3749,6 +3864,12 @@ async function boot() {
 
     // Hydrate in-memory properties with stable numeric IDs
     properties = hydrate(propRows, budgetsByProp, actualsByProp, noiByProp);
+
+    // Backward compat: ensure all nonop items have category field
+    properties.forEach(p => {
+      ensureNonopCategories(p.budget?.nonop);
+      if (p.budgetHistory) Object.values(p.budgetHistory).forEach(bh => ensureNonopCategories(bh?.nonop));
+    });
 
     // Restore alert log from DB
     if (alertRows && alertRows.length) {

@@ -961,19 +961,30 @@ function getAlerts(prop) {
       alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
   }
 
-  // ── CapEx: budget hit ──
-  if (T.capexHit.enabled && b.capexBudget > 0 && a.capexSpent >= b.capexBudget)
-    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
+  // ── CapEx: compute dynamically from line items (stored capexBudget/capexSpent may be stale) ──
+  const capexBudgetMo = (b.nonop || []).reduce((sum, r) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
+  }, 0);
+  const capexActualMo = (b.nonop || []).reduce((sum, r, i) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
+  }, 0);
+  const capexBudgetAnn = capexBudgetMo * 12;
+  const capexSpentAnn  = capexActualMo * 12;
 
-  // ── CapEx: pace-based (annual budget, prorated to current month) ──
-  if (T.capexPace.enabled && b.capexBudget > 0 && a.capexSpent < b.capexBudget) {
-    const monthsElapsed = now.getMonth() + MONTH_PCT; // fractional month
-    const expectedCapex = (b.capexBudget / 12) * monthsElapsed;
+  // ── CapEx: budget hit (monthly actual >= monthly budget) ──
+  if (T.capexHit.enabled && capexBudgetMo > 0 && capexActualMo >= capexBudgetMo)
+    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(capexActualMo)} spent</strong> vs. ${fd(capexBudgetMo)} monthly budget`});
+
+  // ── CapEx: pace-based (monthly budget, prorated to checkpoint) ──
+  if (T.capexPace.enabled && checkpoint && capexBudgetMo > 0 && capexActualMo < capexBudgetMo) {
+    const expectedCapex = capexBudgetMo * checkpoint.pct;
     if (expectedCapex > 0) {
-      const capexExcess = ((a.capexSpent - expectedCapex) / expectedCapex * 100);
+      const capexExcess = ((capexActualMo - expectedCapex) / expectedCapex * 100);
       if (capexExcess > T.capexPace.value)
         alerts.push({sev: capexExcess > T.capexPace.value * 2 ? 'red' : 'amber', icon:'▣',
-          text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — ${capexExcess.toFixed(1)}% ahead of expected pace`});
+          text:`CapEx at <strong>${((capexActualMo/capexBudgetMo)*100).toFixed(0)}% of monthly budget</strong> at ${cpLabel} checkpoint — ${capexExcess.toFixed(1)}% ahead of expected pace`});
     }
   }
 
@@ -1147,6 +1158,16 @@ function renderPropDetail(prop) {
   // Expected pace
   const expPaceExpected = MONTH_PCT * 100;
 
+  // CapEx: compute dynamically from line items (stored capexBudget/capexSpent may be stale from DB)
+  const capexBudMo = (b.nonop || []).reduce((sum, r) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
+  }, 0);
+  const capexActMo = (b.nonop || []).reduce((sum, r, i) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
+  }, 0);
+
   // Month progress
   const monthProgressHtml = `
     <div class="month-progress-wrap">
@@ -1221,12 +1242,12 @@ function renderPropDetail(prop) {
       midMonth:expPace>expPaceExpected+5?`${expPace.toFixed(0)}% spent with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
     },
     {
-      label:'CapEx spend', budget:fd(b.capexBudget)+' budget', actual:fd(a.capexSpent)+' spent',
-      cls:a.capexSpent<b.capexBudget*0.85?'on-track':a.capexSpent<b.capexBudget?'warn':'bad',
-      barPct:b.capexBudget>0?Math.min(a.capexSpent/b.capexBudget*100,130):0,
-      barColor:a.capexSpent<b.capexBudget*0.85?'var(--green)':a.capexSpent<b.capexBudget?'var(--amber)':'var(--red)',
-      variance:a.capexSpent>=b.capexBudget?fd(a.capexSpent-b.capexBudget)+' over budget':fd(b.capexBudget-a.capexSpent)+' remaining',
-      varCls:a.capexSpent>=b.capexBudget?'neg':'pos',
+      label:'CapEx spend', budget:fd(capexBudMo)+'/mo budget', actual:fd(capexActMo)+'/mo spent',
+      cls:capexActMo<capexBudMo*0.85?'on-track':capexActMo<capexBudMo?'warn':'bad',
+      barPct:capexBudMo>0?Math.min(capexActMo/capexBudMo*100,130):0,
+      barColor:capexActMo<capexBudMo*0.85?'var(--green)':capexActMo<capexBudMo?'var(--amber)':'var(--red)',
+      variance:capexActMo>=capexBudMo?fd(capexActMo-capexBudMo)+' over budget':fd(capexBudMo-capexActMo)+' remaining',
+      varCls:capexActMo>=capexBudMo?'neg':'pos',
       alert:alerts.find(al=>al.text.includes('CapEx')),
     },
   ];

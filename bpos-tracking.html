@@ -13,7 +13,7 @@
   --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
   --accent:#3d7fff;--accent2:#1a5ce8;
   --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
-  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
@@ -700,14 +700,27 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // ══════════════════════════════════════
 let THRESHOLDS = {
   noiMissPct:      {enabled:true,  value:5,   label:'NOI misses budget by more than',  unit:'%'},
-  occupancyMin:    {enabled:true,  value:88,  label:'Occupancy drops below',           unit:'%'},
-  expensePacePct:  {enabled:true,  value:80,  label:'Expenses exceed X% of budget before month end', unit:'%'},
+  noiPace:         {enabled:true,  value:5,   label:'NOI below expected pace by more than', unit:'%'},
+  occupancyMin:    {enabled:true,  value:86,  label:'Occupancy (pre-leased if available) drops below', unit:'%'},
+  incomePace:      {enabled:true,  value:5,   label:'Income below expected pace by more than', unit:'%'},
+  expensePacePct:  {enabled:true,  value:5,   label:'Expenses exceed expected pace by more than', unit:'%'},
   capexHit:        {enabled:true,  value:100, label:'CapEx budget reached or exceeded',unit:'%'},
+  capexPace:       {enabled:true,  value:5,   label:'CapEx exceeds expected annual pace by more than', unit:'%'},
   unitRentBelowPct:{enabled:true,  value:5,   label:'Unit rented below budget rate by more than',unit:'%'},
   collectionsMin:  {enabled:true,  value:95,  label:'Collections rate drops below',    unit:'%'},
   cfNegative:      {enabled:true,  value:0,   label:'Cash flow goes negative',         unit:'$'},
 };
 const THRESH_DEFAULTS = JSON.parse(JSON.stringify(THRESHOLDS));
+// Restore thresholds from localStorage if previously saved
+try {
+  const saved = localStorage.getItem('bpos_thresholds');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    Object.keys(parsed).forEach(k => {
+      if (THRESHOLDS[k]) Object.assign(THRESHOLDS[k], parsed[k]);
+    });
+  }
+} catch(e) { /* ignore parse errors */ }
 
 // ══════════════════════════════════════
 // PROPERTY DATA
@@ -858,38 +871,113 @@ let arpOpen = window.innerWidth > 900; // collapsed by default on mobile
 // ══════════════════════════════════════
 // ALERT ENGINE
 // ══════════════════════════════════════
+
+// Get effective occupancy: use pre-leased occupancy from unit tracker if
+// preleased units exist, otherwise fall back to physical occupancy
+function getEffectiveOccupancy(prop) {
+  const occ = prop.bqOccupancy || {};
+  if (occ.total > 0 && (occ.preleased||0) > 0) {
+    // Pre-leased occupancy = (occupied + preleased) / total
+    return { value: ((occ.occupied + occ.preleased) / occ.total * 100), source: 'pre-leased' };
+  }
+  if (occ.total > 0 && occ.occPct > 0) {
+    return { value: occ.occPct, source: 'physical' };
+  }
+  // Fall back to manually entered occupancy
+  return { value: prop.actuals.occupancy, source: 'manual' };
+}
+
+// Determine which checkpoint (25%, 50%, 75%) we've crossed
+function getPaceCheckpoint(monthPct) {
+  if (monthPct >= 0.75) return { label:'75%', pct:0.75 };
+  if (monthPct >= 0.50) return { label:'50%', pct:0.50 };
+  if (monthPct >= 0.25) return { label:'25%', pct:0.25 };
+  return null;
+}
+
 function getAlerts(prop) {
   const alerts = [];
   const a = prop.actuals;
   const b = prop.budget;
   const T = THRESHOLDS;
+  const checkpoint = getPaceCheckpoint(MONTH_PCT);
+  const expectedPct = checkpoint ? checkpoint.pct * 100 : MONTH_PCT * 100;
+  const cpLabel = checkpoint ? checkpoint.label : `${(MONTH_PCT*100).toFixed(0)}%`;
 
-  // Budget NOI vs actual
-  const budgetNOI = (b.income.reduce((s,r)=>s+r.monthly,0) - b.expenses.reduce((s,r)=>s+r.monthly,0));
-  const actualNOI = (a.income.reduce((s,r)=>s+r,0) - a.expenses.reduce((s,r)=>s+r,0));
+  // ── Budget totals ──
+  const budIncome = b.income.reduce((s,r)=>s+r.monthly,0);
+  const actIncome = a.income.reduce((s,r)=>s+r,0);
+  const budgetExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
+  const actualExp = a.expenses.reduce((s,r)=>s+r,0);
+  const budgetNOI = budIncome - budgetExp;
+  const actualNOI = actIncome - actualExp;
+
+  // ── NOI: end-of-month miss ──
   const noiPct = budgetNOI>0?((budgetNOI-actualNOI)/budgetNOI*100):0;
   if (T.noiMissPct.enabled && noiPct > T.noiMissPct.value)
     alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiPct.toFixed(1)}%`});
 
-  // Occupancy — only fire when we actually have occupancy data (>0 means it was entered)
-  if (T.occupancyMin.enabled && a.occupancy > 0 && a.occupancy < T.occupancyMin.value)
-    alerts.push({sev:'red', icon:'◎', text:`Occupancy at <strong>${fp(a.occupancy)}</strong> — below ${T.occupancyMin.value}% threshold`});
+  // ── NOI: pace-based (at checkpoint) ──
+  if (T.noiPace.enabled && checkpoint && budgetNOI > 0) {
+    const expectedNOI = budgetNOI * checkpoint.pct;
+    const noiPaceDeficit = expectedNOI > 0 ? ((expectedNOI - actualNOI) / expectedNOI * 100) : 0;
+    if (actualNOI < expectedNOI && noiPaceDeficit > T.noiPace.value) {
+      const actualPct = (actualNOI / budgetNOI * 100).toFixed(0);
+      alerts.push({sev: noiPaceDeficit > T.noiPace.value * 2 ? 'red' : 'amber', icon:'⚑',
+        text:`NOI at <strong>${actualPct}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, behind by ${noiPaceDeficit.toFixed(1)}%`});
+    }
+  }
 
-  // Expense pace mid-month
-  const budgetExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
-  const actualExp = a.expenses.reduce((s,r)=>s+r,0);
-  const expPace   = budgetExp>0?(actualExp/budgetExp*100):0;
-  const expectedExpPct = MONTH_PCT*100;
-  if (T.expensePacePct.enabled && expPace > T.expensePacePct.value && expPace > expectedExpPct+15)
-    alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
+  // ── Occupancy (pre-leased aware) ──
+  const effOcc = getEffectiveOccupancy(prop);
+  if (T.occupancyMin.enabled && effOcc.value > 0 && effOcc.value < T.occupancyMin.value) {
+    const sourceTag = effOcc.source === 'pre-leased' ? ' (pre-leased)' : effOcc.source === 'physical' ? ' (physical)' : '';
+    alerts.push({sev:'red', icon:'◎', text:`Occupancy${sourceTag} at <strong>${effOcc.value.toFixed(1)}%</strong> — below ${T.occupancyMin.value}% threshold`});
+  }
 
-  // CapEx
-  if (T.capexHit.enabled && a.capexSpent >= b.capexBudget)
+  // ── Income: pace-based (at checkpoint) ──
+  if (T.incomePace.enabled && checkpoint && budIncome > 0) {
+    const expectedInc = budIncome * checkpoint.pct;
+    const incPaceDeficit = expectedInc > 0 ? ((expectedInc - actIncome) / expectedInc * 100) : 0;
+    if (actIncome < expectedInc && incPaceDeficit > T.incomePace.value) {
+      const actualPct = (actIncome / budIncome * 100).toFixed(0);
+      alerts.push({sev: incPaceDeficit > T.incomePace.value * 2 ? 'red' : 'amber', icon:'▲',
+        text:`Income at <strong>${actualPct}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, behind by ${incPaceDeficit.toFixed(1)}%`});
+    }
+  }
+
+  // ── Expenses: pace-based (at checkpoint) ──
+  const expPace = budgetExp>0?(actualExp/budgetExp*100):0;
+  if (T.expensePacePct.enabled && checkpoint && budgetExp > 0) {
+    const excessPct = expPace - expectedPct;
+    if (excessPct > T.expensePacePct.value) {
+      alerts.push({sev: excessPct > T.expensePacePct.value * 2 ? 'red' : 'amber', icon:'◈',
+        text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, over by ${excessPct.toFixed(1)}%`});
+    }
+  } else if (T.expensePacePct.enabled && !checkpoint && budgetExp > 0) {
+    // Before first checkpoint, still flag if wildly over pace
+    const excessPct = expPace - (MONTH_PCT * 100);
+    if (excessPct > T.expensePacePct.value * 2)
+      alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
+  }
+
+  // ── CapEx: budget hit ──
+  if (T.capexHit.enabled && b.capexBudget > 0 && a.capexSpent >= b.capexBudget)
     alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
-  else if (a.capexSpent > b.capexBudget*0.85)
-    alerts.push({sev:'amber', icon:'▣', text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — approaching limit`});
 
-  // Unit rents below budget
+  // ── CapEx: pace-based (annual budget, prorated to current month) ──
+  if (T.capexPace.enabled && b.capexBudget > 0 && a.capexSpent < b.capexBudget) {
+    const monthsElapsed = now.getMonth() + MONTH_PCT; // fractional month
+    const expectedCapex = (b.capexBudget / 12) * monthsElapsed;
+    if (expectedCapex > 0) {
+      const capexExcess = ((a.capexSpent - expectedCapex) / expectedCapex * 100);
+      if (capexExcess > T.capexPace.value)
+        alerts.push({sev: capexExcess > T.capexPace.value * 2 ? 'red' : 'amber', icon:'▣',
+          text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — ${capexExcess.toFixed(1)}% ahead of expected pace`});
+    }
+  }
+
+  // ── Unit rents below budget ──
   if (T.unitRentBelowPct.enabled) {
     a.unitRents.forEach(u=>{
       const miss = u.budgetRate>0?((u.budgetRate-u.actualRate)/u.budgetRate*100):0;
@@ -898,12 +986,12 @@ function getAlerts(prop) {
     });
   }
 
-  // Collections — only fire when we actually have collections data (>0 means it was entered)
+  // ── Collections ──
   if (T.collectionsMin.enabled && a.collections > 0 && a.collections < T.collectionsMin.value)
     alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
 
-  // Cash flow negative
-  const cf = actualNOI; // simplified — full model would subtract debt service
+  // ── Cash flow negative ──
+  const cf = actualNOI;
   if (T.cfNegative.enabled && cf < 0)
     alerts.push({sev:'red', icon:'◐', text:`Cash flow is <strong>negative (${fd(cf)}/mo)</strong> — immediate attention required`});
 
@@ -920,7 +1008,7 @@ function getPortfolioStats() {
     const a=p.actuals;
     return s+(a.income.reduce((si,r)=>si+r,0)-a.expenses.reduce((si,r)=>si+r,0));
   },0);
-  const avgOcc = properties.reduce((s,p)=>s+p.actuals.occupancy,0)/properties.length;
+  const avgOcc = properties.reduce((s,p)=>s+getEffectiveOccupancy(p).value,0)/properties.length;
   const atRisk = properties.filter(p=>getAlerts(p).some(a=>a.sev==='red')).length;
   return {totalUnits,totalBudNOI,totalActNOI,avgOcc,atRisk};
 }
@@ -957,7 +1045,7 @@ function renderPage() {
       </div>
       <div class="pkpi">
         <div class="pkpi-label">Avg occupancy</div>
-        <div class="pkpi-value ${stats.avgOcc>=88?'good':'bad'}">${stats.avgOcc.toFixed(1)}%</div>
+        <div class="pkpi-value ${stats.avgOcc>=THRESHOLDS.occupancyMin.value?'good':'bad'}">${stats.avgOcc.toFixed(1)}%</div>
         <div class="pkpi-sub">Threshold: ${THRESHOLDS.occupancyMin.value}%</div>
       </div>
       <div class="pkpi">
@@ -1073,6 +1161,13 @@ function renderPropDetail(prop) {
       </div>
     </div>`;
 
+  // Effective occupancy (pre-leased aware)
+  const effOcc = getEffectiveOccupancy(prop);
+  const occThresh = THRESHOLDS.occupancyMin.value;
+
+  // Income pace
+  const incPace = budIncome>0?(actIncome/budIncome*100):0;
+
   // KEY METRICS
   const keyMetrics = [
     {
@@ -1083,16 +1178,28 @@ function renderPropDetail(prop) {
       variance:fd(Math.abs(noiVar))+(noiVar>=0?' ahead':' behind'),
       varCls:noiVar>=0?'pos':'neg',
       alert:alerts.find(al=>al.text.includes('NOI')),
+      midMonth:alerts.find(al=>al.text.includes('NOI') && al.text.includes('checkpoint'))?
+        `${(actNOI/budNOI*100).toFixed(0)}% of budget at ${(MONTH_PCT*100).toFixed(0)}% through month`:null,
     },
     {
-      label:'Occupancy', budget:fp(THRESHOLDS.occupancyMin.value), actual:fp(a.occupancy),
-      cls:a.occupancy>=88?'on-track':a.occupancy>=85?'warn':'bad',
-      barPct:Math.min(a.occupancy,100),
-      barColor:a.occupancy>=88?'var(--green)':a.occupancy>=85?'var(--amber)':'var(--red)',
-      variance:a.occupancy>=88?'On target':`${(88-a.occupancy).toFixed(1)}% below threshold`,
-      varCls:a.occupancy>=88?'pos':'neg',
+      label:'Occupancy' + (effOcc.source==='pre-leased'?' (Pre-leased)':''), budget:fp(occThresh), actual:fp(effOcc.value),
+      cls:effOcc.value>=occThresh?'on-track':effOcc.value>=occThresh-3?'warn':'bad',
+      barPct:Math.min(effOcc.value,100),
+      barColor:effOcc.value>=occThresh?'var(--green)':effOcc.value>=occThresh-3?'var(--amber)':'var(--red)',
+      variance:effOcc.value>=occThresh?'On target':`${(occThresh-effOcc.value).toFixed(1)}% below threshold`,
+      varCls:effOcc.value>=occThresh?'pos':'neg',
       alert:alerts.find(al=>al.text.includes('Occupancy')),
-      midMonth: a.occupancy<88?`Triggered — currently ${(MONTH_PCT*100).toFixed(0)}% into month`:null,
+      midMonth: effOcc.value<occThresh?`Triggered — currently ${(MONTH_PCT*100).toFixed(0)}% into month`:null,
+    },
+    {
+      label:'Income pace', budget:`${expPaceExpected.toFixed(0)}% expected`, actual:`${incPace.toFixed(0)}% of budget`,
+      cls:incPace>=expPaceExpected-5?'on-track':incPace>=expPaceExpected-15?'warn':'bad',
+      barPct:Math.min(incPace,130),
+      barColor:incPace>=expPaceExpected-5?'var(--green)':incPace>=expPaceExpected-15?'var(--amber)':'var(--red)',
+      variance:incPace>=expPaceExpected?`${(incPace-expPaceExpected).toFixed(0)}% ahead of pace`:`${(expPaceExpected-incPace).toFixed(0)}% behind pace`,
+      varCls:incPace>=expPaceExpected-5?'pos':'neg',
+      alert:alerts.find(al=>al.text.includes('Income')),
+      midMonth:incPace<expPaceExpected-5?`${incPace.toFixed(0)}% collected with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
     },
     {
       label:'Collections rate', budget:fp(THRESHOLDS.collectionsMin.value), actual:fp(a.collections),
@@ -1105,18 +1212,18 @@ function renderPropDetail(prop) {
     },
     {
       label:'Expense pace', budget:`${expPaceExpected.toFixed(0)}% expected`, actual:`${expPace.toFixed(0)}% of budget`,
-      cls:expPace<=expPaceExpected+10?'on-track':expPace<=expPaceExpected+20?'warn':'bad',
+      cls:expPace<=expPaceExpected+5?'on-track':expPace<=expPaceExpected+15?'warn':'bad',
       barPct:Math.min(expPace,130),
-      barColor:expPace<=expPaceExpected+10?'var(--green)':expPace<=expPaceExpected+20?'var(--amber)':'var(--red)',
+      barColor:expPace<=expPaceExpected+5?'var(--green)':expPace<=expPaceExpected+15?'var(--amber)':'var(--red)',
       variance:expPace>expPaceExpected?`${(expPace-expPaceExpected).toFixed(0)}% ahead of pace`:'On pace',
-      varCls:expPace>expPaceExpected+10?'neg':'pos',
+      varCls:expPace>expPaceExpected+5?'neg':'pos',
       alert:alerts.find(al=>al.text.includes('Expenses')),
-      midMonth:expPace>expPaceExpected+15?`${expPace.toFixed(0)}% spent with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
+      midMonth:expPace>expPaceExpected+5?`${expPace.toFixed(0)}% spent with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
     },
     {
       label:'CapEx spend', budget:fd(b.capexBudget)+' budget', actual:fd(a.capexSpent)+' spent',
       cls:a.capexSpent<b.capexBudget*0.85?'on-track':a.capexSpent<b.capexBudget?'warn':'bad',
-      barPct:Math.min(a.capexSpent/b.capexBudget*100,130),
+      barPct:b.capexBudget>0?Math.min(a.capexSpent/b.capexBudget*100,130):0,
       barColor:a.capexSpent<b.capexBudget*0.85?'var(--green)':a.capexSpent<b.capexBudget?'var(--amber)':'var(--red)',
       variance:a.capexSpent>=b.capexBudget?fd(a.capexSpent-b.capexBudget)+' over budget':fd(b.capexBudget-a.capexSpent)+' remaining',
       varCls:a.capexSpent>=b.capexBudget?'neg':'pos',
@@ -1937,7 +2044,7 @@ function saveNewProp(){apSave();}
 // ══════════════════════════════════════
 function openAlertSettings() {
   document.getElementById('alert-modal-body').innerHTML = `
-    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Alerts fire immediately when a threshold is crossed — mid-month or otherwise. Toggle off to disable a specific alert type.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Pace alerts check at 25%, 50%, and 75% through each month. Threshold alerts fire immediately when crossed. Toggle off to disable any alert type. Changes are saved and persist.</div>
     ${Object.entries(THRESHOLDS).map(([key,t])=>`
       <div class="thresh-row">
         <span class="thresh-label">${t.label}</span>
@@ -1960,10 +2067,12 @@ function saveThresholds(){
     if(inp) THRESHOLDS[key].value=parseFloat(inp.value)||THRESHOLDS[key].value;
     if(en)  THRESHOLDS[key].enabled=en.checked;
   });
+  // Persist to localStorage so thresholds survive page reloads
+  try { localStorage.setItem('bpos_thresholds', JSON.stringify(THRESHOLDS)); } catch(e) {}
   closeAlertSettings(); renderPage();
   showToast('Alert thresholds saved. Monitoring updated.');
 }
-function resetThresholds(){THRESHOLDS=JSON.parse(JSON.stringify(THRESH_DEFAULTS));openAlertSettings();showToast('Thresholds reset to defaults.');}
+function resetThresholds(){THRESHOLDS=JSON.parse(JSON.stringify(THRESH_DEFAULTS));try{localStorage.removeItem('bpos_thresholds');}catch(e){}openAlertSettings();showToast('Thresholds reset to defaults.');}
 function closeAlertSettings(){document.getElementById('alert-modal').classList.remove('open');}
 
 // ══════════════════════════════════════
@@ -3358,8 +3467,10 @@ let bitqueryConfig = {
 };
 
 // Match a BQ property name (e.g. "Park Place - Manhattan - PGO") to a local property
-// Manual overrides: BQ name fragment -> local property name (case-insensitive)
-var BQ_NAME_OVERRIDES = {
+// Strips common suffixes ("- PGO", "- SD", "- KC", "Apartments", "Townhomes")
+// and scores by how many significant words overlap.
+// Manual overrides: BQ name fragment → local property name (case-insensitive)
+const BQ_NAME_OVERRIDES = {
   '504-604 cordes': 'CORDES',
 };
 function matchBQProp(bqName, props) {
@@ -3372,22 +3483,25 @@ function matchBQProp(bqName, props) {
       if (found) return found;
     }
   }
-  var stopWords = ['the','a','an','of','at','in','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan'];
+  const stopWords = new Set(['the','a','an','of','at','in','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan']);
   function sigWords(s) {
-    return s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 1 && stopWords.indexOf(w) === -1; });
+    return s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 1 && !stopWords.has(w); });
   }
-  var bqWords = sigWords(bqName);
+  const bqWords = sigWords(bqName);
   var bestProp = null, bestScore = 0;
   props.forEach(function(p) {
     var pWords = sigWords(p.name);
     var overlap = 0;
     pWords.forEach(function(pw) {
-      if (bqWords.some(function(bw) { return bw === pw || bw.indexOf(pw) >= 0 || pw.indexOf(bw) >= 0; })) overlap++;
+      if (bqWords.some(function(bw) { return bw === pw || bw.includes(pw) || pw.includes(bw); })) overlap++;
     });
+    // Score = overlap / max(words) — prefer higher overlap ratio
     var score = pWords.length > 0 ? overlap / Math.max(pWords.length, bqWords.length) : 0;
+    // Boost exact multi-word matches
     if (overlap >= 2) score += 0.5;
     if (score > bestScore) { bestScore = score; bestProp = p; }
   });
+  // Require at least one significant word match
   return bestScore >= 0.3 ? bestProp : null;
 }
 
@@ -3455,6 +3569,7 @@ async function testBigQueryConnection() {
     let year  = now.getFullYear();
     let month = now.getMonth() + 1;
     let data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    // Fall back to previous month if current month has no data yet
     if (!data.rows || data.rows.length === 0) {
       month = month - 1;
       if (month < 1) { month = 12; year = year - 1; }
@@ -3477,13 +3592,15 @@ async function refreshAllActuals() {
   showToast('Refreshing actuals for all properties…');
   const now = new Date();
   let year  = now.getFullYear();
-  let month = now.getMonth() + 1;
+  let month = now.getMonth() + 1; // 1-based
   try {
+    // Try current month first; if BQ returns no rows, fall back to previous month
     let data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
     if (!data.rows || data.rows.length === 0) {
+      // Fall back to previous month (handles Jan→Dec year rollback)
       month = month - 1;
       if (month < 1) { month = 12; year = year - 1; }
-      showToast('No data for current month \u2014 pulling ' + ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month] + ' ' + year + '\u2026');
+      showToast('No data for current month — pulling ' + ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month] + ' ' + year + '…');
       data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
     }
     const occData = await bqFetch({ type: 'portfolio_occupancy' });
@@ -3893,12 +4010,18 @@ async function boot() {
       const t = threshRow[0];
       THRESHOLDS.noiMissPct.value          = t.noi_miss_pct       ?? 5;
       THRESHOLDS.noiMissPct.enabled        = t.noi_enabled        ?? true;
-      THRESHOLDS.occupancyMin.value        = t.occupancy_min      ?? 88;
+      THRESHOLDS.noiPace.value             = t.noi_pace_pct       ?? 5;
+      THRESHOLDS.noiPace.enabled           = t.noi_pace_enabled   ?? true;
+      THRESHOLDS.occupancyMin.value        = t.occupancy_min      ?? 86;
       THRESHOLDS.occupancyMin.enabled      = t.occupancy_enabled  ?? true;
-      THRESHOLDS.expensePacePct.value      = t.expense_pace_pct   ?? 80;
+      THRESHOLDS.incomePace.value          = t.income_pace_pct    ?? 5;
+      THRESHOLDS.incomePace.enabled        = t.income_pace_enabled ?? true;
+      THRESHOLDS.expensePacePct.value      = t.expense_pace_pct   ?? 5;
       THRESHOLDS.expensePacePct.enabled    = t.expense_pace_enabled ?? true;
       THRESHOLDS.capexHit.value            = t.capex_hit_pct      ?? 100;
       THRESHOLDS.capexHit.enabled          = t.capex_enabled      ?? true;
+      THRESHOLDS.capexPace.value           = t.capex_pace_pct     ?? 5;
+      THRESHOLDS.capexPace.enabled         = t.capex_pace_enabled ?? true;
       THRESHOLDS.unitRentBelowPct.value    = t.unit_rent_below_pct ?? 5;
       THRESHOLDS.unitRentBelowPct.enabled  = t.unit_rent_enabled  ?? true;
       THRESHOLDS.collectionsMin.value      = t.collections_min    ?? 95;
@@ -4154,12 +4277,18 @@ async function dbSaveThresholds() {
       body: JSON.stringify({
         noi_miss_pct:         THRESHOLDS.noiMissPct.value,
         noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+        noi_pace_pct:         THRESHOLDS.noiPace.value,
+        noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
         occupancy_min:        THRESHOLDS.occupancyMin.value,
         occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+        income_pace_pct:      THRESHOLDS.incomePace.value,
+        income_pace_enabled:  THRESHOLDS.incomePace.enabled,
         expense_pace_pct:     THRESHOLDS.expensePacePct.value,
         expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
         capex_hit_pct:        THRESHOLDS.capexHit.value,
         capex_enabled:        THRESHOLDS.capexHit.enabled,
+        capex_pace_pct:       THRESHOLDS.capexPace.value,
+        capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
         unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
         unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
         collections_min:      THRESHOLDS.collectionsMin.value,

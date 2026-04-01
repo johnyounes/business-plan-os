@@ -3418,15 +3418,20 @@ async function testBigQueryConnection() {
   showToast('Pinging PointGuard BigQuery…');
   try {
     const now = new Date();
-    const data = await bqFetch({
-      type: 'portfolio_summary',
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-    });
+    let year  = now.getFullYear();
+    let month = now.getMonth() + 1;
+    let data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    // Fall back to previous month if current month has no data yet
+    if (!data.rows || data.rows.length === 0) {
+      month = month - 1;
+      if (month < 1) { month = 12; year = year - 1; }
+      data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    }
     bitqueryConfig.connected = true;
     bitqueryConfig.lastSync  = Date.now();
     bitqueryConfig.edgeFnReady = true;
-    showToast('Connected! Pulled ' + (data.rows ? data.rows.length : 0) + ' properties from PointGuard.');
+    const monthLabel = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month];
+    showToast('Connected! Pulled ' + (data.rows ? data.rows.length : 0) + ' properties (' + monthLabel + ' ' + year + ') from PointGuard.');
     renderBitqueryModal();
     renderPage();
   } catch (err) {
@@ -3438,11 +3443,19 @@ async function testBigQueryConnection() {
 async function refreshAllActuals() {
   showToast('Refreshing actuals for all properties…');
   const now = new Date();
+  let year  = now.getFullYear();
+  let month = now.getMonth() + 1; // 1-based
   try {
-    const [data, occData] = await Promise.all([
-      bqFetch({ type: 'portfolio_summary', year: now.getFullYear(), month: now.getMonth() + 1 }),
-      bqFetch({ type: 'portfolio_occupancy' })
-    ]);
+    // Try current month first; if BQ returns no rows, fall back to previous month
+    let data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    if (!data.rows || data.rows.length === 0) {
+      // Fall back to previous month (handles Jan→Dec year rollback)
+      month = month - 1;
+      if (month < 1) { month = 12; year = year - 1; }
+      showToast('No data for current month — pulling ' + ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month] + ' ' + year + '…');
+      data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    }
+    const occData = await bqFetch({ type: 'portfolio_occupancy' });
     let updated = 0;
     (data.rows || []).forEach(function(row) {
       const bqName = String(row.PropertyName || '').toLowerCase();
@@ -3471,7 +3484,8 @@ async function refreshAllActuals() {
     });
     bitqueryConfig.connected = true;
     bitqueryConfig.lastSync = Date.now();
-    showToast('Updated actuals for ' + updated + ' of ' + properties.length + ' properties.');
+    const monthLabel = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month];
+    showToast('Updated actuals (' + monthLabel + ' ' + year + ') for ' + updated + ' of ' + properties.length + ' properties.');
     renderPage();
   } catch (err) { showToast('Refresh failed: ' + err.message, true); }
 }

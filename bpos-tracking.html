@@ -3357,6 +3357,27 @@ let bitqueryConfig = {
   edgeFnReady: true,
 };
 
+// Match a BQ property name (e.g. "Park Place - Manhattan - PGO") to a local property
+function matchBQProp(bqName, props) {
+  var stopWords = ['the','a','an','of','at','in','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan'];
+  function sigWords(s) {
+    return s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 1 && stopWords.indexOf(w) === -1; });
+  }
+  var bqWords = sigWords(bqName);
+  var bestProp = null, bestScore = 0;
+  props.forEach(function(p) {
+    var pWords = sigWords(p.name);
+    var overlap = 0;
+    pWords.forEach(function(pw) {
+      if (bqWords.some(function(bw) { return bw === pw || bw.indexOf(pw) >= 0 || pw.indexOf(bw) >= 0; })) overlap++;
+    });
+    var score = pWords.length > 0 ? overlap / Math.max(pWords.length, bqWords.length) : 0;
+    if (overlap >= 2) score += 0.5;
+    if (score > bestScore) { bestScore = score; bestProp = p; }
+  });
+  return bestScore >= 0.3 ? bestProp : null;
+}
+
 async function bqFetch(payload) {
   const res = await fetch(SUPA_URL + '/functions/v1/bq-actuals', {
     method: 'POST',
@@ -3455,21 +3476,15 @@ async function refreshAllActuals() {
     const occData = await bqFetch({ type: 'portfolio_occupancy' });
     let updated = 0;
     (data.rows || []).forEach(function(row) {
-      const bqName = String(row.PropertyName || '').toLowerCase();
-      const prop = properties.find(function(p) {
-        const n = p.name.toLowerCase();
-        return bqName.includes(n.split(' ')[0]) || n.includes(bqName.split(' ')[0]);
-      });
+      const bqName = String(row.PropertyName || '');
+      const prop = matchBQProp(bqName, properties);
       if (!prop) return;
       applyBQActuals(prop, row);
       updated++;
     });
     (occData.rows || []).forEach(function(row) {
-      const bqName = String(row.PropertyName || '').toLowerCase();
-      const prop = properties.find(function(p) {
-        const n = p.name.toLowerCase();
-        return bqName.includes(n.split(' ')[0]) || n.includes(bqName.split(' ')[0]);
-      });
+      const bqName = String(row.PropertyName || '');
+      const prop = matchBQProp(bqName, properties);
       if (!prop) return;
       prop.bqOccupancy = {
         total: +row.TotalUnits||0, occupied: +row.Occupied||0,

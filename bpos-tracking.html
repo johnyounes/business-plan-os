@@ -503,6 +503,54 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .ph-left h1{font-size:16px;}
   .prop-select{font-size:15px;padding:14px 36px 14px 14px;}
   .pkpi-value{font-size:20px;}
+  .pace-tracker-grid{grid-template-columns:1fr !important;}
+}
+
+/* ══════════════════════════════════════
+   PACE TRACKER PANEL
+   ══════════════════════════════════════ */
+.pace-tracker-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden;}
+.ptp-head{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s;}
+.ptp-head:hover{background:rgba(61,127,255,.04);}
+.ptp-icon{font-size:15px;}
+.ptp-title{font-size:14px;font-weight:600;color:var(--accent);flex:1;}
+.ptp-summary{display:flex;align-items:center;gap:8px;}
+.ptp-pill{font-size:11px;font-weight:600;border-radius:10px;padding:2px 9px;display:inline-flex;align-items:center;gap:4px;}
+.ptp-pill.on-track{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.18);}
+.ptp-pill.off-track{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.18);}
+.ptp-pill.critical{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.18);}
+.ptp-chev{font-size:12px;color:var(--text3);transition:transform .2s;}
+.ptp-chev.open{transform:rotate(180deg);}
+.ptp-body{display:none;padding:0 20px 16px;}
+.ptp-body.open{display:block;}
+.ptp-month-note{font-size:11px;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.ptp-month-note .ptp-pct{font-family:var(--mono);font-weight:500;color:var(--accent);}
+.ptp-early-note{font-size:11px;color:var(--text3);padding:12px 0;text-align:center;font-style:italic;}
+
+/* Pace tracker category columns */
+.pace-tracker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.ptg-col{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+.ptg-col-header{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.ptg-col-header .ptg-dir{font-size:9px;font-weight:500;color:var(--text3);opacity:.7;text-transform:none;letter-spacing:0;}
+.ptg-prop-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.ptg-prop-row:last-child{border-bottom:none;}
+.ptg-prop-name{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.ptg-prop-name:hover{color:var(--text);}
+.ptg-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ptg-status-dot.on-track{background:var(--green);box-shadow:0 0 4px rgba(34,201,122,.4);}
+.ptg-status-dot.off-track{background:var(--amber);box-shadow:0 0 4px rgba(245,166,35,.4);}
+.ptg-status-dot.critical{background:var(--red);box-shadow:0 0 4px rgba(232,80,74,.4);}
+.ptg-pct{font-family:var(--mono);font-size:11px;font-weight:500;white-space:nowrap;}
+.ptg-pct.on-track{color:var(--green);}
+.ptg-pct.off-track{color:var(--amber);}
+.ptg-pct.critical{color:var(--red);}
+
+/* Pace note in alerts */
+.pace-note{font-size:10px;color:var(--text3);margin-top:6px;font-style:italic;}
+
+@media (max-width:768px){
+  .pace-tracker-grid{grid-template-columns:repeat(2,1fr);}
+  .ptp-summary{flex-wrap:wrap;}
 }
 </style>
 
@@ -894,6 +942,206 @@ function getPaceCheckpoint(monthPct) {
   return null;
 }
 
+// ══════════════════════════════════════
+// PACE TRACKING ENGINE
+// Computes daily pace status per property per category
+// Thresholds: On Track (≤5%), Off Track (5–15%), Critical (>15%)
+// Suppresses alerts for days 1–5 (too little data)
+// Direction-aware: Income/NOI/Net Income under pace = bad, Expenses/CAPEX over pace = bad
+// Note: Annual/quarterly items (taxes, insurance) may spike early — known quirk
+// ══════════════════════════════════════
+const PACE_THRESHOLDS = { onTrack: 5, offTrack: 15 }; // ≤5% = on track, 5–15% = off track, >15% = critical
+const PACE_SUPPRESS_DAYS = 5; // suppress alerts for first 5 days
+
+function getPaceStatus(variancePct) {
+  // variancePct is always computed so positive = bad direction
+  // (income behind pace, expenses over pace, etc.)
+  // Negative variance = good (ahead on income, under on expenses) → always on-track
+  if (variancePct <= PACE_THRESHOLDS.onTrack)  return 'on-track';
+  if (variancePct <= PACE_THRESHOLDS.offTrack) return 'off-track';
+  return 'critical';
+}
+
+function getPaceStatusLabel(status) {
+  if (status === 'on-track')  return 'On Track';
+  if (status === 'off-track') return 'Off Track';
+  return 'Critical';
+}
+
+/**
+ * Compute pace data for a single property.
+ * Returns object with category keys: { income, expenses, noi, capex, netIncome }
+ * Each category: { budgetMo, actualMo, expectedPct, actualPct, variancePct, status, direction, suppressed }
+ */
+function computePropertyPace(prop) {
+  const a = prop.actuals;
+  const b = prop.budget;
+  const expectedPct = MONTH_PCT * 100; // e.g. day 10 of 30 = 33.3%
+  const suppressed = DAY_OF_MONTH <= PACE_SUPPRESS_DAYS;
+
+  // --- Income ---
+  const budIncome = b.income.reduce((s,r)=>s+r.monthly,0);
+  const actIncome = a.income.reduce((s,r)=>s+r,0);
+  const incPct = budIncome > 0 ? (actIncome / budIncome * 100) : 0;
+  // Income: under pace is bad → positive variance means behind
+  const incVariance = expectedPct - incPct; // positive = behind pace (bad)
+
+  // --- Expenses ---
+  const budExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
+  const actExp = a.expenses.reduce((s,r)=>s+r,0);
+  const expPct = budExp > 0 ? (actExp / budExp * 100) : 0;
+  // Expenses: over pace is bad → positive variance means over-spending
+  const expVariance = expPct - expectedPct; // positive = over pace (bad)
+
+  // --- NOI ---
+  const budNOI = budIncome - budExp;
+  const actNOI = actIncome - actExp;
+  const noiPct = budNOI > 0 ? (actNOI / budNOI * 100) : (budNOI < 0 && actNOI < 0 ? (actNOI / budNOI * 100) : 0);
+  const noiVariance = expectedPct - noiPct; // positive = behind pace (bad)
+
+  // --- CAPEX ---
+  const capexBudMo = (b.nonop || []).reduce((sum, r) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
+  }, 0);
+  const capexActMo = (b.nonop || []).reduce((sum, r, i) => {
+    const cat = r.category || categorizeNonopLabel(r.label);
+    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
+  }, 0);
+  const capexPct = capexBudMo > 0 ? (capexActMo / capexBudMo * 100) : 0;
+  const capexVariance = capexPct - expectedPct; // positive = over pace (bad)
+
+  // --- Net Income (NOI minus all non-operating) ---
+  const budNonop = (b.nonop || []).reduce((s,r) => s + (r.monthly || 0), 0);
+  const actNonop = (a.nonop || []).reduce((s,v) => s + v, 0);
+  const budNetIncome = budNOI - budNonop;
+  const actNetIncome = actNOI - actNonop;
+  const niPct = budNetIncome !== 0 ? (actNetIncome / budNetIncome * 100) : 0;
+  const niVariance = expectedPct - niPct; // positive = behind pace (bad)
+
+  function mkCat(budgetMo, actualMo, actualPctVal, variancePctVal, dir) {
+    return {
+      budgetMo, actualMo,
+      expectedPct,
+      actualPct: actualPctVal,
+      variancePct: variancePctVal,
+      status: suppressed ? 'on-track' : getPaceStatus(variancePctVal),
+      direction: dir,
+      suppressed
+    };
+  }
+
+  return {
+    income:    mkCat(budIncome, actIncome, incPct, incVariance, 'higher-good'),
+    expenses:  mkCat(budExp, actExp, expPct, expVariance, 'lower-good'),
+    noi:       mkCat(budNOI, actNOI, noiPct, noiVariance, 'higher-good'),
+    capex:     mkCat(capexBudMo, capexActMo, capexPct, capexVariance, 'lower-good'),
+    netIncome: mkCat(budNetIncome, actNetIncome, niPct, niVariance, 'higher-good'),
+  };
+}
+
+/**
+ * Compute pace data for all properties. Returns array of {prop, pace}.
+ */
+function computeAllPaceData() {
+  return properties.map(p => ({ prop: p, pace: computePropertyPace(p) }));
+}
+
+/**
+ * Get worst status across all categories for a property
+ */
+function getWorstPaceStatus(pace) {
+  const statuses = ['income','expenses','noi','capex','netIncome'].map(k => pace[k].status);
+  if (statuses.includes('critical'))  return 'critical';
+  if (statuses.includes('off-track')) return 'off-track';
+  return 'on-track';
+}
+
+/**
+ * Render the pace tracker panel HTML
+ */
+function renderPaceTrackerPanel() {
+  const allPace = computeAllPaceData();
+  const suppressed = DAY_OF_MONTH <= PACE_SUPPRESS_DAYS;
+
+  // Count properties per overall status
+  const counts = { 'on-track':0, 'off-track':0, 'critical':0 };
+  allPace.forEach(d => { counts[getWorstPaceStatus(d.pace)]++; });
+
+  const categories = [
+    { key:'income',    label:'Income',      dir:'↑ higher = good' },
+    { key:'expenses',  label:'Expenses',    dir:'↓ lower = good' },
+    { key:'noi',       label:'NOI',         dir:'↑ higher = good' },
+    { key:'capex',     label:'CAPEX',       dir:'↓ lower = good' },
+    { key:'netIncome', label:'Net Income',  dir:'↑ higher = good' },
+  ];
+
+  let bodyContent;
+  if (suppressed) {
+    bodyContent = `<div class="ptp-early-note">Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH} — Pace tracking suppressed for first ${PACE_SUPPRESS_DAYS} days of month (insufficient data)</div>`;
+  } else {
+    bodyContent = `
+      <div class="ptp-month-note">
+        <span class="ptp-pct">${(MONTH_PCT*100).toFixed(0)}%</span> through ${MONTH_LABEL} (Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH}) — expected pace: <strong>${(MONTH_PCT*100).toFixed(0)}%</strong> of monthly budget
+        <span style="margin-left:auto;font-size:10px;color:var(--text3);">⚠ Annual items (taxes, insurance) may cause temporary spikes</span>
+      </div>
+      <div class="pace-tracker-grid">
+        ${categories.map(cat => {
+          // Sort properties: critical first, then off-track, then on-track
+          const sorted = [...allPace].sort((a,b) => {
+            const order = {'critical':0,'off-track':1,'on-track':2};
+            return order[a.pace[cat.key].status] - order[b.pace[cat.key].status];
+          });
+          return `<div class="ptg-col">
+            <div class="ptg-col-header">
+              <span>${cat.label}</span>
+              <span class="ptg-dir">${cat.dir}</span>
+            </div>
+            ${sorted.map(d => {
+              const c = d.pace[cat.key];
+              const sign = c.direction === 'higher-good'
+                ? (c.variancePct > 0 ? '−' : '+')
+                : (c.variancePct > 0 ? '+' : '−');
+              const displayVar = Math.abs(c.variancePct).toFixed(1);
+              return `<div class="ptg-prop-row">
+                <span class="ptg-status-dot ${c.status}"></span>
+                <span class="ptg-prop-name" onclick="selectProp(${d.prop.id})" title="${d.prop.name}">${d.prop.name}</span>
+                <span class="ptg-pct ${c.status}">${c.actualPct.toFixed(0)}%</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  return `
+    <div class="pace-tracker-panel">
+      <div class="ptp-head" onclick="togglePaceTracker()">
+        <span class="ptp-icon">◉</span>
+        <span class="ptp-title">Monthly pace tracker</span>
+        <div class="ptp-summary">
+          ${counts['on-track'] > 0 ? `<span class="ptp-pill on-track">✓ ${counts['on-track']} on track</span>` : ''}
+          ${counts['off-track'] > 0 ? `<span class="ptp-pill off-track">⚠ ${counts['off-track']} off track</span>` : ''}
+          ${counts['critical'] > 0 ? `<span class="ptp-pill critical">✕ ${counts['critical']} critical</span>` : ''}
+          ${suppressed ? '<span style="font-size:11px;color:var(--text3);">Early month — suppressed</span>' : ''}
+        </div>
+        <span class="ptp-chev ${paceTrackerOpen?'open':''}" id="ptp-chev">▾</span>
+      </div>
+      <div class="ptp-body ${paceTrackerOpen?'open':''}" id="ptp-body">
+        ${bodyContent}
+      </div>
+    </div>`;
+}
+
+let paceTrackerOpen = true;
+function togglePaceTracker() {
+  paceTrackerOpen = !paceTrackerOpen;
+  const body = document.getElementById('ptp-body');
+  const chev = document.getElementById('ptp-chev');
+  if (body) body.classList.toggle('open', paceTrackerOpen);
+  if (chev) chev.classList.toggle('open', paceTrackerOpen);
+}
+
 function getAlerts(prop) {
   const alerts = [];
   const a = prop.actuals;
@@ -985,6 +1233,31 @@ function getAlerts(prop) {
         alerts.push({sev: capexExcess > T.capexPace.value * 2 ? 'red' : 'amber', icon:'▣',
           text:`CapEx at <strong>${((capexActualMo/capexBudgetMo)*100).toFixed(0)}% of monthly budget</strong> at ${cpLabel} checkpoint — ${capexExcess.toFixed(1)}% ahead of expected pace`});
     }
+  }
+
+  // ── Daily pace tracking alerts (suppressed days 1–5) ──
+  if (DAY_OF_MONTH > PACE_SUPPRESS_DAYS) {
+    const pace = computePropertyPace(prop);
+    const cats = [
+      { key:'income',    label:'Income',     icon:'▲' },
+      { key:'expenses',  label:'Expenses',   icon:'◈' },
+      { key:'noi',       label:'NOI',        icon:'⚑' },
+      { key:'capex',     label:'CAPEX',      icon:'▣' },
+      { key:'netIncome', label:'Net Income',  icon:'◐' },
+    ];
+    cats.forEach(cat => {
+      const c = pace[cat.key];
+      if (c.status === 'off-track' || c.status === 'critical') {
+        const dirMsg = c.direction === 'higher-good'
+          ? `at <strong>${c.actualPct.toFixed(0)}%</strong> of budget vs. ${c.expectedPct.toFixed(0)}% expected — ${Math.abs(c.variancePct).toFixed(1)}% behind pace`
+          : `at <strong>${c.actualPct.toFixed(0)}%</strong> of budget vs. ${c.expectedPct.toFixed(0)}% expected — ${Math.abs(c.variancePct).toFixed(1)}% ahead of pace`;
+        alerts.push({
+          sev: c.status === 'critical' ? 'red' : 'amber',
+          icon: cat.icon,
+          text: `${cat.label} pace: ${dirMsg} (Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH})`
+        });
+      }
+    });
   }
 
   // ── Unit rents below budget ──
@@ -1111,6 +1384,9 @@ function renderPage() {
             })()}
       </div>
     </div>
+
+    <!-- PACE TRACKER PANEL -->
+    ${renderPaceTrackerPanel()}
 
     <!-- PROPERTY DETAIL SELECTOR -->
     <div class="prop-selector-row">

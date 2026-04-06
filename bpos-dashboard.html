@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — PGM Business Plan OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ═══════════════════════════════════════════════════════
+   MODULE SIDEBAR
+   ═══════════════════════════════════════════════════════ */
+.app-layout{display:flex;min-height:100vh;}
+.module-sidebar{
+  width:56px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding-top:10px;flex-shrink:0;
+  position:fixed;left:0;top:0;bottom:0;z-index:100;
+}
+.app-main{flex:1;display:flex;flex-direction:column;margin-left:56px;min-height:100vh;}
+.ms-logo{
+  font-family:var(--display);font-size:13px;color:var(--accent);
+  margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;width:100%;text-align:center;
+}
+.ms-item{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;cursor:pointer;color:var(--text3);transition:all .15s;
+  margin-bottom:4px;position:relative;text-decoration:none;
+}
+.ms-item:hover{background:rgba(255,255,255,.05);color:var(--text2);}
+.ms-item.active{background:rgba(61,127,255,.12);color:var(--accent);}
+.ms-item svg{width:20px;height:20px;}
+.ms-tooltip{
+  display:none;position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  background:var(--bg4);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;
+  font-weight:500;white-space:nowrap;z-index:101;pointer-events:none;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+.ms-item:hover .ms-tooltip{display:block;}
+.ms-divider{width:28px;height:1px;background:var(--border);margin:8px 0;}
+.ms-item-disabled{opacity:.3;cursor:default;}
+.ms-item-disabled:hover{background:transparent;color:var(--text3);}
+
+/* ═══════════════════════════════════════════════════════
+   TOP BAR
+   ═══════════════════════════════════════════════════════ */
+.topbar{
+  height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;gap:14px;
+}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.topbar-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
+.topbar-brand .sep{color:var(--text3);}
+.topbar-brand .current{color:var(--text);font-weight:500;}
+.topbar-spacer{flex:1;}
+
+.tab-pills{display:flex;gap:3px;background:var(--bg);padding:3px;border-radius:8px;}
+.tab-pill{
+  padding:5px 13px;font-size:11px;font-weight:600;border-radius:6px;border:none;
+  background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;font-family:var(--font);
+}
+.tab-pill:hover{color:var(--text2);}
+.tab-pill.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.2);}
+
+.filter-bar{display:flex;align-items:center;gap:8px;}
+
+/* Refresh / Settings buttons */
+.btn-refresh{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;font-weight:600;
+  font-family:var(--font);border:1px solid rgba(61,127,255,.25);border-radius:7px;
+  background:rgba(61,127,255,.08);color:var(--accent);cursor:pointer;transition:all .15s;
+}
+.btn-refresh:hover{background:rgba(61,127,255,.15);}
+.btn-refresh:disabled{opacity:.4;cursor:not-allowed;}
+.btn-refresh svg{width:13px;height:13px;}
+.btn-refresh.spinning svg{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.btn-settings{
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border2);border-radius:7px;background:var(--bg3);color:var(--text3);
+  cursor:pointer;transition:all .15s;
+}
+.btn-settings:hover{color:var(--text);border-color:var(--accent);}
+.btn-settings svg{width:15px;height:15px;}
+
+/* ═══════════════════════════════════════════════════════
+   CONTENT AREA
+   ═══════════════════════════════════════════════════════ */
+.content{flex:1;padding:20px 28px 40px;overflow-y:auto;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* ═══════════════════════════════════════════════════════
+   KPI SCORECARDS
+   ═══════════════════════════════════════════════════════ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:18px;}
+.kpi-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s;
+}
+.kpi-card:hover{border-color:var(--border2);}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:6px;}
+.kpi-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.1;font-variant-numeric:tabular-nums;}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+.kpi-card.placeholder .kpi-value{color:var(--text3);font-size:12px;font-weight:500;}
+
+/* ═══════════════════════════════════════════════════════
+   CHARTS
+   ═══════════════════════════════════════════════════════ */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;margin-bottom:18px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.chart-wrap{position:relative;height:250px;}
+.chart-wrap canvas{width:100%!important;height:100%!important;}
+
+/* ═══════════════════════════════════════════════════════
+   PLACEHOLDERS
+   ═══════════════════════════════════════════════════════ */
+.section-header{display:flex;align-items:center;gap:8px;margin:20px 0 12px;}
+.section-header h3{font-size:13px;font-weight:700;color:var(--text);}
+.tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;}
+.tag-coming{background:rgba(245,166,35,.1);color:var(--amber);}
+.placeholder-section{
+  background:var(--bg2);border:1px dashed var(--border2);border-radius:10px;
+  padding:24px;text-align:center;color:var(--text3);font-size:12px;margin-bottom:18px;
+}
+.placeholder-section strong{color:var(--text2);display:block;margin-bottom:4px;}
+
+/* ═══════════════════════════════════════════════════════
+   TABLES
+   ═══════════════════════════════════════════════════════ */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.table-header h4{font-size:12px;font-weight:600;color:var(--text);}
+.table-count{font-size:10px;font-weight:600;color:var(--accent);background:rgba(61,127,255,.1);padding:2px 8px;border-radius:10px;}
+.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;}
+.dtable{width:100%;border-collapse:collapse;font-size:11px;}
+.dtable th{
+  position:sticky;top:0;background:var(--bg3);font-size:9px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--text3);
+  padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;
+}
+.dtable th.num,.dtable td.num{text-align:right;}
+.dtable td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.dtable tr:hover td{background:rgba(61,127,255,.03);}
+.dtable .prop-name{color:var(--text);font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+.dtable .grand-total td{font-weight:700;color:var(--text);background:var(--bg3);border-top:2px solid var(--border2);position:sticky;bottom:0;}
+
+/* Occupancy bar */
+.occ-bar-wrap{width:50px;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px;}
+.occ-bar{height:100%;border-radius:3px;}
+.occ-high{background:var(--green);}
+.occ-mid{background:var(--amber);}
+.occ-low{background:var(--red);}
+
+/* Lease dots */
+.ldot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+.ldot-30{background:var(--red);}
+.ldot-60{background:var(--amber);}
+.ldot-90{background:var(--green);}
+.ldot-mtm{background:var(--purple);}
+.ldot-expired{background:var(--text3);}
+
+.lease-legend{display:flex;gap:14px;padding:8px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:4px;}
+
+/* Unit tracker layout */
+.tracker-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+
+/* ═══════════════════════════════════════════════════════
+   MULTI-SELECT DROPDOWN
+   ═══════════════════════════════════════════════════════ */
+.ms{position:relative;min-width:180px;}
+.ms-trigger{
+  font-family:var(--font);font-size:11px;font-weight:500;padding:5px 26px 5px 10px;
+  border:1px solid var(--border2);border-radius:7px;background:var(--bg3);color:var(--text);
+  cursor:pointer;width:100%;text-align:left;
+  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ms-dd{
+  position:absolute;top:calc(100% + 4px);left:0;min-width:100%;max-width:280px;max-height:300px;overflow-y:auto;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:60;display:none;padding:4px;
+}
+.ms-dd.open{display:block;}
+.ms-opt{display:flex;align-items:center;gap:7px;padding:5px 9px;font-size:11px;cursor:pointer;border-radius:5px;color:var(--text2);}
+.ms-opt:hover{background:rgba(255,255,255,.05);}
+.ms-opt.selected{background:rgba(61,127,255,.1);color:var(--accent);font-weight:500;}
+.ms-chk{width:13px;height:13px;border:1.5px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ms-opt.selected .ms-chk{background:var(--accent);border-color:var(--accent);}
+.ms-opt.selected .ms-chk::after{content:'';width:5px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translateY(-1px);}
+.ms-div{height:1px;background:var(--border);margin:3px 0;}
+.ms-all{font-weight:600;color:var(--text);}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:540px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
+.modal-header h2{font-size:15px;font-weight:700;color:var(--text);}
+.modal-header p{font-size:11px;color:var(--text3);margin-top:2px;}
+.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.btn-ghost{font-family:var(--font);font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;}
+.btn-ghost:hover{border-color:var(--text3);color:var(--text);}
+.btn-primary{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer;}
+.btn-primary:hover{background:var(--accent2);}
+
+/* ═══════════════════════════════════════════════════════
+   EMPTY STATE & LOADING
+   ═══════════════════════════════════════════════════════ */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;}
+.empty-state svg{width:44px;height:44px;color:var(--text3);opacity:.35;margin-bottom:14px;}
+.empty-state h3{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.empty-state p{font-size:12px;color:var(--text3);max-width:340px;margin-bottom:14px;}
+
+.loading-overlay{position:fixed;inset:0;background:rgba(13,15,18,.85);z-index:150;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.loading-overlay.show{display:flex;}
+.loading-spinner{width:32px;height:32px;border:3px solid rgba(61,127,255,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════════════ */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.3);display:none;z-index:300;align-items:center;gap:8px;}
+.toast.show{display:flex;}
+.toast .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
+@media (max-width:1024px){.tracker-layout{grid-template-columns:1fr;}}
+@media (max-width:768px){
+  .module-sidebar{width:44px;}
+  .app-main{margin-left:44px;}
+  .ms-item{width:32px;height:32px;}
+  .ms-item svg{width:16px;height:16px;}
+  .topbar{padding:0 14px;gap:8px;}
+  .content{padding:14px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-grid{grid-template-columns:1fr;}
+  .filter-bar{flex-wrap:wrap;}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
+
+@media print{.module-sidebar,.topbar,.modal-overlay,.loading-overlay{display:none!important;}.app-main{margin-left:0;}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ MODULE SIDEBAR ═══════════ -->
+<div class="app-layout">
+<aside class="module-sidebar">
+  <div class="ms-logo">BPOS</div>
+  <a class="ms-item" href="bpos-tracking.html" title="Budget Tracking">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    <span class="ms-tooltip">Budget Tracking</span>
+  </a>
+  <div class="ms-item active" title="Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span class="ms-tooltip">Dashboard</span>
+  </div>
+  <div class="ms-divider"></div>
+  <div class="ms-item ms-item-disabled" title="T-12 Reports (coming soon)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
+    <span class="ms-tooltip">T-12 Reports</span>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN CONTENT ═══════════ -->
+<div class="app-main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="logo">BPOS</span>
+      <span class="sep">›</span>
+      <span class="current" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-spacer"></div>
+
+    <div class="tab-pills">
+      <button class="tab-pill active" data-tab="kpi" onclick="switchTab('kpi')">KPI Overview</button>
+      <button class="tab-pill" data-tab="tracker" onclick="switchTab('tracker')">Unit Tracker</button>
+    </div>
+
+    <div class="filter-bar">
+      <div class="ms" id="prop-filter">
+        <button class="ms-trigger" id="prop-trigger" onclick="togglePropDD()">All Properties</button>
+        <div class="ms-dd" id="prop-dd"></div>
+      </div>
+      <button class="btn-refresh" id="btn-refresh" onclick="refreshDashboard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Refresh
+      </button>
+      <button class="btn-settings" onclick="openBQModal()" title="BigQuery Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="tab-content active" id="tab-kpi"></div>
+    <div class="tab-content" id="tab-tracker"></div>
+    <div class="empty-state" id="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 8v4l3 3"/></svg>
+      <h3>Connect BigQuery to get started</h3>
+      <p>Click the gear icon to configure your BigQuery connection, then hit Refresh to load live portfolio data.</p>
+      <button class="btn-refresh" onclick="openBQModal()" style="font-size:12px;padding:7px 16px;">Configure BigQuery</button>
+    </div>
+  </div>
+
+</div><!-- /app-main -->
+</div><!-- /app-layout -->
+
+<!-- ═══════════ BIGQUERY MODAL ═══════════ -->
+<div class="modal-overlay" id="bq-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>Dashboard BigQuery Connection</h2>
+        <p>Connect to your Buildium BigQuery for live dashboard data.</p>
+      </div>
+      <button class="modal-close" onclick="closeBQModal()">×</button>
+    </div>
+    <div class="modal-body" id="bq-modal-body"></div>
+    <div class="modal-footer" id="bq-modal-footer"></div>
+  </div>
+</div>
+
+<!-- ═══════════ LOADING ═══════════ -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div style="font-size:12px;color:var(--text2);" id="loading-text">Loading dashboard data...</div>
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div class="toast" id="toast"><div class="dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const SUPA_URL = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTI3NTQsImV4cCI6MjA5MDAyODc1NH0.xAjHM7s6IphX_oOA_Qma4sspmlLywX209EssAursr0w';
+const BQ_FN = 'bq-dashboard';
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let S = {
+  connected: false,
+  lastSync: null,
+  loading: false,
+  activeTab: 'kpi',
+  selProps: [],
+  data: { occupancySummary:[], rentRoll:[], vacancy:[], leaseExpirations:[], bedroomMix:[] },
+};
+let charts = {};
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const num = v => v==null?0:Number(v)||0;
+const fmt = (n,d)=>{d=d||0;if(n==null||isNaN(n))return'--';return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});};
+const fPct = (n,d)=>{d=d==null?1:d;if(n==null||isNaN(n))return'--';return Number(n).toFixed(d)+'%';};
+const fCur = n=>{if(n==null||isNaN(n))return'--';return'$'+fmt(n);};
+const occCls = p=>p>=90?'occ-high':p>=80?'occ-mid':'occ-low';
+const esc = s=>{if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+
+function showToast(msg, color) {
+  $('toast-msg').textContent = msg;
+  $('toast-dot').style.background = color || 'var(--green)';
+  $('toast').classList.add('show');
+  setTimeout(() => $('toast').classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════════════════
+// BIGQUERY FETCH
+// ══════════════════════════════════════════════════════════
+async function bqFetch(type) {
+  const res = await fetch(SUPA_URL + '/functions/v1/' + BQ_FN, {
+    method: 'POST',
+    headers: { 'Authorization':'Bearer '+SUPA_KEY, 'Content-Type':'application/json' },
+    body: JSON.stringify({ type }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'Request failed');
+  return data.rows || [];
+}
+
+async function testConnection() {
+  const btn = $('bq-test-btn');
+  const st = $('bq-test-status');
+  if (btn) btn.disabled = true;
+  if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(61,127,255,.08);border:1px solid rgba(61,127,255,.12);border-radius:6px;font-size:11px;color:var(--accent);margin-bottom:8px;">Testing connection...</div>';
+  try {
+    await bqFetch('test');
+    S.connected = true;
+    if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.12);border-radius:6px;font-size:11px;color:var(--green);margin-bottom:8px;">Connected to BigQuery (api-data-pull-492404)</div>';
+  } catch (e) {
+    S.connected = false;
+    if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(232,80,74,.06);border:1px solid rgba(232,80,74,.12);border-radius:6px;font-size:11px;color:var(--red);margin-bottom:8px;">Failed: '+esc(e.message)+'</div>';
+  }
+  if (btn) btn.disabled = false;
+}
+
+async function refreshDashboard() {
+  if (S.loading) return;
+  S.loading = true;
+  $('loading-text').textContent = 'Fetching portfolio data from BigQuery...';
+  $('loading').classList.add('show');
+  const btn = $('btn-refresh');
+  if (btn) btn.classList.add('spinning');
+
+  try {
+    const [occ,rr,vac,le,bm] = await Promise.all([
+      bqFetch('occupancy_summary'),
+      bqFetch('rent_roll'),
+      bqFetch('vacancy'),
+      bqFetch('lease_expirations'),
+      bqFetch('bedroom_mix'),
+    ]);
+    S.data = { occupancySummary:occ, rentRoll:rr, vacancy:vac, leaseExpirations:le, bedroomMix:bm };
+    S.connected = true;
+    S.lastSync = new Date().toISOString();
+    try { localStorage.setItem('bpos_dash_data',JSON.stringify(S.data)); localStorage.setItem('bpos_dash_meta',JSON.stringify({connected:S.connected,lastSync:S.lastSync})); } catch(e){}
+    buildPropFilter();
+    renderAll();
+    showToast('Dashboard refreshed — '+occ.length+' properties loaded','var(--green)');
+  } catch (e) {
+    console.error('Refresh failed:', e);
+    showToast('Refresh failed: '+e.message,'var(--red)');
+  }
+
+  S.loading = false;
+  $('loading').classList.remove('show');
+  if (btn) btn.classList.remove('spinning');
+}
+
+// ══════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════
+function switchTab(tab) {
+  S.activeTab = tab;
+  document.querySelectorAll('.tab-pill').forEach(p=>p.classList.toggle('active',p.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  const el = $('tab-'+tab);
+  if (el) el.classList.add('active');
+  $('topbar-title').textContent = tab==='kpi'?'Dashboard':'Unit Tracker';
+}
+
+// ══════════════════════════════════════════════════════════
+// PROPERTY FILTER
+// ══════════════════════════════════════════════════════════
+function buildPropFilter() {
+  const dd = $('prop-dd');
+  const names = S.data.occupancySummary.map(r=>r.property_name).sort();
+  let html = '<div class="ms-opt ms-all'+(S.selProps.length===0?' selected':'')+'" onclick="selectAllProps()"><div class="ms-chk"></div>All Properties ('+names.length+')</div><div class="ms-div"></div>';
+  names.forEach(n=>{
+    const sel = S.selProps.includes(n);
+    html+='<div class="ms-opt'+(sel?' selected':'')+'" onclick="toggleProp(\''+esc(n.replace(/'/g,"\\'"))+'\')">'+'<div class="ms-chk"></div>'+esc(n)+'</div>';
+  });
+  dd.innerHTML = html;
+  updatePropTrigger();
+}
+function togglePropDD() { $('prop-dd').classList.toggle('open'); }
+function selectAllProps() { S.selProps=[]; buildPropFilter(); renderAll(); }
+function toggleProp(n) { const i=S.selProps.indexOf(n); if(i>=0)S.selProps.splice(i,1);else S.selProps.push(n); buildPropFilter(); renderAll(); }
+function updatePropTrigger() {
+  const t=$('prop-trigger');
+  if(S.selProps.length===0) t.textContent='All Properties';
+  else if(S.selProps.length===1) t.textContent=S.selProps[0];
+  else t.textContent=S.selProps.length+' properties';
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#prop-filter'))$('prop-dd').classList.remove('open');});
+
+// ══════════════════════════════════════════════════════════
+// FILTERED DATA
+// ══════════════════════════════════════════════════════════
+function fOcc(){const p=S.selProps;return p.length===0?S.data.occupancySummary:S.data.occupancySummary.filter(r=>p.includes(r.property_name));}
+function fRR(){const p=S.selProps;return p.length===0?S.data.rentRoll:S.data.rentRoll.filter(r=>p.includes(r.property_name));}
+function fVac(){const p=S.selProps;return p.length===0?S.data.vacancy:S.data.vacancy.filter(r=>p.includes(r.property_name));}
+function fExp(){const p=S.selProps;return p.length===0?S.data.leaseExpirations:S.data.leaseExpirations.filter(r=>p.includes(r.property_name));}
+
+// ══════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════
+function renderAll() {
+  const has = S.data.occupancySummary.length>0;
+  $('empty-state').style.display = has?'none':'';
+  if(!has){$('tab-kpi').innerHTML='';$('tab-tracker').innerHTML='';return;}
+  renderKPI();
+  renderTracker();
+  switchTab(S.activeTab);
+}
+
+// ══════════════════════════════════════════════════════════
+// KPI OVERVIEW
+// ══════════════════════════════════════════════════════════
+function renderKPI() {
+  const occ=fOcc(),rr=fRR(),vac=fVac(),le=fExp();
+  const tU=occ.reduce((s,r)=>s+num(r.api_units),0);
+  const oU=occ.reduce((s,r)=>s+num(r.occupied_units),0);
+  const vU=occ.reduce((s,r)=>s+num(r.vacant_units),0);
+  const pU=occ.reduce((s,r)=>s+num(r.preleased_units),0);
+  const pO=tU>0?(oU/tU*100):0;
+  const plO=tU>0?((oU+pU)/tU*100):0;
+  const aR=occ.reduce((s,r)=>s+num(r.total_actual_rent),0);
+  const mR=occ.reduce((s,r)=>s+num(r.total_market_rent),0);
+  const vL=occ.reduce((s,r)=>s+num(r.vacancy_loss_market),0);
+  const e30=le.filter(r=>r.expiry_bucket==='EXPIRING_30').length;
+  const e60=le.filter(r=>r.expiry_bucket==='EXPIRING_60').length;
+  const e90=le.filter(r=>r.expiry_bucket==='EXPIRING_90').length;
+  const mtm=rr.filter(r=>r.lease_type==='Month-to-Month').length;
+
+  $('tab-kpi').innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-accent" style="background:${pO>=90?'var(--green)':pO>=80?'var(--amber)':'var(--red)'}"></div>
+        <div class="kpi-label">Physical Occupancy</div><div class="kpi-value">${fPct(pO)}</div><div class="kpi-sub">${fmt(oU)} of ${fmt(tU)} units</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--accent)"></div>
+        <div class="kpi-label">Preleased Occupancy</div><div class="kpi-value">${fPct(plO)}</div><div class="kpi-sub">${fmt(pU)} preleased</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div>
+        <div class="kpi-label">Monthly Rent</div><div class="kpi-value">${fCur(aR)}</div><div class="kpi-sub">Market: ${fCur(mR)}</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--red)"></div>
+        <div class="kpi-label">Vacancy Loss</div><div class="kpi-value">${fCur(vL)}</div><div class="kpi-sub">${fmt(vU)} vacant units</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div>
+        <div class="kpi-label">Lease Expirations</div><div class="kpi-value">${fmt(e30+e60+e90)}</div><div class="kpi-sub">30d: ${e30} · 60d: ${e60} · 90d: ${e90}</div></div>
+      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
+        <div class="kpi-label">Economic Occupancy</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires non-recurring charges data</div></div>
+      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
+        <div class="kpi-label">Expense Ratio</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires P&amp;L data in BigQuery</div></div>
+      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
+        <div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires financial data</div></div>
+      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
+        <div class="kpi-label">Utility Reimbursement</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Utility income / expense</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Average Rent by Bedroom Type</div><div class="chart-wrap"><canvas id="chart-bed"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Occupancy by Property</div><div class="chart-wrap" style="height:${Math.max(250,occ.length*22+40)}px"><canvas id="chart-occ"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Lease Expiration Pipeline</div><div class="chart-wrap"><canvas id="chart-lease"></canvas></div></div>
+    </div>
+    <div class="section-header"><h3>Debt Service</h3><span class="tag tag-coming">Coming Soon</span></div>
+    <div class="placeholder-section"><strong>Debt Service Tracking</strong>Mortgage interest, seller carry, principal payments, total debt service, and DSCR scorecard will appear here once financial data is loaded into BigQuery.</div>
+    <div class="section-header"><h3>Financial Summary</h3><span class="tag tag-coming">Coming Soon</span></div>
+    <div class="placeholder-section"><strong>Income, Expenses, NOI &amp; Net Income</strong>Full P&amp;L financial overview will appear here once income and expense data is loaded into BigQuery.</div>
+  `;
+  setTimeout(()=>{renderBedChart();renderOccChart(occ);renderLeaseChart(le,mtm);},50);
+}
+
+// ══════════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════════
+const CC=['#3b82f6','#22c97a','#f5a623','#e8504a','#9b7aff','#ec4899','#06b6d4','#84cc16'];
+Chart.defaults.color='#8c939e';
+Chart.defaults.borderColor='rgba(255,255,255,0.07)';
+
+function destroyChart(k){if(charts[k]){charts[k].destroy();charts[k]=null;}}
+
+function renderBedChart(){
+  destroyChart('bed');
+  const c=document.getElementById('chart-bed');if(!c)return;
+  let bm=S.data.bedroomMix;
+  if(S.selProps.length>0){
+    const rr=fRR();const m={};
+    rr.forEach(r=>{const b=r.bedrooms||'Unknown';if(!m[b])m[b]={t:0,s:0};m[b].t++;m[b].s+=num(r.lease_rent);});
+    bm=Object.entries(m).map(([bedrooms,v])=>({bedrooms,avg_actual_rent:v.t>0?Math.round(v.s/v.t):0,total_units:v.t}));
+  }
+  const lm={'OneBed':'1 Bed','TwoBed':'2 Bed','ThreeBed':'3 Bed','FourBed':'4 Bed','FiveBed':'5 Bed','Studio':'Studio'};
+  const labels=bm.map(r=>lm[r.bedrooms]||r.bedrooms);
+  const values=bm.map(r=>num(r.avg_actual_rent));
+  charts.bed=new Chart(c,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:CC.slice(0,labels.length),borderWidth:2,borderColor:'#13161b'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:"'DM Sans'",size:10},padding:10,usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:ctx=>ctx.label+': $'+fmt(ctx.raw)+' avg rent'}}}}});
+}
+
+function renderOccChart(occ){
+  destroyChart('occ');
+  const c=document.getElementById('chart-occ');if(!c)return;
+  const sorted=[...occ].sort((a,b)=>num(a.physical_occupancy_pct)-num(b.physical_occupancy_pct));
+  const labels=sorted.map(r=>{const n=r.property_name||'';return n.length>25?n.slice(0,25)+'...':n;});
+  const values=sorted.map(r=>num(r.physical_occupancy_pct));
+  const colors=values.map(v=>v>=95?'#22c97a':v>=90?'#34d399':v>=80?'#f5a623':'#e8504a');
+  charts.occ=new Chart(c,{type:'bar',data:{labels,datasets:[{data:values,backgroundColor:colors,borderRadius:3,barThickness:14}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%',font:{family:"'DM Mono'",size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{family:"'DM Sans'",size:9}},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fPct(ctx.raw)}}}}});
+}
+
+function renderLeaseChart(le,mtm){
+  destroyChart('lease');
+  const c=document.getElementById('chart-lease');if(!c)return;
+  const bk=['EXPIRED','EXPIRING_30','EXPIRING_60','EXPIRING_90'];
+  const bl=['Expired','30 Days','60 Days','90 Days','MTM'];
+  const bc=['#555c66','#e8504a','#f5a623','#22c97a','#9b7aff'];
+  const ct=bk.map(b=>le.filter(r=>r.expiry_bucket===b).length);ct.push(mtm);
+  charts.lease=new Chart(c,{type:'bar',data:{labels:bl,datasets:[{data:ct,backgroundColor:bc,borderRadius:5,barThickness:32}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{font:{family:"'DM Mono'",size:9}},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{font:{family:"'DM Sans'",size:10,weight:500}},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+' leases'}}}}});
+}
+
+// ══════════════════════════════════════════════════════════
+// UNIT TRACKER
+// ══════════════════════════════════════════════════════════
+function renderTracker(){
+  const occ=fOcc(),vac=fVac(),le=fExp(),rr=fRR();
+  const mtm=rr.filter(r=>r.lease_type==='Month-to-Month');
+  const tU=occ.reduce((s,r)=>s+num(r.api_units),0);
+  const oU=occ.reduce((s,r)=>s+num(r.occupied_units),0);
+  const vU=occ.reduce((s,r)=>s+num(r.vacant_units),0);
+  const pU=occ.reduce((s,r)=>s+num(r.preleased_units),0);
+  const pO=tU>0?(oU/tU*100):0;
+  const plO=tU>0?((oU+pU)/tU*100):0;
+  const sorted=[...occ].sort((a,b)=>num(b.api_units)-num(a.api_units));
+  const expiring=le.filter(r=>['EXPIRING_30','EXPIRING_60','EXPIRING_90','EXPIRED'].includes(r.expiry_bucket));
+  const bl={'OneBed':'1x1','TwoBed':'2x1','ThreeBed':'3x1','FourBed':'4x1','FiveBed':'5x1','Studio':'Studio'};
+
+  $('tab-tracker').innerHTML=`
+    <div class="tracker-layout">
+      <div>
+        <div class="table-card">
+          <div class="table-header"><h4>All Properties</h4><span class="table-count">${occ.length} properties</span></div>
+          <div class="table-wrap" style="max-height:600px">
+            <table class="dtable"><thead><tr><th>Property</th><th class="num">Units</th><th class="num">Vac</th><th class="num">AV</th><th class="num">MR</th><th class="num">Occ</th><th class="num">Occ %</th><th class="num">PL</th><th class="num">PL %</th></tr></thead>
+            <tbody>${sorted.map(r=>{
+              const u=num(r.api_units),o=num(r.occupied_units),v=num(r.vacant_units),p=num(r.preleased_units);
+              const oP=num(r.physical_occupancy_pct),pP=num(r.preleased_occupancy_pct);
+              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc(r.property_name)}</td><td class="num">${u}</td><td class="num">${v}</td><td class="num" style="color:var(--text3)">--</td><td class="num" style="color:var(--text3)">--</td><td class="num">${o}</td><td class="num"><span class="occ-bar-wrap"><span class="occ-bar ${occCls(oP)}" style="width:${oP}%"></span></span>${fPct(oP,0)}</td><td class="num">${p}</td><td class="num">${fPct(pP,0)}</td></tr>`;
+            }).join('')}</tbody>
+            <tfoot><tr class="grand-total"><td>Grand Total</td><td class="num">${fmt(tU)}</td><td class="num">${fmt(vU)}</td><td class="num">--</td><td class="num">--</td><td class="num">${fmt(oU)}</td><td class="num">${fPct(pO,0)}</td><td class="num">${fmt(pU)}</td><td class="num">${fPct(plO,0)}</td></tr></tfoot></table>
+          </div>
+          <div style="padding:7px 16px;font-size:9px;color:var(--text3);border-top:1px solid var(--border);">AV: Available · MR: Make Ready · PL: Preleased · <em>AV/MR data coming soon</em></div>
+        </div>
+      </div>
+      <div>
+        <div class="table-card">
+          <div class="table-header"><h4>Vacant Units</h4><span class="table-count">${vac.length} units</span></div>
+          <div class="table-wrap" style="max-height:320px">
+            <table class="dtable"><thead><tr><th>Property</th><th>Unit</th><th>Type</th><th class="num">Mkt Rent</th><th class="num">Days Vac</th><th>PL</th></tr></thead>
+            <tbody>${vac.length===0?'<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text3)">No vacant units</td></tr>':''}
+            ${vac.map(r=>{
+              const dv=num(r.days_vacant);const dc=dv>60?'var(--red)':dv>30?'var(--amber)':'var(--text2)';
+              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td class="num">${fCur(num(r.market_rent))}</td><td class="num" style="color:${dc};font-weight:600">${dv>0?dv:'--'}</td><td>${r.is_preleased==='true'||r.is_preleased===true?'<span style="color:var(--green);font-weight:600">Yes</span>':''}</td></tr>`;
+            }).join('')}</tbody></table>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h4>Lease Expirations &amp; MTM</h4><span class="table-count">${expiring.length+mtm.length} units</span></div>
+          <div class="table-wrap" style="max-height:400px">
+            <table class="dtable"><thead><tr><th>Property</th><th>Unit</th><th>Type</th><th>Exp</th><th>MTM</th><th>Lease Ending</th><th class="num">Rent</th><th>Tenant</th></tr></thead>
+            <tbody>${(expiring.length+mtm.length)===0?'<tr><td colspan="8" style="text-align:center;padding:18px;color:var(--text3)">No expiring leases</td></tr>':''}
+            ${expiring.map(r=>{
+              const b=r.expiry_bucket;let dc='ldot-90';if(b==='EXPIRED')dc='ldot-expired';else if(b==='EXPIRING_30')dc='ldot-30';else if(b==='EXPIRING_60')dc='ldot-60';
+              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td><span class="ldot ${dc}"></span></td><td></td><td>${r.lease_to_date||'--'}</td><td class="num">${fCur(num(r.rent_amount))}</td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.tenant_names)}">${esc((r.tenant_names||'').substring(0,18))}</td></tr>`;
+            }).join('')}
+            ${mtm.length>0?'<tr><td colspan="8" style="padding:5px 10px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--purple);background:rgba(155,122,255,.08);">Month-to-Month (At-Will)</td></tr>':''}
+            ${mtm.map(r=>{
+              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td></td><td><span class="ldot ldot-mtm"></span></td><td>At-Will</td><td class="num">${fCur(num(r.lease_rent))}</td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.tenant_names)}">${esc((r.tenant_names||'').substring(0,18))}</td></tr>`;
+            }).join('')}</tbody></table>
+          </div>
+          <div class="lease-legend">
+            <div class="legend-item"><span class="ldot ldot-30"></span> 30 days</div>
+            <div class="legend-item"><span class="ldot ldot-60"></span> 60 days</div>
+            <div class="legend-item"><span class="ldot ldot-90"></span> 90 days</div>
+            <div class="legend-item"><span class="ldot ldot-expired"></span> Expired</div>
+            <div class="legend-item"><span class="ldot ldot-mtm"></span> MTM</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// BQ MODAL
+// ══════════════════════════════════════════════════════════
+function openBQModal(){renderBQModal();$('bq-modal').classList.add('open');}
+function closeBQModal(){$('bq-modal').classList.remove('open');}
+function renderBQModal(){
+  const t=S.lastSync?new Date(S.lastSync).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):null;
+  $('bq-modal-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:14px;
+      background:${S.connected?'rgba(34,201,122,.06)':'rgba(61,127,255,.06)'};border:1px solid ${S.connected?'rgba(34,201,122,.12)':'rgba(61,127,255,.12)'};">
+      <div style="width:7px;height:7px;border-radius:50%;background:${S.connected?'var(--green)':'var(--text3)'};flex-shrink:0;${S.connected?'box-shadow:0 0 6px var(--green);':''}"></div>
+      <span style="color:${S.connected?'var(--green)':'var(--text2)'}">
+        ${S.connected?'Connected to BigQuery'+(t?' — last sync: '+t:''):'Not connected — deploy the Edge Function and click Test Connection'}
+      </span>
+    </div>
+    <div id="bq-test-status"></div>
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:14px 0 8px;">One-time setup</div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Place your service account JSON key for project <code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">api-data-pull-492404</code> with <strong style="color:var(--text);">BigQuery Data Viewer</strong> + <strong style="color:var(--text);">BigQuery Job User</strong> roles.</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Deploy the Edge Function:<br><code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase functions deploy bq-dashboard</code></div></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Set the secret (different from Budget Tracking):<br><code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase secrets set GOOGLE_SERVICE_ACCOUNT_DASHBOARD="$(cat key.json)"</code></div></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Click <strong style="color:var(--text);">Test Connection</strong> below — once green, hit <strong style="color:var(--text);">Refresh</strong> to load live data.</div></div>
+    <div style="padding:12px;background:rgba(61,127,255,.05);border:1px solid rgba(61,127,255,.1);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-top:12px;">
+      <strong style="color:var(--accent);">Data source:</strong> Buildium API via BigQuery dataset <code style="font-family:var(--mono);font-size:10px;">buildium_data</code>.<br>
+      <strong style="color:var(--accent);">Note:</strong> This is completely separate from the Budget Tracking BigQuery (PointGuard).
+    </div>`;
+  $('bq-modal-footer').innerHTML=`<button class="btn-ghost" onclick="closeBQModal()">Close</button><button class="btn-primary" id="bq-test-btn" onclick="testConnection()">Test Connection</button>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+(function init(){
+  try{
+    const meta=JSON.parse(localStorage.getItem('bpos_dash_meta')||'{}');
+    const data=JSON.parse(localStorage.getItem('bpos_dash_data')||'{}');
+    if(meta.connected&&data.occupancySummary&&data.occupancySummary.length>0){
+      S.connected=meta.connected;S.lastSync=meta.lastSync;S.data=data;
+      buildPropFilter();renderAll();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

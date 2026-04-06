@@ -142,6 +142,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
    TABLES
    ═══════════════════════════════════════════════════════ */
 .table-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.fin-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:18px;}
+.fin-table th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);}
+.fin-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap;}
+.fin-table tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text);}
+.fin-table tfoot td{padding:10px 12px;border-top:1px solid var(--border2);border-bottom:none;background:var(--bg3);color:var(--text);}
+.fin-table .num{text-align:right;font-family:var(--mono);}
 .table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
 .table-header h4{font-size:12px;font-weight:600;color:var(--text);}
 .table-count{font-size:10px;font-weight:600;color:var(--accent);background:rgba(61,127,255,.1);padding:2px 8px;border-radius:10px;}
@@ -377,7 +383,7 @@ let S = {
   loading: false,
   activeTab: 'kpi',
   selProps: [],
-  data: { occupancySummary:[], rentRoll:[], vacancy:[], leaseExpirations:[], bedroomMix:[] },
+  data: { occupancySummary:[], rentRoll:[], vacancy:[], leaseExpirations:[], bedroomMix:[], noiSummary:[], incomeStatement:[] },
 };
 let charts = {};
 
@@ -438,14 +444,16 @@ async function refreshDashboard() {
   if (btn) btn.classList.add('spinning');
 
   try {
-    const [occ,rr,vac,le,bm] = await Promise.all([
+    const [occ,rr,vac,le,bm,noi,is] = await Promise.all([
       bqFetch('occupancy_summary'),
       bqFetch('rent_roll'),
       bqFetch('vacancy'),
       bqFetch('lease_expirations'),
       bqFetch('bedroom_mix'),
+      bqFetch('noi_summary'),
+      bqFetch('income_statement').catch(()=>[]),
     ]);
-    S.data = { occupancySummary:occ, rentRoll:rr, vacancy:vac, leaseExpirations:le, bedroomMix:bm };
+    S.data = { occupancySummary:occ, rentRoll:rr, vacancy:vac, leaseExpirations:le, bedroomMix:bm, noiSummary:noi, incomeStatement:is };
     S.connected = true;
     S.lastSync = new Date().toISOString();
     try { localStorage.setItem('bpos_dash_data',JSON.stringify(S.data)); localStorage.setItem('bpos_dash_meta',JSON.stringify({connected:S.connected,lastSync:S.lastSync})); } catch(e){}
@@ -506,6 +514,32 @@ function fOcc(){const p=S.selProps;return p.length===0?S.data.occupancySummary:S
 function fRR(){const p=S.selProps;return p.length===0?S.data.rentRoll:S.data.rentRoll.filter(r=>p.includes(r.property_name));}
 function fVac(){const p=S.selProps;return p.length===0?S.data.vacancy:S.data.vacancy.filter(r=>p.includes(r.property_name));}
 function fExp(){const p=S.selProps;return p.length===0?S.data.leaseExpirations:S.data.leaseExpirations.filter(r=>p.includes(r.property_name));}
+function fNOI(){const p=S.selProps;const all=S.data.noiSummary||[];return p.length===0?all:all.filter(r=>p.includes(r.property_name));}
+// Get most recent month's rows from noi data
+function latestNOI(){
+  const rows=fNOI(); if(!rows.length) return [];
+  const months=rows.map(r=>r.month).filter(Boolean).sort();
+  const latest=months[months.length-1];
+  return rows.filter(r=>r.month===latest);
+}
+// Income statement filters
+function fIS(section){
+  const p=S.selProps;let rows=S.data.incomeStatement||[];
+  if(p.length>0) rows=rows.filter(r=>p.includes(r.property_name));
+  if(section) rows=rows.filter(r=>r.section===section);
+  return rows;
+}
+function latestIS(section){
+  const ln=latestNOI(); if(!ln.length) return fIS(section).slice(0,0);
+  const latest=ln[0].month;
+  return fIS(section).filter(r=>r.month===latest);
+}
+// Group income statement rows by account_name, summing total_amount
+function groupByAcct(rows){
+  const m={};
+  rows.forEach(r=>{const a=r.account_name||'Unknown';if(!m[a])m[a]=0;m[a]+=num(r.total_amount);});
+  return Object.entries(m).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+}
 
 // ══════════════════════════════════════════════════════════
 // RENDER ALL
@@ -550,24 +584,62 @@ function renderKPI() {
         <div class="kpi-label">Vacancy Loss</div><div class="kpi-value">${fCur(vL)}</div><div class="kpi-sub">${fmt(vU)} vacant units</div></div>
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div>
         <div class="kpi-label">Lease Expirations</div><div class="kpi-value">${fmt(e30+e60+e90)}</div><div class="kpi-sub">30d: ${e30} · 60d: ${e60} · 90d: ${e90}</div></div>
-      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
-        <div class="kpi-label">Economic Occupancy</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires non-recurring charges data</div></div>
-      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
-        <div class="kpi-label">Expense Ratio</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires P&amp;L data in BigQuery</div></div>
-      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
-        <div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Requires financial data</div></div>
-      <div class="kpi-card placeholder"><div class="kpi-accent" style="background:var(--text3)"></div>
-        <div class="kpi-label">Utility Reimbursement</div><div class="kpi-value">Coming Soon</div><div class="kpi-sub">Utility income / expense</div></div>
+      ${(()=>{const o=fOcc();const ln=latestNOI();const tMR=o.reduce((s,r)=>s+num(r.total_market_rent),0);const tInc=ln.reduce((s,r)=>s+num(r.total_income),0);const eo=tMR>0?tInc/tMR*100:null;const col=eo===null?'var(--text3)':eo>=95?'var(--green)':eo>=85?'var(--amber)':'var(--red)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Economic Occupancy</div><div class="kpi-value">${eo===null?'—':fPct(eo)}</div><div class="kpi-sub">Income / Market Rent Potential</div></div>`;})()}
+      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);const er=tI>0?tE/tI:null;const mo=ln.length?ln[0].month:'';const col=er===null?'var(--text3)':er<0.5?'var(--green)':er<0.65?'var(--amber)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Expense Ratio</div><div class="kpi-value">${er===null?'—':fPct(er*100)}</div><div class="kpi-sub">${mo?mo+' · ':''} Exp/Income</div></div>`;})()}
+      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const mo=ln.length?ln[0].month:'';return `<div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label">Total Income</div><div class="kpi-value">${fCur(tI)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
+      ${(()=>{const ln=latestNOI();const noi=ln.reduce((s,r)=>s+num(r.noi),0);const mo=ln.length?ln[0].month:'';const col=noi>=0?'var(--green)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">NOI</div><div class="kpi-value">${fCur(noi)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
+      ${(()=>{const cxKw=['capital','improvement','renovation','hvac','roof','appliance','replacement','flooring','construction','rehab','upgrade'];const noRows=latestIS('non_operating_expense');const cxTotal=groupByAcct(noRows).filter(([a])=>cxKw.some(k=>a.toLowerCase().includes(k))).reduce((s,[,v])=>s+v,0);const mo=noRows.length?noRows[0].month:'';const col=cxTotal>0?'var(--accent)':'var(--text3)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">${noRows.length?fCur(cxTotal):'—'}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
     </div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">Average Rent by Bedroom Type</div><div class="chart-wrap"><canvas id="chart-bed"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Occupancy by Property</div><div class="chart-wrap" style="height:${Math.max(250,occ.length*22+40)}px"><canvas id="chart-occ"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Lease Expiration Pipeline</div><div class="chart-wrap"><canvas id="chart-lease"></canvas></div></div>
     </div>
-    <div class="section-header"><h3>Debt Service</h3><span class="tag tag-coming">Coming Soon</span></div>
-    <div class="placeholder-section"><strong>Debt Service Tracking</strong>Mortgage interest, seller carry, principal payments, total debt service, and DSCR scorecard will appear here once financial data is loaded into BigQuery.</div>
-    <div class="section-header"><h3>Financial Summary</h3><span class="tag tag-coming">Coming Soon</span></div>
-    <div class="placeholder-section"><strong>Income, Expenses, NOI &amp; Net Income</strong>Full P&amp;L financial overview will appear here once income and expense data is loaded into BigQuery.</div>
+    <div class="section-header"><h3>Debt Service &amp; CAPEX</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
+    ${(()=>{
+      const dsKw=['mortgage','interest','principal','loan','debt','carry','seller','note','lien','financing','amortiz'];
+      const cxKw=['capital','improvement','renovation','hvac','roof','appliance','replacement','flooring','construction','rehab','upgrade'];
+      const noRows=latestIS('non_operating_expense');
+      if(!noRows.length){
+        const hasIS=S.data.incomeStatement&&S.data.incomeStatement.length>0;
+        return'<div class="placeholder-section"><strong>'+(hasIS?'No non-operating expenses found for this period.':'Refresh to load non-operating data from BigQuery.')+'</strong>'+(hasIS?'':'<br>Mortgage interest, CAPEX, seller carry, and principal payments will appear here.')+'</div>';
+      }
+      const grp=groupByAcct(noRows);
+      const dsGrp=grp.filter(([a])=>dsKw.some(k=>a.toLowerCase().includes(k)));
+      const cxGrp=grp.filter(([a])=>cxKw.some(k=>a.toLowerCase().includes(k)));
+      const otGrp=grp.filter(([a])=>!dsKw.some(k=>a.toLowerCase().includes(k))&&!cxKw.some(k=>a.toLowerCase().includes(k)));
+      const dsTotal=dsGrp.reduce((s,[,v])=>s+v,0);
+      const cxTotal=cxGrp.reduce((s,[,v])=>s+v,0);
+      const otTotal=otGrp.reduce((s,[,v])=>s+v,0);
+      const mo=noRows[0].month||'';
+      const rowHtml=(arr,color)=>arr.map(([a,v])=>`<tr><td style="padding-left:20px;">${esc(a)}</td><td class="num" style="color:${color||'var(--text2)'}">${fCur(v)}</td></tr>`).join('');
+      const secHdr=(label,total,color)=>`<tr><td style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};padding:10px 12px 5px;background:var(--bg3);">${label}</td><td class="num" style="font-size:10px;font-weight:700;color:${color};padding:10px 12px 5px;background:var(--bg3);">${fCur(total)}</td></tr>`;
+      let body='';
+      if(dsGrp.length){body+=secHdr('Debt Service',dsTotal,'var(--red)')+rowHtml(dsGrp,'var(--red)');}
+      if(cxGrp.length){body+=secHdr('Capital Expenditures',cxTotal,'var(--accent)')+rowHtml(cxGrp,'var(--accent)');}
+      if(otGrp.length){body+=secHdr('Other Non-Operating',otTotal,'var(--text3)')+rowHtml(otGrp);}
+      const grandTotal=dsTotal+cxTotal+otTotal;
+      return`<div style="overflow-x:auto"><table class="fin-table" style="max-width:700px"><thead><tr><th>Account</th><th class="num">${mo}</th></tr></thead><tbody>${body}</tbody><tfoot><tr><td><strong>Total Non-Operating</strong></td><td class="num"><strong>${fCur(grandTotal)}</strong></td></tr></tfoot></table></div>`;
+    })()}
+    <div class="section-header"><h3>Financial Summary</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
+    ${(()=>{
+      const ln=latestNOI();
+      if(!ln.length) return '<div class="placeholder-section"><strong>No financial data available.</strong> Refresh to load from BigQuery.</div>';
+      const mo=ln[0].month||'';
+      const tI=ln.reduce((s,r)=>s+num(r.total_income),0);
+      const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);
+      const tN=ln.reduce((s,r)=>s+num(r.noi),0);
+      const tX=ln.reduce((s,r)=>s+num(r.non_operating),0);
+      const tNet=ln.reduce((s,r)=>s+num(r.net_income),0);
+      const er=tI>0?fPct(tE/tI*100):'—';
+      let rows=ln.slice().sort((a,b)=>a.property_name>b.property_name?1:-1).map(r=>{
+        const i=num(r.total_income),e=num(r.total_expenses),n=num(r.noi),net=num(r.net_income),ratio=i>0?fPct(e/i*100):'—';
+        const nc=n>=0?'var(--green)':'var(--red)';
+        return `<tr><td>${esc(r.property_name)}</td><td class="num">${fCur(i)}</td><td class="num">${fCur(e)}</td><td class="num" style="color:${nc}">${fCur(n)}</td><td class="num">${ratio}</td><td class="num">${fCur(net)}</td></tr>`;
+      }).join('');
+      const nc=tN>=0?'var(--green)':'var(--red)';
+      return `<div style="overflow-x:auto"><table class="fin-table"><thead><tr><th>Property</th><th class="num">Income</th><th class="num">Expenses</th><th class="num">NOI</th><th class="num">Exp Ratio</th><th class="num">Net Income</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td><strong>Portfolio Total</strong><span style="color:var(--text3);font-size:11px;margin-left:6px;">${mo}</span></td><td class="num"><strong>${fCur(tI)}</strong></td><td class="num"><strong>${fCur(tE)}</strong></td><td class="num"><strong style="color:${nc}">${fCur(tN)}</strong></td><td class="num"><strong>${er}</strong></td><td class="num"><strong>${fCur(tNet)}</strong></td></tr></tfoot></table></div>`;
+    })()}
   `;
   setTimeout(()=>{renderBedChart();renderOccChart(occ);renderLeaseChart(le,mtm);},50);
 }

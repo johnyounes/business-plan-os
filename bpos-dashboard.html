@@ -540,6 +540,21 @@ function groupByAcct(rows){
   rows.forEach(r=>{const a=r.account_name||'Unknown';if(!m[a])m[a]=0;m[a]+=num(r.total_amount);});
   return Object.entries(m).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
 }
+// Exact GL account names from Data_Mapping_Directory — debt service items
+// (Source: non_operating_expense section, GL accounts: 277490, 453136, 478883, 484218, 277492, 480938, 485163)
+const DS_ACCTS = new Set([
+  'Mortgage Interest','Mortgage Payment','Mortgage Payment - Seller Carry',
+  'Mortgage Principal','Other Interest Expense','SBA Loan Expense',
+  'Mortgage Escrow Replacement Reserve'
+]);
+// Non-CAPEX non-operating items (asset/admin/legal — below the NOI line but not debt or construction)
+const OTHER_NOE_ACCTS = new Set([
+  'Asset Management Fee','Earnest Money Expense','Legal and Consulting Fees',
+  'MIP Insurance','Parent Company Expenses','Model Staging','Signage',
+  'Plan Printing','Equipment Rental'
+]);
+// Pass-through GL IDs excluded from all P&L (BG Check Income 479629, NSF Fee Income 13)
+// These are already filtered in v_income_statement (is_pass_through = FALSE), listed here for reference
 
 // ══════════════════════════════════════════════════════════
 // RENDER ALL
@@ -585,10 +600,10 @@ function renderKPI() {
       <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div>
         <div class="kpi-label">Lease Expirations</div><div class="kpi-value">${fmt(e30+e60+e90)}</div><div class="kpi-sub">30d: ${e30} · 60d: ${e60} · 90d: ${e90}</div></div>
       ${(()=>{const o=fOcc();const ln=latestNOI();const tMR=o.reduce((s,r)=>s+num(r.total_market_rent),0);const tInc=ln.reduce((s,r)=>s+num(r.total_income),0);const eo=tMR>0?tInc/tMR*100:null;const col=eo===null?'var(--text3)':eo>=95?'var(--green)':eo>=85?'var(--amber)':'var(--red)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Economic Occupancy</div><div class="kpi-value">${eo===null?'—':fPct(eo)}</div><div class="kpi-sub">Income / Market Rent Potential</div></div>`;})()}
-      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);const er=tI>0?tE/tI:null;const mo=ln.length?ln[0].month:'';const col=er===null?'var(--text3)':er<0.5?'var(--green)':er<0.65?'var(--amber)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Expense Ratio</div><div class="kpi-value">${er===null?'—':fPct(er*100)}</div><div class="kpi-sub">${mo?mo+' · ':''} Exp/Income</div></div>`;})()}
+      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);const er=tI>0?Math.abs(tE)/tI:null;const mo=ln.length?ln[0].month:'';const col=er===null?'var(--text3)':er<0.5?'var(--green)':er<0.65?'var(--amber)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Expense Ratio</div><div class="kpi-value">${er===null?'—':fPct(er*100)}</div><div class="kpi-sub">${mo?mo+' · ':''} Opex / Income</div></div>`;})()}
       ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const mo=ln.length?ln[0].month:'';return `<div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label">Total Income</div><div class="kpi-value">${fCur(tI)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
       ${(()=>{const ln=latestNOI();const noi=ln.reduce((s,r)=>s+num(r.noi),0);const mo=ln.length?ln[0].month:'';const col=noi>=0?'var(--green)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">NOI</div><div class="kpi-value">${fCur(noi)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
-      ${(()=>{const cxKw=['capital','improvement','renovation','hvac','roof','appliance','replacement','flooring','construction','rehab','upgrade'];const noRows=latestIS('non_operating_expense');const cxTotal=groupByAcct(noRows).filter(([a])=>cxKw.some(k=>a.toLowerCase().includes(k))).reduce((s,[,v])=>s+v,0);const mo=noRows.length?noRows[0].month:'';const col=cxTotal>0?'var(--accent)':'var(--text3)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">${noRows.length?fCur(cxTotal):'—'}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
+      ${(()=>{const noRows=latestIS('non_operating_expense');const cxTotal=groupByAcct(noRows).filter(([a])=>!DS_ACCTS.has(a)&&!OTHER_NOE_ACCTS.has(a)).reduce((s,[,v])=>s+Math.abs(v),0);const mo=noRows.length?noRows[0].month:'';const col=noRows.length?'var(--accent)':'var(--text3)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">${noRows.length?fCur(cxTotal):'—'}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
     </div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">Average Rent by Bedroom Type</div><div class="chart-wrap"><canvas id="chart-bed"></canvas></div></div>
@@ -597,28 +612,37 @@ function renderKPI() {
     </div>
     <div class="section-header"><h3>Debt Service &amp; CAPEX</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
     ${(()=>{
-      const dsKw=['mortgage','interest','principal','loan','debt','carry','seller','note','lien','financing','amortiz'];
-      const cxKw=['capital','improvement','renovation','hvac','roof','appliance','replacement','flooring','construction','rehab','upgrade'];
+      // Use exact account names from Data_Mapping_Directory GL mapping
+      // DS_ACCTS = 7 specific debt service accounts; OTHER_NOE_ACCTS = admin/misc; everything else = CAPEX
       const noRows=latestIS('non_operating_expense');
-      if(!noRows.length){
+      const noiRows=latestIS('non_operating_income');
+      if(!noRows.length&&!noiRows.length){
         const hasIS=S.data.incomeStatement&&S.data.incomeStatement.length>0;
-        return'<div class="placeholder-section"><strong>'+(hasIS?'No non-operating expenses found for this period.':'Refresh to load non-operating data from BigQuery.')+'</strong>'+(hasIS?'':'<br>Mortgage interest, CAPEX, seller carry, and principal payments will appear here.')+'</div>';
+        return'<div class="placeholder-section"><strong>'+(hasIS?'No non-operating data found for the latest period.':'Refresh to load from BigQuery.')+'</strong>'+(hasIS?'':'<br>Debt service (mortgage interest, principal, seller carry) and CAPEX will appear here once data is loaded.')+'</div>';
       }
       const grp=groupByAcct(noRows);
-      const dsGrp=grp.filter(([a])=>dsKw.some(k=>a.toLowerCase().includes(k)));
-      const cxGrp=grp.filter(([a])=>cxKw.some(k=>a.toLowerCase().includes(k)));
-      const otGrp=grp.filter(([a])=>!dsKw.some(k=>a.toLowerCase().includes(k))&&!cxKw.some(k=>a.toLowerCase().includes(k)));
+      // Debt service: exact match on DS_ACCTS (Mortgage Interest, Principal, Seller Carry, SBA Loan, etc.)
+      const dsGrp=grp.filter(([a])=>DS_ACCTS.has(a));
+      // CAPEX: everything in non_operating_expense that is NOT debt service and NOT misc
+      const cxGrp=grp.filter(([a])=>!DS_ACCTS.has(a)&&!OTHER_NOE_ACCTS.has(a));
+      // Misc: Asset Mgmt Fee, Earnest Money, Legal, MIP Insurance, etc.
+      const otGrp=grp.filter(([a])=>OTHER_NOE_ACCTS.has(a));
+      // Non-operating income (e.g., Mortgage SWAP Refund)
+      const noiGrp=groupByAcct(noiRows);
       const dsTotal=dsGrp.reduce((s,[,v])=>s+v,0);
       const cxTotal=cxGrp.reduce((s,[,v])=>s+v,0);
       const otTotal=otGrp.reduce((s,[,v])=>s+v,0);
-      const mo=noRows[0].month||'';
+      const noiTotal=noiGrp.reduce((s,[,v])=>s+v,0);
+      const mo=noRows.length?noRows[0].month:noiRows.length?noiRows[0].month:'';
       const rowHtml=(arr,color)=>arr.map(([a,v])=>`<tr><td style="padding-left:20px;">${esc(a)}</td><td class="num" style="color:${color||'var(--text2)'}">${fCur(v)}</td></tr>`).join('');
       const secHdr=(label,total,color)=>`<tr><td style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};padding:10px 12px 5px;background:var(--bg3);">${label}</td><td class="num" style="font-size:10px;font-weight:700;color:${color};padding:10px 12px 5px;background:var(--bg3);">${fCur(total)}</td></tr>`;
       let body='';
       if(dsGrp.length){body+=secHdr('Debt Service',dsTotal,'var(--red)')+rowHtml(dsGrp,'var(--red)');}
-      if(cxGrp.length){body+=secHdr('Capital Expenditures',cxTotal,'var(--accent)')+rowHtml(cxGrp,'var(--accent)');}
+      if(cxGrp.length){body+=secHdr('Capital Expenditures (CAPEX)',cxTotal,'var(--accent)')+rowHtml(cxGrp,'var(--accent)');}
       if(otGrp.length){body+=secHdr('Other Non-Operating',otTotal,'var(--text3)')+rowHtml(otGrp);}
-      const grandTotal=dsTotal+cxTotal+otTotal;
+      if(noiGrp.length){body+=secHdr('Non-Operating Income',noiTotal,'var(--green)')+rowHtml(noiGrp,'var(--green)');}
+      if(!body) return'<div class="placeholder-section"><strong>No non-operating transactions found for this period.</strong></div>';
+      const grandTotal=dsTotal+cxTotal+otTotal+noiTotal;
       return`<div style="overflow-x:auto"><table class="fin-table" style="max-width:700px"><thead><tr><th>Account</th><th class="num">${mo}</th></tr></thead><tbody>${body}</tbody><tfoot><tr><td><strong>Total Non-Operating</strong></td><td class="num"><strong>${fCur(grandTotal)}</strong></td></tr></tfoot></table></div>`;
     })()}
     <div class="section-header"><h3>Financial Summary</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
@@ -631,9 +655,10 @@ function renderKPI() {
       const tN=ln.reduce((s,r)=>s+num(r.noi),0);
       const tX=ln.reduce((s,r)=>s+num(r.non_operating),0);
       const tNet=ln.reduce((s,r)=>s+num(r.net_income),0);
-      const er=tI>0?fPct(tE/tI*100):'—';
+      // Expenses are negative values per mapping rules — use Math.abs for the ratio display
+      const er=tI>0?fPct(Math.abs(tE)/tI*100):'—';
       let rows=ln.slice().sort((a,b)=>a.property_name>b.property_name?1:-1).map(r=>{
-        const i=num(r.total_income),e=num(r.total_expenses),n=num(r.noi),net=num(r.net_income),ratio=i>0?fPct(e/i*100):'—';
+        const i=num(r.total_income),e=num(r.total_expenses),n=num(r.noi),net=num(r.net_income),ratio=i>0?fPct(Math.abs(e)/i*100):'—';
         const nc=n>=0?'var(--green)':'var(--red)';
         return `<tr><td>${esc(r.property_name)}</td><td class="num">${fCur(i)}</td><td class="num">${fCur(e)}</td><td class="num" style="color:${nc}">${fCur(n)}</td><td class="num">${ratio}</td><td class="num">${fCur(net)}</td></tr>`;
       }).join('');

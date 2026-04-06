@@ -176,7 +176,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
 
-/* ── MOBILE SIDEBAR TOGGLE ── */
+/* ═══════════════════════
+   MOBILE SIDEBAR TOGGLE
+═══════════════════════ */
 .sb-toggle{display:none;position:fixed;top:10px;left:10px;z-index:120;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px;cursor:pointer;width:38px;height:38px;flex-direction:column;gap:4px;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4);}
 .sb-toggle .ham{display:block;width:18px;height:2px;background:var(--text2);border-radius:1px;transition:all .2s;}
 .sb-overlay{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .25s;}
@@ -313,12 +315,12 @@ var AVATAR_BG = ['linear-gradient(135deg,#3d7fff,#9b7aff)','linear-gradient(135d
 // PERMISSIONS
 // ============================================================
 var ROLE_PERMS = {
-  superadmin:       {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
-  admin:            {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
-  asset_manager:    {screening:'edit',underwriting:'edit',capex:'edit',diligence:'read',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
-  underwriter:      {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'upload',planlock:'hidden',tracking:'read',users:'hidden'},
-  property_manager: {screening:'read',underwriting:'read',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
-  read_only:        {screening:'read',underwriting:'read',capex:'read',diligence:'read',onboarding:'read',planlock:'hidden',tracking:'read',users:'hidden'}
+  superadmin:       {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',dashboard:'edit',users:'edit'},
+  admin:            {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',dashboard:'edit',users:'edit'},
+  asset_manager:    {screening:'edit',underwriting:'edit',capex:'edit',diligence:'read',onboarding:'edit',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  underwriter:      {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'upload',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  property_manager: {screening:'read',underwriting:'read',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  read_only:        {screening:'read',underwriting:'read',capex:'read',diligence:'read',onboarding:'read',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'}
 };
 
 var ROLE_LABELS = {superadmin:'Super Admin',admin:'Admin',asset_manager:'Asset Manager',underwriter:'Underwriter',property_manager:'Property Manager',read_only:'Read Only'};
@@ -331,6 +333,7 @@ var MODULES = {
   onboarding:   {file:'bpos-onboarding.html',   label:'PM Onboarding',        icon:'&#9655;', badge:'nb-blue',   num:'M5', phase:'Onboarding'},
   planlock:     {file:'bpos-planlock.html',      label:'Plan Lock',            icon:'&#128274;',badge:'nb-coral', num:'M6', phase:'Onboarding'},
   tracking:     {file:'bpos-tracking.html',      label:'Budget Tracking',      icon:'&#9772;', badge:'nb-green',  num:'M7', phase:'Operations'},
+  dashboard:    {file:'bpos-dashboard.html',     label:'Dashboard',            icon:'&#9685;', badge:'nb-blue',   num:'M8', phase:'Operations'},
   users:        {file:null,                      label:'User Management',      icon:'&#9672;', badge:'nb-gray',   num:'',   phase:'Admin'}
 };
 
@@ -410,7 +413,7 @@ function doLogout() {
 function buildSidebar() {
   var perms   = ROLE_PERMS[currentUser.role] || ROLE_PERMS.read_only;
   var isAdmin = currentUser.role==='superadmin' || currentUser.role==='admin';
-  var phases  = {Acquisition:['screening','underwriting'],Diligence:['capex','diligence'],Onboarding:['onboarding','planlock'],Operations:['tracking']};
+  var phases  = {Acquisition:['screening','underwriting'],Diligence:['capex','diligence'],Onboarding:['onboarding','planlock'],Operations:['tracking','dashboard']};
   var html = '<div class="nav-section">Overview</div>'
     + '<div class="nav-item active" data-mod="home" onclick="goTo(\'home\',this)">'
     + '<span class="ni-icon">&#11041;</span><span class="ni-label">Dashboard</span></div>';
@@ -454,7 +457,7 @@ function buildSidebar() {
 // NAVIGATION
 // ============================================================
 function goTo(module, el) {
-  closeSidebar();
+  closeSidebar(); // auto-close sidebar on mobile
   var perms = ROLE_PERMS[currentUser ? currentUser.role : 'read_only'] || ROLE_PERMS.read_only;
   if (module!=='home' && module!=='users' && (perms[module]||'hidden')==='hidden') {
     showToast('You do not have access to this module.', true); return;
@@ -528,7 +531,8 @@ function renderHome() {
     {key:'diligence',  phase:'Diligence',   num:'04', col:'hc-t', badge:'nb-teal',   title:'Due Diligence',          desc:'50+ checklist items across 8 categories. Critical flagging, risk panel, admin template.',          note:'2 properties'},
     {key:'onboarding', phase:'Onboarding',  num:'05', col:'hc-b', badge:'nb-blue',   title:'PM Onboarding',          desc:'AppFolio and Buildium data transfer checklist. Nav paths per item, document upload, go-live.',      note:'In progress'},
     {key:'planlock',   phase:'Onboarding',  num:'06', col:'hc-c', badge:'nb-coral',  title:'Plan Lock',               desc:'Dept sign-offs, locked metrics, annual budgets by year, API actuals panel, amendment log.',        note:'Admin only'},
-    {key:'tracking',   phase:'Operations',  num:'07', col:'hc-g', badge:'nb-green',  title:'Budget Tracking',         desc:'Portfolio and property budget vs. actuals. Real-time mid-month alerts. Budget file upload.',        note:'4 properties'}
+    {key:'tracking',   phase:'Operations',  num:'07', col:'hc-g', badge:'nb-green',  title:'Budget Tracking',         desc:'Portfolio and property budget vs. actuals. Real-time mid-month alerts. Budget file upload.',        note:'4 properties'},
+    {key:'dashboard',  phase:'Operations',  num:'08', col:'hc-b', badge:'nb-blue',   title:'Dashboard',                desc:'Portfolio KPIs, occupancy, lease expirations, and unit tracker. Powered by Buildium BigQuery.',     note:'Live data'}
   ].filter(function(c){ return (perms[c.key]||'hidden')!=='hidden'; });
 
   var byPhase = {};

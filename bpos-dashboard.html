@@ -536,6 +536,13 @@ const fmtMonth = (m) => {
   const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return names[parseInt(mo)-1] + ' ' + y;
 };
+// Convert Buildium bed/bath enums like "TwoBed"/"OneBath" to readable format
+const fmtBedBath = (v) => {
+  if (!v) return '—';
+  const map = { studio: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6' };
+  const lower = v.toLowerCase().replace(/bed|bath/g, '').trim();
+  return map[lower] || v;
+};
 
 // ── NAVIGATION ──
 document.querySelectorAll('.sb-item').forEach(el => {
@@ -675,13 +682,18 @@ function getFilteredProps() {
   return allProperties.filter(p => selectedProps.includes(p.id));
 }
 
-// Universal row filter — matches by property_id OR property_name
+// Universal row filter — matches by property_id OR property_name (api_name or t12_name)
 function matchesSelectedProps(r) {
   if (selectedProps.length === 0) return true;
   const propIds = new Set(selectedProps);
-  const propNames = new Set(getFilteredProps().map(p => p.name));
   if (r.property_id && propIds.has(r.property_id)) return true;
-  if (r.property_name && propNames.has(r.property_name)) return true;
+  // Also match by property_name → look up the id
+  if (r.property_name) {
+    const fp = getFilteredProps();
+    for (const p of fp) {
+      if (p.name === r.property_name || p.apiName === r.property_name || p.t12Name === r.property_name) return true;
+    }
+  }
   return false;
 }
 
@@ -986,14 +998,16 @@ function renderPropPerfTable(monthData) {
     return;
   }
   const rows = monthData.map(r => {
-    const p = allProperties.find(x => x.id === r.property_id);
+    // Look up property by id OR name (api_name)
+    const p = allProperties.find(x => x.id === r.property_id || x.name === r.property_name || x.apiName === r.property_name);
     const rev = r.total_income || r.revenue || 0;
     const exp = Math.abs(r.total_expenses || r.expenses || 0);
     const noi = r.noi || 0;
     const ratio = rev > 0 ? (exp / rev * 100) : 0;
-    const units = p ? (p.units || 0) : 0;
+    const units = p ? (p.units || 0) : (r.units || 0);
     const noiUnit = units > 0 ? noi / units : 0;
-    const occ = DATA.occupancy ? DATA.occupancy.find(o => o.property_id === r.property_id) : null;
+    // Look up occupancy by property_name (api_name matches across views)
+    const occ = DATA.occupancy ? DATA.occupancy.find(o => o.property_name === r.property_name || (o.property_id && o.property_id === r.property_id)) : null;
     const occPct = occ ? Math.round(occ.physical_occupancy) : null;
     return { name: r.property_name || (p ? p.name : '?'), units, rev, exp, noi, ratio, noiUnit, occPct };
   }).sort((a, b) => b.noi - a.noi);
@@ -1025,24 +1039,30 @@ function renderPropPerfTable(monthData) {
 //  VIEW: P&L DETAIL
 // ════════════════════════════════════════
 function renderPnL() {
-  // Populate property dropdown
+  // Populate property dropdown — only show properties that have financial data
   const sel = document.getElementById('pnlPropertySelect');
   if (sel.children.length <= 1) {
-    sel.innerHTML = allProperties
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(p => `<option value="${p.id}">${p.name}</option>`)
-      .join('');
+    // Get property names that exist in financial data
+    const finPropNames = new Set(DATA.financial.map(r => r.property_name));
+    const propsWithData = allProperties.filter(p => finPropNames.has(p.name) || finPropNames.has(p.apiName));
+    sel.innerHTML = '<option value="">— Select Property —</option>' +
+      propsWithData
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(p => `<option value="${p.id}" data-name="${p.name}">${p.name}</option>`)
+        .join('');
   }
 
   const propId = parseInt(sel.value);
+  const selOption = sel.options[sel.selectedIndex];
+  const propName = selOption ? selOption.getAttribute('data-name') : '';
   const period = document.getElementById('pnlPeriodSelect').value;
   if (!propId || !DATA.financial) {
     document.getElementById('pnlTableContainer').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Select a property to view P&L</p></div>';
     return;
   }
 
-  // Filter financial data
-  let rows = DATA.financial.filter(r => r.property_id === propId);
+  // Filter financial data — match by property_id OR property_name
+  let rows = DATA.financial.filter(r => r.property_id === propId || r.property_name === propName);
   let months = [...new Set(rows.map(r => r.snapshot_month))].sort();
 
   if (period === 'trailing12') {
@@ -1107,11 +1127,10 @@ function renderPnL() {
   });
   html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
 
-  // Occupancy row if available
+  // Occupancy row if available — match by name or id
   if (DATA.occupancy) {
-    const occ = DATA.occupancy.find(o => o.property_id === propId);
+    const occ = DATA.occupancy.find(o => o.property_id === propId || o.property_name === propName);
     if (occ) {
-      const p = allProperties.find(x => x.id === propId);
       html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
       months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
       html += `<td></td></tr>`;
@@ -1257,7 +1276,7 @@ function renderExpirations() {
       <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
       <td>${fmtDate(r.lease_end)}</td>
       <td><span class="status-badge ${badgeClass}">${bucketLabel}</span></td>
-      <td>${r.status || '—'}</td>
+      <td>${r.renewal_status || r.status || '—'}</td>
     </tr>`;
   }).join('');
 
@@ -1330,7 +1349,7 @@ function renderUnits() {
     return `<tr>
       <td>${r.property_name || '—'}</td>
       <td>${r.unit_number || '—'}</td>
-      <td>${r.bedrooms || '—'}/${r.bathrooms || '—'}</td>
+      <td>${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}</td>
       <td>${r.tenant_name || '—'}</td>
       <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
       <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
@@ -1511,42 +1530,137 @@ async function loadDashboardData() {
     DATA.turns       = turnsRes.data || [];
     DATA.properties  = propsRes.data || [];
 
-    // Build property list
+    // ── BUILD PROPERTY LIST ──
+    // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views
+    // t12_name is the long form with LLC suffixes that doesn't match
     allProperties = DATA.properties.map(p => ({
       id: parseInt(p.property_id) || 0,
-      name: p.t12_name || p.api_name || `Property ${p.property_id}`,
+      name: p.api_name || p.t12_name || `Property ${p.property_id}`,
+      t12Name: p.t12_name || '',
+      apiName: p.api_name || '',
       units: parseInt(p.units) || 0,
     })).sort((a, b) => a.name.localeCompare(b.name));
 
-    // Normalize: add property_id to any rows that only have property_name
+    // ── BUILD NAME → ID MAPS ──
+    // Map both api_name and t12_name to property_id for robust matching
     const nameToId = {};
-    allProperties.forEach(p => { nameToId[p.name] = p.id; });
+    allProperties.forEach(p => {
+      if (p.apiName) nameToId[p.apiName] = p.id;
+      if (p.t12Name) nameToId[p.t12Name] = p.id;
+      nameToId[p.name] = p.id;
+    });
+    // Also build a name→property lookup for units/occupancy
+    const nameToProp = {};
+    allProperties.forEach(p => {
+      if (p.apiName) nameToProp[p.apiName] = p;
+      if (p.t12Name) nameToProp[p.t12Name] = p;
+      nameToProp[p.name] = p;
+    });
+
+    // ── NORMALIZE PROPERTY IDS ──
+    // Add property_id to any rows that only have property_name
     const addPropId = (rows) => rows.forEach(r => {
       if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
     [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
-      if (arr) addPropId(arr);
+      if (arr && arr.length) addPropId(arr);
     });
-    // Coerce numeric fields from BigQuery (returned as strings)
-    DATA.noiSummary.forEach(r => {
-      r.total_income = parseFloat(r.total_income) || 0;
-      r.total_expenses = parseFloat(r.total_expenses) || 0;
-      r.noi = parseFloat(r.noi) || 0;
-      r.units = parseInt(r.units) || 0;
+
+    // ── COERCE FINANCIAL DATA ──
+    DATA.financial.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_amount = parseFloat(r.total_amount) || 0;
+      r.transaction_count = parseInt(r.transaction_count) || 0;
     });
+
+    // ── BUILD MONTHS FROM FINANCIAL DATA ──
+    // financial_summary has all months (15+), noiSummary may only have 1
+    const finMonths = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean).sort();
+    const noiMonths = [...new Set(DATA.noiSummary.map(r => r.month))].filter(Boolean).sort();
+    DATA.months = finMonths.length > noiMonths.length ? finMonths : noiMonths;
+    selectedMonth = DATA.months[DATA.months.length - 1] || '';
+    populateMonthFilter(DATA.months);
+
+    // ── COMPUTE NOI SUMMARY FROM FINANCIAL DATA (for all months) ──
+    // Since v_noi_summary may only have 1 month, build comprehensive NOI from financial_snapshots
+    if (DATA.financial.length > 0) {
+      const noiMap = {}; // key: "propName|month"
+      DATA.financial.forEach(r => {
+        const key = `${r.property_name}|${r.snapshot_month}`;
+        if (!noiMap[key]) noiMap[key] = { property_name: r.property_name, property_id: r.property_id, month: r.snapshot_month, total_income: 0, total_expenses: 0, noi: 0, non_operating: 0 };
+        const sec = (r.t12_section || '').toLowerCase();
+        if (sec === 'income') {
+          noiMap[key].total_income += r.total_amount;
+        } else if (sec === 'expense' || sec === 'operating_expense') {
+          noiMap[key].total_expenses += r.total_amount;
+        } else if (sec.includes('non_operating')) {
+          noiMap[key].non_operating += r.total_amount;
+        }
+      });
+      // Compute NOI = income + expenses (expenses are typically negative from BQ)
+      Object.values(noiMap).forEach(r => {
+        r.noi = r.total_income + r.total_expenses;
+        // If expenses came as positive values, make them negative for NOI calc
+        if (r.total_expenses > 0 && r.total_income > 0) {
+          r.noi = r.total_income - r.total_expenses;
+        }
+        // Add units from property lookup
+        const prop = nameToProp[r.property_name];
+        r.units = prop ? prop.units : 0;
+        if (!r.property_id && prop) r.property_id = prop.id;
+      });
+      DATA.noiSummary = Object.values(noiMap);
+      console.log(`Built NOI summary: ${DATA.noiSummary.length} rows, ${DATA.months.length} months`);
+    }
+
+    // ── COERCE OCCUPANCY DATA ──
     if (DATA.occupancy) DATA.occupancy.forEach(r => {
       r.total_units = parseInt(r.total_units) || 0;
       r.occupied_units = parseInt(r.occupied_units) || 0;
       r.vacant_units = parseInt(r.vacant_units) || 0;
       r.preleased_units = parseInt(r.preleased_units) || 0;
       r.physical_occupancy = parseFloat(r.physical_occupancy) || 0;
+      // Ensure property_id is set via name lookup
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
     });
 
-    // Build months list from NOI data
-    DATA.months = [...new Set(DATA.noiSummary.map(r => r.month))].sort();
-    selectedMonth = DATA.months[DATA.months.length - 1] || '';
-    populateMonthFilter(DATA.months);
+    // ── COERCE RENT ROLL DATA ──
+    // Field mapping: BigQuery uses lease_rent, tenant_names, lease_from_date, lease_to_date
+    if (DATA.rentRoll) DATA.rentRoll.forEach(r => {
+      r.rent = parseFloat(r.lease_rent || r.rent_amount || r.rent) || 0;
+      r.market_rent = parseFloat(r.market_rent) || 0;
+      r.tenant_name = r.tenant_names || r.tenant_name || '';
+      r.lease_start = r.lease_from_date || r.lease_start || '';
+      r.lease_end = r.lease_to_date || r.lease_end || '';
+      r.days_until_expiry = parseInt(r.days_until_expiry) || 0;
+      // Derive status from lease data
+      if (!r.status) {
+        if (r.lease_id) r.status = 'Current';
+        else r.status = 'Vacant';
+      }
+      // MTM: lease_type = 'AtWill' or 'Month-to-Month' or 'MonthToMonth'
+      const lt = (r.lease_type || '').toLowerCase();
+      r.is_mtm = lt.includes('atwill') || lt.includes('month-to-month') || lt.includes('monthtomonth');
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE EXPIRATIONS DATA ──
+    if (DATA.expirations) DATA.expirations.forEach(r => {
+      r.rent = parseFloat(r.rent_amount || r.rent) || 0;
+      r.tenant_name = r.tenant_names || r.tenant_name || '';
+      r.lease_end = r.lease_to_date || r.lease_end || '';
+      r.days_until_expiry = parseInt(r.days_until_expiry) || 0;
+      r.bucket = r.expiry_bucket || r.bucket || '';
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE VACANCY DATA ──
+    if (DATA.vacancy) DATA.vacancy.forEach(r => {
+      r.market_rent = parseFloat(r.market_rent) || 0;
+      r.days_vacant = parseInt(r.days_vacant) || 0;
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
 
     // Render property dropdown
     renderPropDropdown();
@@ -1556,7 +1670,6 @@ async function loadDashboardData() {
     if (allProperties.length > 0) {
       const warnings = [];
       if (!DATA.turns.length) warnings.push('Unit Turns');
-      if (!DATA.financial.length) warnings.push('Financials');
       const warnMsg = warnings.length ? ` (${warnings.join(', ')} unavailable)` : '';
       setApiStatus('ok', `${allProperties.length} properties loaded${warnMsg}`);
       showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data${warnMsg}`);

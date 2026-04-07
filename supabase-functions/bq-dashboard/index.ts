@@ -154,9 +154,9 @@ const QUERIES: Record<string, string> = {
   `,
 
   // NOI summary: income, expenses, NOI, non-operating per property per month
+  // Note: v_noi_summary uses property_name, not property_id
   noi_summary: `
     SELECT
-      property_id,
       property_name,
       units,
       month,
@@ -203,6 +203,7 @@ const QUERIES: Record<string, string> = {
   `,
 
   // PropUp unit turns with cross-system mapping
+  // Note: turn_step_schedules may not have scheduled_start — using step_order instead
   turns: `
     SELECT
       t.turnover_id,
@@ -216,19 +217,12 @@ const QUERIES: Record<string, string> = {
       t.estimated_cost,
       t.start_date,
       t.end_date,
-      DATE_DIFF(COALESCE(t.end_date, CURRENT_DATE()), t.start_date, DAY) AS days_in_turn,
-      ts.step_name AS current_step
+      DATE_DIFF(COALESCE(t.end_date, CURRENT_DATE()), t.start_date, DAY) AS days_in_turn
     FROM \`${PROJECT_ID}.propup_data.turnovers\` t
     LEFT JOIN \`${PROJECT_ID}.propup_data.property_mapping\` pm
       ON t.property_id = pm.propup_property_id
     LEFT JOIN ${T}.properties\` bp
       ON pm.buildium_property_id = bp.property_id
-    LEFT JOIN (
-      SELECT turnover_id, step_name
-      FROM \`${PROJECT_ID}.propup_data.turn_step_schedules\`
-      WHERE status != 'Complete'
-      QUALIFY ROW_NUMBER() OVER (PARTITION BY turnover_id ORDER BY scheduled_start ASC) = 1
-    ) ts ON t.turnover_id = ts.turnover_id
     ORDER BY property_name, unit_number
   `,
 

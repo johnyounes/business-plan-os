@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dashboard — PGM Business Plan OS</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<title>Dashboard — BPOS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -16,822 +15,1683 @@
   --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
   --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
 }
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
-/* ═══════════════════════════════════════════════════════
-   MODULE SIDEBAR
-   ═══════════════════════════════════════════════════════ */
-.app-layout{display:flex;min-height:100vh;}
-.module-sidebar{
-  width:56px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;align-items:center;padding-top:10px;flex-shrink:0;
-  position:fixed;left:0;top:0;bottom:0;z-index:100;
-}
-.app-main{flex:1;display:flex;flex-direction:column;margin-left:56px;min-height:100vh;}
-.ms-logo{
-  font-family:var(--display);font-size:13px;color:var(--accent);
-  margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;width:100%;text-align:center;
-}
-.ms-item{
-  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
-  border-radius:10px;cursor:pointer;color:var(--text3);transition:all .15s;
-  margin-bottom:4px;position:relative;text-decoration:none;
-}
-.ms-item:hover{background:rgba(255,255,255,.05);color:var(--text2);}
-.ms-item.active{background:rgba(61,127,255,.12);color:var(--accent);}
-.ms-item svg{width:20px;height:20px;}
-.ms-tooltip{
-  display:none;position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
-  background:var(--bg4);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;
-  font-weight:500;white-space:nowrap;z-index:101;pointer-events:none;
-  box-shadow:0 4px 12px rgba(0,0,0,.3);
-}
-.ms-item:hover .ms-tooltip{display:block;}
-.ms-divider{width:28px;height:1px;background:var(--border);margin:8px 0;}
-.ms-item-disabled{opacity:.3;cursor:default;}
-.ms-item-disabled:hover{background:transparent;color:var(--text3);}
+/* ── TOP NAV ── */
+.topnav{height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.nav-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
+.nav-brand .sep{color:var(--text3);}
+.nav-brand .current{color:var(--text);font-weight:500;}
+.topnav-spacer{flex:1;}
+.module-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:rgba(46,196,182,.1);border:1px solid rgba(46,196,182,.2);border-radius:20px;padding:3px 10px;}
+.api-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.api-dot.off{background:var(--text3);box-shadow:none;}
+.api-dot.pending{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.back-link{color:var(--text3);text-decoration:none;font-size:12px;display:flex;align-items:center;gap:5px;transition:color .15s;}
+.back-link:hover{color:var(--accent);}
 
-/* ═══════════════════════════════════════════════════════
-   TOP BAR
-   ═══════════════════════════════════════════════════════ */
-.topbar{
-  height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 28px;gap:14px;
-}
-.topbar-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
-.topbar-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
-.topbar-brand .sep{color:var(--text3);}
-.topbar-brand .current{color:var(--text);font-weight:500;}
-.topbar-spacer{flex:1;}
+/* ── LAYOUT ── */
+.app-wrap{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.sb-section{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:16px 20px 6px;margin-top:4px;}
+.sb-section:first-child{margin-top:0;padding-top:8px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:3px solid transparent;}
+.sb-item:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.sb-item.active{color:var(--text);background:rgba(61,127,255,.06);border-left-color:var(--accent);}
+.sb-item .icon{font-size:16px;width:20px;text-align:center;opacity:.6;}
+.sb-item.active .icon{opacity:1;}
+.main{flex:1;overflow-y:auto;padding:24px 28px 48px;}
 
-.tab-pills{display:flex;gap:3px;background:var(--bg);padding:3px;border-radius:8px;}
-.tab-pill{
-  padding:5px 13px;font-size:11px;font-weight:600;border-radius:6px;border:none;
-  background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;font-family:var(--font);
-}
-.tab-pill:hover{color:var(--text2);}
-.tab-pill.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.2);}
+/* ── GLOBAL FILTERS BAR ── */
+.filters-bar{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.filters-bar h1{font-family:var(--display);font-size:22px;font-weight:600;margin-right:auto;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.filter-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.filter-select{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 32px 7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;cursor:pointer;}
+.filter-select:focus{border-color:var(--accent);}
 
-.filter-bar{display:flex;align-items:center;gap:8px;}
+/* ── PROPERTY MULTI-SELECT ── */
+.prop-multi{position:relative;}
+.prop-multi-trigger{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;min-width:280px;cursor:pointer;transition:border-color .15s;min-height:36px;flex-wrap:wrap;}
+.prop-multi-trigger:focus-within{border-color:var(--accent);}
+.prop-chip{display:flex;align-items:center;gap:4px;background:rgba(61,127,255,.12);color:var(--accent);font-size:11px;font-weight:500;padding:2px 8px;border-radius:5px;white-space:nowrap;}
+.prop-chip .remove{cursor:pointer;opacity:.6;font-size:13px;line-height:1;}
+.prop-chip .remove:hover{opacity:1;}
+.prop-search-input{border:none;background:none;color:var(--text);font-size:13px;font-family:var(--font);outline:none;flex:1;min-width:100px;padding:2px 0;}
+.prop-search-input::placeholder{color:var(--text3);}
+.prop-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;max-height:320px;overflow-y:auto;z-index:50;display:none;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.prop-dropdown.open{display:block;}
+.prop-dd-actions{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;}
+.prop-dd-actions a{color:var(--accent);cursor:pointer;text-decoration:none;}
+.prop-dd-actions a:hover{text-decoration:underline;}
+.prop-dd-actions span{color:var(--text3);}
+.prop-dd-item{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:13px;color:var(--text2);cursor:pointer;transition:background .1s;}
+.prop-dd-item:hover{background:rgba(255,255,255,.03);}
+.prop-dd-item.selected{background:rgba(61,127,255,.06);color:var(--text);}
+.prop-dd-item .check{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0;transition:all .15s;}
+.prop-dd-item.selected .check{background:var(--accent);border-color:var(--accent);color:#fff;}
+.prop-dd-item .units{font-size:11px;color:var(--text3);margin-left:auto;}
+.prop-dd-empty{padding:20px;text-align:center;font-size:13px;color:var(--text3);}
 
-/* Refresh / Settings buttons */
-.btn-refresh{
-  display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;font-weight:600;
-  font-family:var(--font);border:1px solid rgba(61,127,255,.25);border-radius:7px;
-  background:rgba(61,127,255,.08);color:var(--accent);cursor:pointer;transition:all .15s;
-}
-.btn-refresh:hover{background:rgba(61,127,255,.15);}
-.btn-refresh:disabled{opacity:.4;cursor:not-allowed;}
-.btn-refresh svg{width:13px;height:13px;}
-.btn-refresh.spinning svg{animation:spin .8s linear infinite;}
+/* ── KPI CARDS ── */
+.kpi-grid{display:grid;gap:12px;margin-bottom:24px;}
+.kpi-grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.kpi-grid.cols-5{grid-template-columns:repeat(5,1fr);}
+.kpi-grid.cols-6{grid-template-columns:repeat(6,1fr);}
+.kpi-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;}
+.kpi-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;}
+.kpi-value{font-size:22px;font-weight:500;font-family:var(--mono);color:var(--text);margin-bottom:3px;}
+.kpi-value.good{color:var(--green);}
+.kpi-value.bad{color:var(--red);}
+.kpi-value.warn{color:var(--amber);}
+.kpi-sub{font-size:11px;color:var(--text3);}
+.kpi-sparkline{position:absolute;bottom:12px;right:14px;width:60px;height:28px;}
+.kpi-change{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;}
+.kpi-change.up{color:var(--green);background:rgba(34,201,122,.1);}
+.kpi-change.down{color:var(--red);background:rgba(232,80,74,.1);}
+
+/* ── CHART CARDS ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;overflow:hidden;}
+.chart-card.full{grid-column:1/-1;}
+.cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cc-title{font-size:14px;font-weight:600;color:var(--text);}
+.cc-subtitle{font-size:11px;color:var(--text3);}
+.chart-canvas{width:100%;height:220px;position:relative;}
+
+/* ── FINANCIALS TABLE ── */
+.fin-table-wrap{overflow-x:auto;background:var(--bg2);border:1px solid var(--border);border-radius:12px;}
+.fin-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+.fin-table th{position:sticky;top:0;z-index:2;background:var(--bg3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:10px 14px;text-align:right;border-bottom:1px solid var(--border2);}
+.fin-table th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--bg3);min-width:200px;}
+.fin-table td{padding:8px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-size:12px;color:var(--text2);}
+.fin-table td:first-child{text-align:left;font-family:var(--font);color:var(--text2);position:sticky;left:0;background:var(--bg2);z-index:1;}
+.fin-table tr:hover td{background:rgba(255,255,255,.015);}
+.fin-table tr:hover td:first-child{background:rgba(255,255,255,.03);}
+.fin-table .row-header{font-weight:600;color:var(--text);font-size:11px;background:var(--bg3);border-bottom:1px solid var(--border2);}
+.fin-table .row-header td{background:var(--bg3);font-family:var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-size:10px;font-weight:600;padding:14px 14px 8px;}
+.fin-table .row-total td{font-weight:600;color:var(--text);border-top:1px solid var(--border2);font-family:var(--mono);}
+.fin-table .row-total td:first-child{font-family:var(--font);}
+.fin-table .row-noi td{font-weight:700;color:var(--green);border-top:2px solid var(--border2);}
+.fin-table .good{color:var(--green);}
+.fin-table .bad{color:var(--red);}
+.fin-table .warn{color:var(--amber);}
+.fin-table .pct-row td{color:var(--text3);font-size:11px;}
+
+/* ── OCCUPANCY DONUT ── */
+.occ-donuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+.occ-donut-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;}
+.donut-wrap{width:120px;height:120px;margin:0 auto 12px;position:relative;}
+.donut-wrap canvas{width:100%;height:100%;}
+.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;font-family:var(--mono);}
+.odc-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.odc-sub{font-size:11px;color:var(--text3);}
+
+/* ── DATA TABLE (generic) ── */
+.data-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;}
+.dt-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.dt-title{font-size:14px;font-weight:600;color:var(--text);}
+.dt-count{font-size:12px;color:var(--text3);}
+.dt-search{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:6px 12px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:200px;transition:border-color .15s;}
+.dt-search:focus{border-color:var(--accent);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--bg3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;white-space:nowrap;}
+.data-table th:hover{color:var(--text2);}
+.data-table th.r{text-align:right;}
+.data-table td{padding:8px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
+.data-table td.r{text-align:right;font-family:var(--mono);}
+.data-table td.good{color:var(--green);}
+.data-table td.bad{color:var(--red);}
+.data-table td.warn{color:var(--amber);}
+.data-table tr:hover td{background:rgba(255,255,255,.015);}
+.data-table .status-badge{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;}
+.sb-current{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
+.sb-mtm{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.sb-vacant{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.2);}
+.sb-notice{background:rgba(155,122,255,.1);color:var(--purple);border:1px solid rgba(155,122,255,.2);}
+.sb-future{background:rgba(46,196,182,.1);color:var(--teal);border:1px solid rgba(46,196,182,.2);}
+
+/* ── LEASE EXP BUCKETS ── */
+.exp-buckets{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.exp-bucket{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;text-align:center;}
+.eb-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
+.eb-label{font-size:11px;color:var(--text3);font-weight:500;}
+
+/* ── TURN PIPELINE ── */
+.turn-pipeline{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.turn-stage{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.ts-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
+.ts-label{font-size:11px;color:var(--text3);font-weight:500;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-state .icon{font-size:48px;opacity:.3;margin-bottom:14px;}
+.empty-state p{font-size:14px;margin-bottom:6px;}
+.empty-state small{font-size:12px;}
+
+/* ── LOADING ── */
+.loading-spinner{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--text3);font-size:13px;}
+.spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.08);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-.btn-settings{
-  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--border2);border-radius:7px;background:var(--bg3);color:var(--text3);
-  cursor:pointer;transition:all .15s;
-}
-.btn-settings:hover{color:var(--text);border-color:var(--accent);}
-.btn-settings svg{width:15px;height:15px;}
+/* ── SECTION DIVIDERS ── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:8px;}
+.section-head h2{font-size:15px;font-weight:600;color:var(--text);}
+.section-head .badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:10px;background:rgba(61,127,255,.1);color:var(--accent);border:1px solid rgba(61,127,255,.15);}
 
-/* ═══════════════════════════════════════════════════════
-   CONTENT AREA
-   ═══════════════════════════════════════════════════════ */
-.content{flex:1;padding:20px 28px 40px;overflow-y:auto;}
-.tab-content{display:none;}
-.tab-content.active{display:block;}
-
-/* ═══════════════════════════════════════════════════════
-   KPI SCORECARDS
-   ═══════════════════════════════════════════════════════ */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:18px;}
-.kpi-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
-  padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s;
-}
-.kpi-card:hover{border-color:var(--border2);}
-.kpi-accent{position:absolute;top:0;left:0;right:0;height:3px;}
-.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:6px;}
-.kpi-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.1;font-variant-numeric:tabular-nums;}
-.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px;}
-.kpi-card.placeholder .kpi-value{color:var(--text3);font-size:12px;font-weight:500;}
-
-/* ═══════════════════════════════════════════════════════
-   CHARTS
-   ═══════════════════════════════════════════════════════ */
-.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;margin-bottom:18px;}
-.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;}
-.chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;}
-.chart-wrap{position:relative;height:250px;}
-.chart-wrap canvas{width:100%!important;height:100%!important;}
-
-/* ═══════════════════════════════════════════════════════
-   PLACEHOLDERS
-   ═══════════════════════════════════════════════════════ */
-.section-header{display:flex;align-items:center;gap:8px;margin:20px 0 12px;}
-.section-header h3{font-size:13px;font-weight:700;color:var(--text);}
-.tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;}
-.tag-coming{background:rgba(245,166,35,.1);color:var(--amber);}
-.placeholder-section{
-  background:var(--bg2);border:1px dashed var(--border2);border-radius:10px;
-  padding:24px;text-align:center;color:var(--text3);font-size:12px;margin-bottom:18px;
-}
-.placeholder-section strong{color:var(--text2);display:block;margin-bottom:4px;}
-
-/* ═══════════════════════════════════════════════════════
-   TABLES
-   ═══════════════════════════════════════════════════════ */
-.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
-.fin-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:18px;}
-.fin-table th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);}
-.fin-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap;}
-.fin-table tbody tr:hover td{background:rgba(255,255,255,.02);color:var(--text);}
-.fin-table tfoot td{padding:10px 12px;border-top:1px solid var(--border2);border-bottom:none;background:var(--bg3);color:var(--text);}
-.fin-table .num{text-align:right;font-family:var(--mono);}
-.table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
-.table-header h4{font-size:12px;font-weight:600;color:var(--text);}
-.table-count{font-size:10px;font-weight:600;color:var(--accent);background:rgba(61,127,255,.1);padding:2px 8px;border-radius:10px;}
-.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;}
-.dtable{width:100%;border-collapse:collapse;font-size:11px;}
-.dtable th{
-  position:sticky;top:0;background:var(--bg3);font-size:9px;font-weight:600;
-  text-transform:uppercase;letter-spacing:.05em;color:var(--text3);
-  padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;
-}
-.dtable th.num,.dtable td.num{text-align:right;}
-.dtable td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.dtable tr:hover td{background:rgba(61,127,255,.03);}
-.dtable .prop-name{color:var(--text);font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
-.dtable .grand-total td{font-weight:700;color:var(--text);background:var(--bg3);border-top:2px solid var(--border2);position:sticky;bottom:0;}
-
-/* Occupancy bar */
-.occ-bar-wrap{width:50px;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px;}
-.occ-bar{height:100%;border-radius:3px;}
-.occ-high{background:var(--green);}
-.occ-mid{background:var(--amber);}
-.occ-low{background:var(--red);}
-
-/* Lease dots */
-.ldot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;vertical-align:middle;}
-.ldot-30{background:var(--red);}
-.ldot-60{background:var(--amber);}
-.ldot-90{background:var(--green);}
-.ldot-mtm{background:var(--purple);}
-.ldot-expired{background:var(--text3);}
-
-.lease-legend{display:flex;gap:14px;padding:8px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border);}
-.legend-item{display:flex;align-items:center;gap:4px;}
-
-/* Unit tracker layout */
-.tracker-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
-
-/* ═══════════════════════════════════════════════════════
-   MULTI-SELECT DROPDOWN
-   ═══════════════════════════════════════════════════════ */
-.ms{position:relative;min-width:180px;}
-.ms-trigger{
-  font-family:var(--font);font-size:11px;font-weight:500;padding:5px 26px 5px 10px;
-  border:1px solid var(--border2);border-radius:7px;background:var(--bg3);color:var(--text);
-  cursor:pointer;width:100%;text-align:left;
-  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 8px center;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.ms-dd{
-  position:absolute;top:calc(100% + 4px);left:0;min-width:100%;max-width:280px;max-height:300px;overflow-y:auto;
-  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
-  box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:60;display:none;padding:4px;
-}
-.ms-dd.open{display:block;}
-.ms-opt{display:flex;align-items:center;gap:7px;padding:5px 9px;font-size:11px;cursor:pointer;border-radius:5px;color:var(--text2);}
-.ms-opt:hover{background:rgba(255,255,255,.05);}
-.ms-opt.selected{background:rgba(61,127,255,.1);color:var(--accent);font-weight:500;}
-.ms-chk{width:13px;height:13px;border:1.5px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.ms-opt.selected .ms-chk{background:var(--accent);border-color:var(--accent);}
-.ms-opt.selected .ms-chk::after{content:'';width:5px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translateY(-1px);}
-.ms-div{height:1px;background:var(--border);margin:3px 0;}
-.ms-all{font-weight:600;color:var(--text);}
-
-/* ═══════════════════════════════════════════════════════
-   MODALS
-   ═══════════════════════════════════════════════════════ */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:540px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);}
-.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
-.modal-header h2{font-size:15px;font-weight:700;color:var(--text);}
-.modal-header p{font-size:11px;color:var(--text3);margin-top:2px;}
-.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
-.modal-close:hover{color:var(--text);}
-.modal-body{padding:20px;}
-.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
-.btn-ghost{font-family:var(--font);font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;}
-.btn-ghost:hover{border-color:var(--text3);color:var(--text);}
-.btn-primary{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer;}
-.btn-primary:hover{background:var(--accent2);}
-
-/* ═══════════════════════════════════════════════════════
-   EMPTY STATE & LOADING
-   ═══════════════════════════════════════════════════════ */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;}
-.empty-state svg{width:44px;height:44px;color:var(--text3);opacity:.35;margin-bottom:14px;}
-.empty-state h3{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:5px;}
-.empty-state p{font-size:12px;color:var(--text3);max-width:340px;margin-bottom:14px;}
-
-.loading-overlay{position:fixed;inset:0;background:rgba(13,15,18,.85);z-index:150;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
-.loading-overlay.show{display:flex;}
-.loading-spinner{width:32px;height:32px;border:3px solid rgba(61,127,255,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
-
-/* ═══════════════════════════════════════════════════════
-   TOAST
-   ═══════════════════════════════════════════════════════ */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.3);display:none;z-index:300;align-items:center;gap:8px;}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
 .toast.show{display:flex;}
-.toast .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════════ */
-@media (max-width:1024px){.tracker-layout{grid-template-columns:1fr;}}
-@media (max-width:768px){
-  .module-sidebar{width:44px;}
-  .app-main{margin-left:44px;}
-  .ms-item{width:32px;height:32px;}
-  .ms-item svg{width:16px;height:16px;}
-  .topbar{padding:0 14px;gap:8px;}
-  .content{padding:14px;}
-  .kpi-grid{grid-template-columns:repeat(2,1fr);}
-  .charts-grid{grid-template-columns:1fr;}
-  .filter-bar{flex-wrap:wrap;}
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .kpi-grid.cols-6{grid-template-columns:repeat(3,1fr);}
+  .chart-row{grid-template-columns:1fr;}
+}
+@media(max-width:900px){
+  .sidebar{width:56px;padding:16px 0;}
+  .sb-section{display:none;}
+  .sb-item{padding:10px 0;justify-content:center;gap:0;border-left:none;border-bottom:3px solid transparent;}
+  .sb-item.active{border-bottom-color:var(--accent);border-left-color:transparent;}
+  .sb-item span:not(.icon){display:none;}
+  .kpi-grid.cols-5,.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr);}
+  .exp-buckets{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .filters-bar{flex-direction:column;align-items:stretch;gap:10px;}
+  .filters-bar h1{margin-right:0;}
+  .prop-multi-trigger{min-width:unset;}
 }
 
-/* Scrollbar */
-::-webkit-scrollbar{width:6px;height:6px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px;}
-::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
-
-@media print{.module-sidebar,.topbar,.modal-overlay,.loading-overlay{display:none!important;}.app-main{margin-left:0;}}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
 </style>
 </head>
 <body>
 
-<!-- ═══════════ MODULE SIDEBAR ═══════════ -->
-<div class="app-layout">
-<aside class="module-sidebar">
-  <div class="ms-logo">BPOS</div>
-  <a class="ms-item" href="bpos-tracking.html" title="Budget Tracking">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-    <span class="ms-tooltip">Budget Tracking</span>
-  </a>
-  <div class="ms-item active" title="Dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    <span class="ms-tooltip">Dashboard</span>
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="nav-brand">
+    <span class="logo">BPOS</span>
+    <span class="sep">/</span>
+    <span class="current">Dashboard</span>
   </div>
-  <div class="ms-divider"></div>
-  <div class="ms-item ms-item-disabled" title="T-12 Reports (coming soon)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
-    <span class="ms-tooltip">T-12 Reports</span>
+  <div class="topnav-spacer"></div>
+  <span class="module-badge">Live Data</span>
+  <div class="api-status" id="apiStatus">
+    <div class="api-dot pending" id="apiDot"></div>
+    <span id="apiLabel">Connecting…</span>
   </div>
-</aside>
-
-<!-- ═══════════ MAIN CONTENT ═══════════ -->
-<div class="app-main">
-
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="topbar-brand">
-      <span class="logo">BPOS</span>
-      <span class="sep">›</span>
-      <span class="current" id="topbar-title">Dashboard</span>
-    </div>
-    <div class="topbar-spacer"></div>
-
-    <div class="tab-pills">
-      <button class="tab-pill active" data-tab="kpi" onclick="switchTab('kpi')">KPI Overview</button>
-      <button class="tab-pill" data-tab="tracker" onclick="switchTab('tracker')">Unit Tracker</button>
-    </div>
-
-    <div class="filter-bar">
-      <div class="ms" id="prop-filter">
-        <button class="ms-trigger" id="prop-trigger" onclick="togglePropDD()">All Properties</button>
-        <div class="ms-dd" id="prop-dd"></div>
-      </div>
-      <button class="btn-refresh" id="btn-refresh" onclick="refreshDashboard()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-        Refresh
-      </button>
-      <button class="btn-settings" onclick="openBQModal()" title="BigQuery Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content">
-    <div class="tab-content active" id="tab-kpi"></div>
-    <div class="tab-content" id="tab-tracker"></div>
-    <div class="empty-state" id="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 8v4l3 3"/></svg>
-      <h3>Connect BigQuery to get started</h3>
-      <p>Click the gear icon to configure your BigQuery connection, then hit Refresh to load live portfolio data.</p>
-      <button class="btn-refresh" onclick="openBQModal()" style="font-size:12px;padding:7px 16px;">Configure BigQuery</button>
-    </div>
-  </div>
-
-</div><!-- /app-main -->
-</div><!-- /app-layout -->
-
-<!-- ═══════════ BIGQUERY MODAL ═══════════ -->
-<div class="modal-overlay" id="bq-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h2>Dashboard BigQuery Connection</h2>
-        <p>Connect to your Buildium BigQuery for live dashboard data.</p>
-      </div>
-      <button class="modal-close" onclick="closeBQModal()">×</button>
-    </div>
-    <div class="modal-body" id="bq-modal-body"></div>
-    <div class="modal-footer" id="bq-modal-footer"></div>
-  </div>
+  <a href="bpos-tracking.html" class="back-link">← Budget Tracker</a>
 </div>
 
-<!-- ═══════════ LOADING ═══════════ -->
-<div class="loading-overlay" id="loading">
-  <div class="loading-spinner"></div>
-  <div style="font-size:12px;color:var(--text2);" id="loading-text">Loading dashboard data...</div>
+<!-- APP -->
+<div class="app-wrap">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-section">Financial</div>
+  <div class="sb-item active" data-view="overview"><span class="icon">📊</span><span>Overview</span></div>
+  <div class="sb-item" data-view="pnl"><span class="icon">📋</span><span>P&L Detail</span></div>
+  <div class="sb-section">Occupancy</div>
+  <div class="sb-item" data-view="occupancy"><span class="icon">🏠</span><span>Occupancy</span></div>
+  <div class="sb-item" data-view="units"><span class="icon">🔑</span><span>Unit Tracker</span></div>
+  <div class="sb-section">Operations</div>
+  <div class="sb-item" data-view="turns"><span class="icon">🔧</span><span>Unit Turns</span></div>
 </div>
 
-<!-- ═══════════ TOAST ═══════════ -->
-<div class="toast" id="toast"><div class="dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+
+  <!-- FILTERS BAR -->
+  <div class="filters-bar">
+    <h1 id="viewTitle">Financial Overview</h1>
+    <div class="filter-group">
+      <span class="filter-label">Month</span>
+      <select class="filter-select" id="monthFilter"></select>
+    </div>
+    <div class="filter-group prop-multi" id="propMulti">
+      <span class="filter-label">Properties</span>
+      <div class="prop-multi-trigger" id="propTrigger" tabindex="0">
+        <span class="prop-chip" id="propAllChip">All Properties <span class="remove" id="propAllRemove" style="display:none;">×</span></span>
+        <input type="text" class="prop-search-input" id="propSearch" placeholder="Search…"/>
+      </div>
+      <div class="prop-dropdown" id="propDropdown">
+        <div class="prop-dd-actions">
+          <a id="selectAllProps">Select All</a>
+          <span>·</span>
+          <a id="clearAllProps">Clear All</a>
+          <span style="margin-left:auto;" id="propSelectedCount">0 selected</span>
+        </div>
+        <div id="propDropdownList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: FINANCIAL OVERVIEW -->
+  <div class="view-panel" id="view-overview">
+    <div class="kpi-grid cols-6" id="finKpis"></div>
+    <div class="chart-row" id="finCharts">
+      <div class="chart-card">
+        <div class="cc-head"><span class="cc-title">Income vs Expenses</span><span class="cc-subtitle" id="chartPeriodLabel"></span></div>
+        <canvas id="incExpChart" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="cc-head"><span class="cc-title">NOI Trend</span></div>
+        <canvas id="noiChart" class="chart-canvas"></canvas>
+      </div>
+    </div>
+    <div class="section-head"><h2>Property Metrics</h2></div>
+    <div class="kpi-grid cols-4" id="propMetrics"></div>
+    <div class="section-head"><h2>Property Performance</h2></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">All Properties</span>
+        <input class="dt-search" id="propPerfSearch" placeholder="Filter properties…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="propPerfTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th class="r">Units</th>
+              <th class="r">Income</th>
+              <th class="r">Expenses</th>
+              <th class="r">NOI</th>
+              <th class="r">Expense Ratio</th>
+              <th class="r">Occupancy</th>
+              <th class="r">NOI / Unit</th>
+            </tr>
+          </thead>
+          <tbody id="propPerfBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: P&L DETAIL -->
+  <div class="view-panel" id="view-pnl" style="display:none;">
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div class="filter-group">
+        <span class="filter-label">Property</span>
+        <select class="filter-select" id="pnlPropertySelect" style="min-width:260px;"></select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Period</span>
+        <select class="filter-select" id="pnlPeriodSelect">
+          <option value="trailing12">Trailing 12 Months</option>
+          <option value="ytd">Year to Date</option>
+          <option value="custom">All Available</option>
+        </select>
+      </div>
+    </div>
+    <div id="pnlTableContainer">
+      <div class="loading-spinner"><div class="spinner"></div> Loading P&L…</div>
+    </div>
+  </div>
+
+  <!-- VIEW: OCCUPANCY -->
+  <div class="view-panel" id="view-occupancy" style="display:none;">
+    <div class="kpi-grid cols-5" id="occKpis"></div>
+    <div class="section-head"><h2>Occupancy by Property</h2></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Property Occupancy</span>
+        <input class="dt-search" id="occSearch" placeholder="Filter…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="occTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th class="r">Total Units</th>
+              <th class="r">Occupied</th>
+              <th class="r">Vacant</th>
+              <th class="r">Physical Occ.</th>
+              <th class="r">Preleased</th>
+              <th class="r">Net Exposure</th>
+            </tr>
+          </thead>
+          <tbody id="occBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:28px;"><h2>Lease Expirations</h2><span class="badge" id="expTotal">0 expiring</span></div>
+    <div class="exp-buckets" id="expBuckets"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Expiring Leases</span>
+        <input class="dt-search" id="expSearch" placeholder="Filter…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="expTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>Tenant</th>
+              <th class="r">Rent</th>
+              <th>Lease End</th>
+              <th>Bucket</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="expBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: UNIT TRACKER -->
+  <div class="view-panel" id="view-units" style="display:none;">
+    <div class="kpi-grid cols-5" id="unitKpis"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Rent Roll</span>
+        <span class="dt-count" id="unitCount"></span>
+        <input class="dt-search" id="unitSearch" placeholder="Search unit, tenant…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="unitTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>BR/BA</th>
+              <th>Tenant</th>
+              <th class="r">Rent</th>
+              <th class="r">Market Rent</th>
+              <th class="r">Loss to Lease</th>
+              <th>Status</th>
+              <th>Lease Start</th>
+              <th>Lease End</th>
+            </tr>
+          </thead>
+          <tbody id="unitBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: UNIT TURNS -->
+  <div class="view-panel" id="view-turns" style="display:none;">
+    <div class="kpi-grid cols-4" id="turnKpis"></div>
+    <div class="section-head"><h2>Turn Pipeline</h2></div>
+    <div class="turn-pipeline" id="turnPipeline"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Active Turns</span>
+        <span class="dt-count" id="turnCount"></span>
+        <input class="dt-search" id="turnSearch" placeholder="Search…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="turnTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>Status</th>
+              <th>Board</th>
+              <th>Finish Level</th>
+              <th class="r">Est. Cost</th>
+              <th>Start Date</th>
+              <th class="r">Days in Turn</th>
+              <th>Current Step</th>
+            </tr>
+          </thead>
+          <tbody id="turnBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app-wrap -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="dot"></div><span></span></div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════════
-const SUPA_URL = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTI3NTQsImV4cCI6MjA5MDAyODc1NH0.xAjHM7s6IphX_oOA_Qma4sspmlLywX209EssAursr0w';
-const BQ_FN = 'bq-dashboard';
+/* ════════════════════════════════════════════════════════════════
+   BPOS DASHBOARD — Buildium BigQuery Data
+   ════════════════════════════════════════════════════════════════ */
 
-// ══════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════
-let S = {
-  connected: false,
-  lastSync: null,
-  loading: false,
-  activeTab: 'kpi',
-  selProps: [],
-  data: { occupancySummary:[], rentRoll:[], vacancy:[], leaseExpirations:[], bedroomMix:[], noiSummary:[], incomeStatement:[] },
+// ── CONFIG ──
+const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNjg5MjAsImV4cCI6MjA1Mzg0NDkyMH0.vAMm-c4URNsLgbnQ6jzASt_7c6C71EV35wA0Mu2i0S8';
+const FN_NAME   = 'bq-dashboard';
+
+// ── STATE ──
+let allProperties = [];
+let selectedProps  = []; // empty = "all"
+let selectedMonth  = '';
+let currentView    = 'overview';
+
+// Cached data from BigQuery
+let DATA = {
+  financial: null,    // financial_snapshots aggregated
+  occupancy: null,    // v_occupancy_summary
+  rentRoll: null,     // v_rent_roll
+  vacancy: null,      // v_vacancy
+  expirations: null,  // v_lease_expirations
+  turns: null,        // propup turnovers + steps
+  properties: null,   // property list with units
+  noiSummary: null,   // v_noi_summary
+  pnlDetail: null,    // income statement detail for selected property
+  months: [],         // available months
 };
-let charts = {};
 
-// ══════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════
-const $ = id => document.getElementById(id);
-const num = v => v==null?0:Number(v)||0;
-const fmt = (n,d)=>{d=d||0;if(n==null||isNaN(n))return'--';return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});};
-const fPct = (n,d)=>{d=d==null?1:d;if(n==null||isNaN(n))return'--';return Number(n).toFixed(d)+'%';};
-const fCur = n=>{if(n==null||isNaN(n))return'--';return'$'+fmt(n);};
-const occCls = p=>p>=90?'occ-high':p>=80?'occ-mid':'occ-low';
-const esc = s=>{if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-
-function showToast(msg, color) {
-  $('toast-msg').textContent = msg;
-  $('toast-dot').style.background = color || 'var(--green)';
-  $('toast').classList.add('show');
-  setTimeout(() => $('toast').classList.remove('show'), 3000);
-}
-
-// ══════════════════════════════════════════════════════════
-// BIGQUERY FETCH
-// ══════════════════════════════════════════════════════════
-async function bqFetch(type) {
-  const res = await fetch(SUPA_URL + '/functions/v1/' + BQ_FN, {
+// ── SUPABASE HELPER ──
+async function callEdgeFn(query, params = {}) {
+  const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
     method: 'POST',
-    headers: { 'Authorization':'Bearer '+SUPA_KEY, 'Content-Type':'application/json' },
-    body: JSON.stringify({ type }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'apikey': SUPA_KEY,
+    },
+    body: JSON.stringify({ query, ...params }),
   });
-  const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || 'Request failed');
-  return data.rows || [];
-}
-
-async function testConnection() {
-  const btn = $('bq-test-btn');
-  const st = $('bq-test-status');
-  if (btn) btn.disabled = true;
-  if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(61,127,255,.08);border:1px solid rgba(61,127,255,.12);border-radius:6px;font-size:11px;color:var(--accent);margin-bottom:8px;">Testing connection...</div>';
-  try {
-    await bqFetch('test');
-    S.connected = true;
-    if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(34,201,122,.06);border:1px solid rgba(34,201,122,.12);border-radius:6px;font-size:11px;color:var(--green);margin-bottom:8px;">Connected to BigQuery (api-data-pull-492404)</div>';
-  } catch (e) {
-    S.connected = false;
-    if (st) st.innerHTML = '<div style="padding:8px 12px;background:rgba(232,80,74,.06);border:1px solid rgba(232,80,74,.12);border-radius:6px;font-size:11px;color:var(--red);margin-bottom:8px;">Failed: '+esc(e.message)+'</div>';
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Edge fn error ${res.status}: ${txt}`);
   }
-  if (btn) btn.disabled = false;
+  return res.json();
 }
 
-async function refreshDashboard() {
-  if (S.loading) return;
-  S.loading = true;
-  $('loading-text').textContent = 'Fetching portfolio data from BigQuery...';
-  $('loading').classList.add('show');
-  const btn = $('btn-refresh');
-  if (btn) btn.classList.add('spinning');
+// ── FORMAT HELPERS ──
+const fmt$ = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v < 0 ? '-' : '') + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return (v < 0 ? '-' : '') + '$' + (abs / 1e3).toFixed(0) + 'K';
+  return (v < 0 ? '-' : '') + '$' + abs.toFixed(0);
+};
+const fmtFull$ = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const fmtPct = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return Math.round(v) + '%';
+};
+const fmtPct1 = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return v.toFixed(1) + '%';
+};
+const fmtDate = (d) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+const fmtMonth = (m) => {
+  if (!m) return '';
+  const [y, mo] = m.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(mo)-1] + ' ' + y;
+};
 
-  try {
-    const [occ,rr,vac,le,bm,noi,is] = await Promise.all([
-      bqFetch('occupancy_summary'),
-      bqFetch('rent_roll'),
-      bqFetch('vacancy'),
-      bqFetch('lease_expirations'),
-      bqFetch('bedroom_mix'),
-      bqFetch('noi_summary'),
-      bqFetch('income_statement').catch(()=>[]),
-    ]);
-    S.data = { occupancySummary:occ, rentRoll:rr, vacancy:vac, leaseExpirations:le, bedroomMix:bm, noiSummary:noi, incomeStatement:is };
-    S.connected = true;
-    S.lastSync = new Date().toISOString();
-    try { localStorage.setItem('bpos_dash_data',JSON.stringify(S.data)); localStorage.setItem('bpos_dash_meta',JSON.stringify({connected:S.connected,lastSync:S.lastSync})); } catch(e){}
-    buildPropFilter();
-    renderAll();
-    showToast('Dashboard refreshed — '+occ.length+' properties loaded','var(--green)');
-  } catch (e) {
-    console.error('Refresh failed:', e);
-    showToast('Refresh failed: '+e.message,'var(--red)');
-  }
-
-  S.loading = false;
-  $('loading').classList.remove('show');
-  if (btn) btn.classList.remove('spinning');
-}
-
-// ══════════════════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════════════════
-function switchTab(tab) {
-  S.activeTab = tab;
-  document.querySelectorAll('.tab-pill').forEach(p=>p.classList.toggle('active',p.dataset.tab===tab));
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  const el = $('tab-'+tab);
-  if (el) el.classList.add('active');
-  $('topbar-title').textContent = tab==='kpi'?'Dashboard':'Unit Tracker';
-}
-
-// ══════════════════════════════════════════════════════════
-// PROPERTY FILTER
-// ══════════════════════════════════════════════════════════
-function buildPropFilter() {
-  const dd = $('prop-dd');
-  const names = S.data.occupancySummary.map(r=>r.property_name).sort();
-  let html = '<div class="ms-opt ms-all'+(S.selProps.length===0?' selected':'')+'" onclick="selectAllProps()"><div class="ms-chk"></div>All Properties ('+names.length+')</div><div class="ms-div"></div>';
-  names.forEach(n=>{
-    const sel = S.selProps.includes(n);
-    html+='<div class="ms-opt'+(sel?' selected':'')+'" onclick="toggleProp(\''+esc(n.replace(/'/g,"\\'"))+'\')">'+'<div class="ms-chk"></div>'+esc(n)+'</div>';
+// ── NAVIGATION ──
+document.querySelectorAll('.sb-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const view = el.dataset.view;
+    if (view === currentView) return;
+    document.querySelector('.sb-item.active')?.classList.remove('active');
+    el.classList.add('active');
+    currentView = view;
+    document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+    document.getElementById('view-' + view).style.display = '';
+    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Turns' };
+    document.getElementById('viewTitle').textContent = titles[view] || '';
+    renderCurrentView();
   });
-  dd.innerHTML = html;
-  updatePropTrigger();
-}
-function togglePropDD() { $('prop-dd').classList.toggle('open'); }
-function selectAllProps() { S.selProps=[]; buildPropFilter(); renderAll(); }
-function toggleProp(n) { const i=S.selProps.indexOf(n); if(i>=0)S.selProps.splice(i,1);else S.selProps.push(n); buildPropFilter(); renderAll(); }
-function updatePropTrigger() {
-  const t=$('prop-trigger');
-  if(S.selProps.length===0) t.textContent='All Properties';
-  else if(S.selProps.length===1) t.textContent=S.selProps[0];
-  else t.textContent=S.selProps.length+' properties';
-}
-document.addEventListener('click',e=>{if(!e.target.closest('#prop-filter'))$('prop-dd').classList.remove('open');});
+});
 
-// ══════════════════════════════════════════════════════════
-// FILTERED DATA
-// ══════════════════════════════════════════════════════════
-function fOcc(){const p=S.selProps;return p.length===0?S.data.occupancySummary:S.data.occupancySummary.filter(r=>p.includes(r.property_name));}
-function fRR(){const p=S.selProps;return p.length===0?S.data.rentRoll:S.data.rentRoll.filter(r=>p.includes(r.property_name));}
-function fVac(){const p=S.selProps;return p.length===0?S.data.vacancy:S.data.vacancy.filter(r=>p.includes(r.property_name));}
-function fExp(){const p=S.selProps;return p.length===0?S.data.leaseExpirations:S.data.leaseExpirations.filter(r=>p.includes(r.property_name));}
-function fNOI(){const p=S.selProps;const all=S.data.noiSummary||[];return p.length===0?all:all.filter(r=>p.includes(r.property_name));}
-// Get most recent month's rows from noi data
-function latestNOI(){
-  const rows=fNOI(); if(!rows.length) return [];
-  const months=rows.map(r=>r.month).filter(Boolean).sort();
-  const latest=months[months.length-1];
-  return rows.filter(r=>r.month===latest);
-}
-// Income statement filters
-function fIS(section){
-  const p=S.selProps;let rows=S.data.incomeStatement||[];
-  if(p.length>0) rows=rows.filter(r=>p.includes(r.property_name));
-  if(section) rows=rows.filter(r=>r.section===section);
-  return rows;
-}
-function latestIS(section){
-  const ln=latestNOI(); if(!ln.length) return fIS(section).slice(0,0);
-  const latest=ln[0].month;
-  return fIS(section).filter(r=>r.month===latest);
-}
-// Group income statement rows by account_name, summing total_amount
-function groupByAcct(rows){
-  const m={};
-  rows.forEach(r=>{const a=r.account_name||'Unknown';if(!m[a])m[a]=0;m[a]+=num(r.total_amount);});
-  return Object.entries(m).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
-}
-// Exact GL account names from Data_Mapping_Directory — debt service items
-// (Source: non_operating_expense section, GL accounts: 277490, 453136, 478883, 484218, 277492, 480938, 485163)
-const DS_ACCTS = new Set([
-  'Mortgage Interest','Mortgage Payment','Mortgage Payment - Seller Carry',
-  'Mortgage Principal','Other Interest Expense','SBA Loan Expense',
-  'Mortgage Escrow Replacement Reserve'
-]);
-// Non-CAPEX non-operating items (asset/admin/legal — below the NOI line but not debt or construction)
-const OTHER_NOE_ACCTS = new Set([
-  'Asset Management Fee','Earnest Money Expense','Legal and Consulting Fees',
-  'MIP Insurance','Parent Company Expenses','Model Staging','Signage',
-  'Plan Printing','Equipment Rental'
-]);
-// Pass-through GL IDs excluded from all P&L (BG Check Income 479629, NSF Fee Income 13)
-// These are already filtered in v_income_statement (is_pass_through = FALSE), listed here for reference
+// ── PROPERTY MULTI-SELECT ──
+const propTrigger  = document.getElementById('propTrigger');
+const propDropdown = document.getElementById('propDropdown');
+const propSearch   = document.getElementById('propSearch');
+const propAllChip  = document.getElementById('propAllChip');
 
-// ══════════════════════════════════════════════════════════
-// RENDER ALL
-// ══════════════════════════════════════════════════════════
-function renderAll() {
-  const has = S.data.occupancySummary.length>0;
-  $('empty-state').style.display = has?'none':'';
-  if(!has){$('tab-kpi').innerHTML='';$('tab-tracker').innerHTML='';return;}
-  renderKPI();
-  renderTracker();
-  switchTab(S.activeTab);
-}
+propTrigger.addEventListener('click', (e) => {
+  if (e.target.classList.contains('remove')) return;
+  propDropdown.classList.toggle('open');
+  if (propDropdown.classList.contains('open')) propSearch.focus();
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('propMulti').contains(e.target)) propDropdown.classList.remove('open');
+});
+propSearch.addEventListener('input', () => renderPropDropdown());
+document.getElementById('selectAllProps').addEventListener('click', (e) => {
+  e.preventDefault();
+  selectedProps = [];
+  renderPropChips();
+  renderPropDropdown();
+  onFiltersChanged();
+});
+document.getElementById('clearAllProps').addEventListener('click', (e) => {
+  e.preventDefault();
+  selectedProps = [];
+  renderPropChips();
+  renderPropDropdown();
+  onFiltersChanged();
+});
 
-// ══════════════════════════════════════════════════════════
-// KPI OVERVIEW
-// ══════════════════════════════════════════════════════════
-function renderKPI() {
-  const occ=fOcc(),rr=fRR(),vac=fVac(),le=fExp();
-  const tU=occ.reduce((s,r)=>s+num(r.api_units),0);
-  const oU=occ.reduce((s,r)=>s+num(r.occupied_units),0);
-  const vU=occ.reduce((s,r)=>s+num(r.vacant_units),0);
-  const pU=occ.reduce((s,r)=>s+num(r.preleased_units),0);
-  const pO=tU>0?(oU/tU*100):0;
-  const plO=tU>0?((oU+pU)/tU*100):0;
-  const aR=occ.reduce((s,r)=>s+num(r.total_actual_rent),0);
-  const mR=occ.reduce((s,r)=>s+num(r.total_market_rent),0);
-  const vL=occ.reduce((s,r)=>s+num(r.vacancy_loss_market),0);
-  const e30=le.filter(r=>r.expiry_bucket==='EXPIRING_30').length;
-  const e60=le.filter(r=>r.expiry_bucket==='EXPIRING_60').length;
-  const e90=le.filter(r=>r.expiry_bucket==='EXPIRING_90').length;
-  const mtm=rr.filter(r=>r.lease_type==='Month-to-Month').length;
-
-  $('tab-kpi').innerHTML=`
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-accent" style="background:${pO>=90?'var(--green)':pO>=80?'var(--amber)':'var(--red)'}"></div>
-        <div class="kpi-label">Physical Occupancy</div><div class="kpi-value">${fPct(pO)}</div><div class="kpi-sub">${fmt(oU)} of ${fmt(tU)} units</div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--accent)"></div>
-        <div class="kpi-label">Preleased Occupancy</div><div class="kpi-value">${fPct(plO)}</div><div class="kpi-sub">${fmt(pU)} preleased</div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div>
-        <div class="kpi-label">Monthly Rent</div><div class="kpi-value">${fCur(aR)}</div><div class="kpi-sub">Market: ${fCur(mR)}</div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--red)"></div>
-        <div class="kpi-label">Vacancy Loss</div><div class="kpi-value">${fCur(vL)}</div><div class="kpi-sub">${fmt(vU)} vacant units</div></div>
-      <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div>
-        <div class="kpi-label">Lease Expirations</div><div class="kpi-value">${fmt(e30+e60+e90)}</div><div class="kpi-sub">30d: ${e30} · 60d: ${e60} · 90d: ${e90}</div></div>
-      ${(()=>{const o=fOcc();const ln=latestNOI();const tMR=o.reduce((s,r)=>s+num(r.total_market_rent),0);const tInc=ln.reduce((s,r)=>s+num(r.total_income),0);const eo=tMR>0?tInc/tMR*100:null;const col=eo===null?'var(--text3)':eo>=95?'var(--green)':eo>=85?'var(--amber)':'var(--red)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Economic Occupancy</div><div class="kpi-value">${eo===null?'—':fPct(eo)}</div><div class="kpi-sub">Income / Market Rent Potential</div></div>`;})()}
-      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);const er=tI>0?Math.abs(tE)/tI:null;const mo=ln.length?ln[0].month:'';const col=er===null?'var(--text3)':er<0.5?'var(--green)':er<0.65?'var(--amber)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Expense Ratio</div><div class="kpi-value">${er===null?'—':fPct(er*100)}</div><div class="kpi-sub">${mo?mo+' · ':''} Opex / Income</div></div>`;})()}
-      ${(()=>{const ln=latestNOI();const tI=ln.reduce((s,r)=>s+num(r.total_income),0);const mo=ln.length?ln[0].month:'';return `<div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label">Total Income</div><div class="kpi-value">${fCur(tI)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
-      ${(()=>{const ln=latestNOI();const noi=ln.reduce((s,r)=>s+num(r.noi),0);const mo=ln.length?ln[0].month:'';const col=noi>=0?'var(--green)':'var(--red)';return `<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">NOI</div><div class="kpi-value">${fCur(noi)}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
-      ${(()=>{const noRows=latestIS('non_operating_expense');const cxTotal=groupByAcct(noRows).filter(([a])=>!DS_ACCTS.has(a)&&!OTHER_NOE_ACCTS.has(a)).reduce((s,[,v])=>s+Math.abs(v),0);const mo=noRows.length?noRows[0].month:'';const col=noRows.length?'var(--accent)':'var(--text3)';return`<div class="kpi-card"><div class="kpi-accent" style="background:${col}"></div><div class="kpi-label">Total CAPEX Spend</div><div class="kpi-value">${noRows.length?fCur(cxTotal):'—'}</div><div class="kpi-sub">${mo||'Most recent month'}</div></div>`;})()}
-    </div>
-    <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Average Rent by Bedroom Type</div><div class="chart-wrap"><canvas id="chart-bed"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Occupancy by Property</div><div class="chart-wrap" style="height:${Math.max(250,occ.length*22+40)}px"><canvas id="chart-occ"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Lease Expiration Pipeline</div><div class="chart-wrap"><canvas id="chart-lease"></canvas></div></div>
-    </div>
-    <div class="section-header"><h3>Debt Service &amp; CAPEX</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
-    ${(()=>{
-      // Use exact account names from Data_Mapping_Directory GL mapping
-      // DS_ACCTS = 7 specific debt service accounts; OTHER_NOE_ACCTS = admin/misc; everything else = CAPEX
-      const noRows=latestIS('non_operating_expense');
-      const noiRows=latestIS('non_operating_income');
-      if(!noRows.length&&!noiRows.length){
-        const hasIS=S.data.incomeStatement&&S.data.incomeStatement.length>0;
-        return'<div class="placeholder-section"><strong>'+(hasIS?'No non-operating data found for the latest period.':'Refresh to load from BigQuery.')+'</strong>'+(hasIS?'':'<br>Debt service (mortgage interest, principal, seller carry) and CAPEX will appear here once data is loaded.')+'</div>';
+function renderPropDropdown() {
+  const q = propSearch.value.toLowerCase().trim();
+  const list = document.getElementById('propDropdownList');
+  const filtered = allProperties.filter(p => !q || p.name.toLowerCase().includes(q));
+  if (!filtered.length) {
+    list.innerHTML = '<div class="prop-dd-empty">No matching properties</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(p => {
+    const sel = selectedProps.length === 0 || selectedProps.includes(p.id);
+    return `<div class="prop-dd-item${sel && selectedProps.length > 0 ? ' selected' : ''}" data-id="${p.id}">
+      <div class="check">${sel && selectedProps.length > 0 ? '✓' : ''}</div>
+      <span>${p.name}</span>
+      <span class="units">${p.units || ''} units</span>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.prop-dd-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.id);
+      if (selectedProps.includes(id)) {
+        selectedProps = selectedProps.filter(x => x !== id);
+      } else {
+        selectedProps.push(id);
       }
-      const grp=groupByAcct(noRows);
-      // Debt service: exact match on DS_ACCTS (Mortgage Interest, Principal, Seller Carry, SBA Loan, etc.)
-      const dsGrp=grp.filter(([a])=>DS_ACCTS.has(a));
-      // CAPEX: everything in non_operating_expense that is NOT debt service and NOT misc
-      const cxGrp=grp.filter(([a])=>!DS_ACCTS.has(a)&&!OTHER_NOE_ACCTS.has(a));
-      // Misc: Asset Mgmt Fee, Earnest Money, Legal, MIP Insurance, etc.
-      const otGrp=grp.filter(([a])=>OTHER_NOE_ACCTS.has(a));
-      // Non-operating income (e.g., Mortgage SWAP Refund)
-      const noiGrp=groupByAcct(noiRows);
-      const dsTotal=dsGrp.reduce((s,[,v])=>s+v,0);
-      const cxTotal=cxGrp.reduce((s,[,v])=>s+v,0);
-      const otTotal=otGrp.reduce((s,[,v])=>s+v,0);
-      const noiTotal=noiGrp.reduce((s,[,v])=>s+v,0);
-      const mo=noRows.length?noRows[0].month:noiRows.length?noiRows[0].month:'';
-      const rowHtml=(arr,color)=>arr.map(([a,v])=>`<tr><td style="padding-left:20px;">${esc(a)}</td><td class="num" style="color:${color||'var(--text2)'}">${fCur(v)}</td></tr>`).join('');
-      const secHdr=(label,total,color)=>`<tr><td style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${color};padding:10px 12px 5px;background:var(--bg3);">${label}</td><td class="num" style="font-size:10px;font-weight:700;color:${color};padding:10px 12px 5px;background:var(--bg3);">${fCur(total)}</td></tr>`;
-      let body='';
-      if(dsGrp.length){body+=secHdr('Debt Service',dsTotal,'var(--red)')+rowHtml(dsGrp,'var(--red)');}
-      if(cxGrp.length){body+=secHdr('Capital Expenditures (CAPEX)',cxTotal,'var(--accent)')+rowHtml(cxGrp,'var(--accent)');}
-      if(otGrp.length){body+=secHdr('Other Non-Operating',otTotal,'var(--text3)')+rowHtml(otGrp);}
-      if(noiGrp.length){body+=secHdr('Non-Operating Income',noiTotal,'var(--green)')+rowHtml(noiGrp,'var(--green)');}
-      if(!body) return'<div class="placeholder-section"><strong>No non-operating transactions found for this period.</strong></div>';
-      const grandTotal=dsTotal+cxTotal+otTotal+noiTotal;
-      return`<div style="overflow-x:auto"><table class="fin-table" style="max-width:700px"><thead><tr><th>Account</th><th class="num">${mo}</th></tr></thead><tbody>${body}</tbody><tfoot><tr><td><strong>Total Non-Operating</strong></td><td class="num"><strong>${fCur(grandTotal)}</strong></td></tr></tfoot></table></div>`;
-    })()}
-    <div class="section-header"><h3>Financial Summary</h3><span class="tag" style="background:rgba(34,201,122,.12);color:var(--green);border:1px solid rgba(34,201,122,.2);">Live</span></div>
-    ${(()=>{
-      const ln=latestNOI();
-      if(!ln.length) return '<div class="placeholder-section"><strong>No financial data available.</strong> Refresh to load from BigQuery.</div>';
-      const mo=ln[0].month||'';
-      const tI=ln.reduce((s,r)=>s+num(r.total_income),0);
-      const tE=ln.reduce((s,r)=>s+num(r.total_expenses),0);
-      const tN=ln.reduce((s,r)=>s+num(r.noi),0);
-      const tX=ln.reduce((s,r)=>s+num(r.non_operating),0);
-      const tNet=ln.reduce((s,r)=>s+num(r.net_income),0);
-      // Expenses are negative values per mapping rules — use Math.abs for the ratio display
-      const er=tI>0?fPct(Math.abs(tE)/tI*100):'—';
-      let rows=ln.slice().sort((a,b)=>a.property_name>b.property_name?1:-1).map(r=>{
-        const i=num(r.total_income),e=num(r.total_expenses),n=num(r.noi),net=num(r.net_income),ratio=i>0?fPct(Math.abs(e)/i*100):'—';
-        const nc=n>=0?'var(--green)':'var(--red)';
-        return `<tr><td>${esc(r.property_name)}</td><td class="num">${fCur(i)}</td><td class="num">${fCur(e)}</td><td class="num" style="color:${nc}">${fCur(n)}</td><td class="num">${ratio}</td><td class="num">${fCur(net)}</td></tr>`;
-      }).join('');
-      const nc=tN>=0?'var(--green)':'var(--red)';
-      return `<div style="overflow-x:auto"><table class="fin-table"><thead><tr><th>Property</th><th class="num">Income</th><th class="num">Expenses</th><th class="num">NOI</th><th class="num">Exp Ratio</th><th class="num">Net Income</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td><strong>Portfolio Total</strong><span style="color:var(--text3);font-size:11px;margin-left:6px;">${mo}</span></td><td class="num"><strong>${fCur(tI)}</strong></td><td class="num"><strong>${fCur(tE)}</strong></td><td class="num"><strong style="color:${nc}">${fCur(tN)}</strong></td><td class="num"><strong>${er}</strong></td><td class="num"><strong>${fCur(tNet)}</strong></td></tr></tfoot></table></div>`;
-    })()}
-  `;
-  setTimeout(()=>{renderBedChart();renderOccChart(occ);renderLeaseChart(le,mtm);},50);
+      // If all selected or none, treat as "all"
+      if (selectedProps.length === allProperties.length) selectedProps = [];
+      renderPropChips();
+      renderPropDropdown();
+      onFiltersChanged();
+    });
+  });
+  document.getElementById('propSelectedCount').textContent =
+    selectedProps.length === 0 ? `All ${allProperties.length}` : `${selectedProps.length} selected`;
 }
 
-// ══════════════════════════════════════════════════════════
-// CHARTS
-// ══════════════════════════════════════════════════════════
-const CC=['#3b82f6','#22c97a','#f5a623','#e8504a','#9b7aff','#ec4899','#06b6d4','#84cc16'];
-Chart.defaults.color='#8c939e';
-Chart.defaults.borderColor='rgba(255,255,255,0.07)';
-
-function destroyChart(k){if(charts[k]){charts[k].destroy();charts[k]=null;}}
-
-function renderBedChart(){
-  destroyChart('bed');
-  const c=document.getElementById('chart-bed');if(!c)return;
-  let bm=S.data.bedroomMix;
-  if(S.selProps.length>0){
-    const rr=fRR();const m={};
-    rr.forEach(r=>{const b=r.bedrooms||'Unknown';if(!m[b])m[b]={t:0,s:0};m[b].t++;m[b].s+=num(r.lease_rent);});
-    bm=Object.entries(m).map(([bedrooms,v])=>({bedrooms,avg_actual_rent:v.t>0?Math.round(v.s/v.t):0,total_units:v.t}));
+function renderPropChips() {
+  // Remove existing chips (except allChip and search)
+  propTrigger.querySelectorAll('.prop-chip:not(#propAllChip)').forEach(c => c.remove());
+  if (selectedProps.length === 0) {
+    propAllChip.style.display = '';
+    propAllChip.innerHTML = 'All Properties';
+  } else if (selectedProps.length <= 3) {
+    propAllChip.style.display = 'none';
+    selectedProps.forEach(id => {
+      const p = allProperties.find(x => x.id === id);
+      if (!p) return;
+      const chip = document.createElement('span');
+      chip.className = 'prop-chip';
+      chip.innerHTML = `${p.name} <span class="remove" data-id="${id}">×</span>`;
+      chip.querySelector('.remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedProps = selectedProps.filter(x => x !== id);
+        renderPropChips();
+        renderPropDropdown();
+        onFiltersChanged();
+      });
+      propTrigger.insertBefore(chip, propSearch);
+    });
+  } else {
+    propAllChip.style.display = '';
+    propAllChip.innerHTML = `${selectedProps.length} Properties <span class="remove" id="clearChips">×</span>`;
+    document.getElementById('clearChips').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedProps = [];
+      renderPropChips();
+      renderPropDropdown();
+      onFiltersChanged();
+    });
   }
-  const lm={'OneBed':'1 Bed','TwoBed':'2 Bed','ThreeBed':'3 Bed','FourBed':'4 Bed','FiveBed':'5 Bed','Studio':'Studio'};
-  const labels=bm.map(r=>lm[r.bedrooms]||r.bedrooms);
-  const values=bm.map(r=>num(r.avg_actual_rent));
-  charts.bed=new Chart(c,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:CC.slice(0,labels.length),borderWidth:2,borderColor:'#13161b'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:"'DM Sans'",size:10},padding:10,usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:ctx=>ctx.label+': $'+fmt(ctx.raw)+' avg rent'}}}}});
 }
 
-function renderOccChart(occ){
-  destroyChart('occ');
-  const c=document.getElementById('chart-occ');if(!c)return;
-  const sorted=[...occ].sort((a,b)=>num(a.physical_occupancy_pct)-num(b.physical_occupancy_pct));
-  const labels=sorted.map(r=>{const n=r.property_name||'';return n.length>25?n.slice(0,25)+'...':n;});
-  const values=sorted.map(r=>num(r.physical_occupancy_pct));
-  const colors=values.map(v=>v>=95?'#22c97a':v>=90?'#34d399':v>=80?'#f5a623':'#e8504a');
-  charts.occ=new Chart(c,{type:'bar',data:{labels,datasets:[{data:values,backgroundColor:colors,borderRadius:3,barThickness:14}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%',font:{family:"'DM Mono'",size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{family:"'DM Sans'",size:9}},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fPct(ctx.raw)}}}}});
+// ── MONTH FILTER ──
+const monthFilter = document.getElementById('monthFilter');
+monthFilter.addEventListener('change', () => {
+  selectedMonth = monthFilter.value;
+  onFiltersChanged();
+});
+
+function populateMonthFilter(months) {
+  monthFilter.innerHTML = months.map(m => `<option value="${m}"${m === selectedMonth ? ' selected' : ''}>${fmtMonth(m)}</option>`).join('');
 }
 
-function renderLeaseChart(le,mtm){
-  destroyChart('lease');
-  const c=document.getElementById('chart-lease');if(!c)return;
-  const bk=['EXPIRED','EXPIRING_30','EXPIRING_60','EXPIRING_90'];
-  const bl=['Expired','30 Days','60 Days','90 Days','MTM'];
-  const bc=['#555c66','#e8504a','#f5a623','#22c97a','#9b7aff'];
-  const ct=bk.map(b=>le.filter(r=>r.expiry_bucket===b).length);ct.push(mtm);
-  charts.lease=new Chart(c,{type:'bar',data:{labels:bl,datasets:[{data:ct,backgroundColor:bc,borderRadius:5,barThickness:32}]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{font:{family:"'DM Mono'",size:9}},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{font:{family:"'DM Sans'",size:10,weight:500}},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+' leases'}}}}});
+// ── FILTER CHANGE HANDLER ──
+function onFiltersChanged() {
+  renderCurrentView();
 }
 
-// ══════════════════════════════════════════════════════════
-// UNIT TRACKER
-// ══════════════════════════════════════════════════════════
-function renderTracker(){
-  const occ=fOcc(),vac=fVac(),le=fExp(),rr=fRR();
-  const mtm=rr.filter(r=>r.lease_type==='Month-to-Month');
-  const tU=occ.reduce((s,r)=>s+num(r.api_units),0);
-  const oU=occ.reduce((s,r)=>s+num(r.occupied_units),0);
-  const vU=occ.reduce((s,r)=>s+num(r.vacant_units),0);
-  const pU=occ.reduce((s,r)=>s+num(r.preleased_units),0);
-  const pO=tU>0?(oU/tU*100):0;
-  const plO=tU>0?((oU+pU)/tU*100):0;
-  const sorted=[...occ].sort((a,b)=>num(b.api_units)-num(a.api_units));
-  const expiring=le.filter(r=>['EXPIRING_30','EXPIRING_60','EXPIRING_90','EXPIRED'].includes(r.expiry_bucket));
-  const bl={'OneBed':'1x1','TwoBed':'2x1','ThreeBed':'3x1','FourBed':'4x1','FiveBed':'5x1','Studio':'Studio'};
-
-  $('tab-tracker').innerHTML=`
-    <div class="tracker-layout">
-      <div>
-        <div class="table-card">
-          <div class="table-header"><h4>All Properties</h4><span class="table-count">${occ.length} properties</span></div>
-          <div class="table-wrap" style="max-height:600px">
-            <table class="dtable"><thead><tr><th>Property</th><th class="num">Units</th><th class="num">Vac</th><th class="num">AV</th><th class="num">MR</th><th class="num">Occ</th><th class="num">Occ %</th><th class="num">PL</th><th class="num">PL %</th></tr></thead>
-            <tbody>${sorted.map(r=>{
-              const u=num(r.api_units),o=num(r.occupied_units),v=num(r.vacant_units),p=num(r.preleased_units);
-              const oP=num(r.physical_occupancy_pct),pP=num(r.preleased_occupancy_pct);
-              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc(r.property_name)}</td><td class="num">${u}</td><td class="num">${v}</td><td class="num" style="color:var(--text3)">--</td><td class="num" style="color:var(--text3)">--</td><td class="num">${o}</td><td class="num"><span class="occ-bar-wrap"><span class="occ-bar ${occCls(oP)}" style="width:${oP}%"></span></span>${fPct(oP,0)}</td><td class="num">${p}</td><td class="num">${fPct(pP,0)}</td></tr>`;
-            }).join('')}</tbody>
-            <tfoot><tr class="grand-total"><td>Grand Total</td><td class="num">${fmt(tU)}</td><td class="num">${fmt(vU)}</td><td class="num">--</td><td class="num">--</td><td class="num">${fmt(oU)}</td><td class="num">${fPct(pO,0)}</td><td class="num">${fmt(pU)}</td><td class="num">${fPct(plO,0)}</td></tr></tfoot></table>
-          </div>
-          <div style="padding:7px 16px;font-size:9px;color:var(--text3);border-top:1px solid var(--border);">AV: Available · MR: Make Ready · PL: Preleased · <em>AV/MR data coming soon</em></div>
-        </div>
-      </div>
-      <div>
-        <div class="table-card">
-          <div class="table-header"><h4>Vacant Units</h4><span class="table-count">${vac.length} units</span></div>
-          <div class="table-wrap" style="max-height:320px">
-            <table class="dtable"><thead><tr><th>Property</th><th>Unit</th><th>Type</th><th class="num">Mkt Rent</th><th class="num">Days Vac</th><th>PL</th></tr></thead>
-            <tbody>${vac.length===0?'<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text3)">No vacant units</td></tr>':''}
-            ${vac.map(r=>{
-              const dv=num(r.days_vacant);const dc=dv>60?'var(--red)':dv>30?'var(--amber)':'var(--text2)';
-              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td class="num">${fCur(num(r.market_rent))}</td><td class="num" style="color:${dc};font-weight:600">${dv>0?dv:'--'}</td><td>${r.is_preleased==='true'||r.is_preleased===true?'<span style="color:var(--green);font-weight:600">Yes</span>':''}</td></tr>`;
-            }).join('')}</tbody></table>
-          </div>
-        </div>
-        <div class="table-card">
-          <div class="table-header"><h4>Lease Expirations &amp; MTM</h4><span class="table-count">${expiring.length+mtm.length} units</span></div>
-          <div class="table-wrap" style="max-height:400px">
-            <table class="dtable"><thead><tr><th>Property</th><th>Unit</th><th>Type</th><th>Exp</th><th>MTM</th><th>Lease Ending</th><th class="num">Rent</th><th>Tenant</th></tr></thead>
-            <tbody>${(expiring.length+mtm.length)===0?'<tr><td colspan="8" style="text-align:center;padding:18px;color:var(--text3)">No expiring leases</td></tr>':''}
-            ${expiring.map(r=>{
-              const b=r.expiry_bucket;let dc='ldot-90';if(b==='EXPIRED')dc='ldot-expired';else if(b==='EXPIRING_30')dc='ldot-30';else if(b==='EXPIRING_60')dc='ldot-60';
-              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td><span class="ldot ${dc}"></span></td><td></td><td>${r.lease_to_date||'--'}</td><td class="num">${fCur(num(r.rent_amount))}</td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.tenant_names)}">${esc((r.tenant_names||'').substring(0,18))}</td></tr>`;
-            }).join('')}
-            ${mtm.length>0?'<tr><td colspan="8" style="padding:5px 10px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--purple);background:rgba(155,122,255,.08);">Month-to-Month (At-Will)</td></tr>':''}
-            ${mtm.map(r=>{
-              return`<tr><td class="prop-name" title="${esc(r.property_name)}">${esc((r.property_name||'').substring(0,22))}</td><td>${esc(r.unit_number)}</td><td>${bl[r.bedrooms]||r.bedrooms||'--'}</td><td></td><td><span class="ldot ldot-mtm"></span></td><td>At-Will</td><td class="num">${fCur(num(r.lease_rent))}</td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.tenant_names)}">${esc((r.tenant_names||'').substring(0,18))}</td></tr>`;
-            }).join('')}</tbody></table>
-          </div>
-          <div class="lease-legend">
-            <div class="legend-item"><span class="ldot ldot-30"></span> 30 days</div>
-            <div class="legend-item"><span class="ldot ldot-60"></span> 60 days</div>
-            <div class="legend-item"><span class="ldot ldot-90"></span> 90 days</div>
-            <div class="legend-item"><span class="ldot ldot-expired"></span> Expired</div>
-            <div class="legend-item"><span class="ldot ldot-mtm"></span> MTM</div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+function getFilteredProps() {
+  if (selectedProps.length === 0) return allProperties;
+  return allProperties.filter(p => selectedProps.includes(p.id));
 }
 
-// ══════════════════════════════════════════════════════════
-// BQ MODAL
-// ══════════════════════════════════════════════════════════
-function openBQModal(){renderBQModal();$('bq-modal').classList.add('open');}
-function closeBQModal(){$('bq-modal').classList.remove('open');}
-function renderBQModal(){
-  const t=S.lastSync?new Date(S.lastSync).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):null;
-  $('bq-modal-body').innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;font-size:11px;margin-bottom:14px;
-      background:${S.connected?'rgba(34,201,122,.06)':'rgba(61,127,255,.06)'};border:1px solid ${S.connected?'rgba(34,201,122,.12)':'rgba(61,127,255,.12)'};">
-      <div style="width:7px;height:7px;border-radius:50%;background:${S.connected?'var(--green)':'var(--text3)'};flex-shrink:0;${S.connected?'box-shadow:0 0 6px var(--green);':''}"></div>
-      <span style="color:${S.connected?'var(--green)':'var(--text2)'}">
-        ${S.connected?'Connected to BigQuery'+(t?' — last sync: '+t:''):'Not connected — deploy the Edge Function and click Test Connection'}
-      </span>
+// ── RENDER DISPATCH ──
+function renderCurrentView() {
+  switch (currentView) {
+    case 'overview': renderOverview(); break;
+    case 'pnl': renderPnL(); break;
+    case 'occupancy': renderOccupancy(); break;
+    case 'units': renderUnits(); break;
+    case 'turns': renderTurns(); break;
+  }
+}
+
+// ════════════════════════════════════════
+//  VIEW: FINANCIAL OVERVIEW
+// ════════════════════════════════════════
+function renderOverview() {
+  if (!DATA.noiSummary) {
+    document.getElementById('finKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const month = selectedMonth;
+  const propIds = selectedProps.length > 0 ? selectedProps : allProperties.map(p => p.id);
+  const propSet = new Set(propIds);
+
+  // Current month NOI data
+  const monthData = DATA.noiSummary.filter(r => r.month === month && propSet.has(r.property_id));
+  const totalIncome   = monthData.reduce((s, r) => s + (r.revenue || 0), 0);
+  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.expenses || 0), 0);
+  const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
+  const expenseRatio  = totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0;
+  const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
+  const noiPerUnit    = totalUnits > 0 ? totalNOI / totalUnits : 0;
+
+  // Previous month comparison
+  const prevMonth = getPrevMonth(month);
+  const prevData  = DATA.noiSummary.filter(r => r.month === prevMonth && propSet.has(r.property_id));
+  const prevNOI   = prevData.reduce((s, r) => s + (r.noi || 0), 0);
+  const noiChange = prevNOI !== 0 ? ((totalNOI - prevNOI) / Math.abs(prevNOI) * 100) : 0;
+
+  // Count negative NOI properties
+  const negNOI = monthData.filter(r => (r.noi || 0) < 0).length;
+  const propCount = monthData.length;
+
+  document.getElementById('finKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Operating Income</div>
+      <div class="kpi-value">${fmt$(totalIncome)}</div>
+      <div class="kpi-sub">${fmtMonth(month)}</div>
     </div>
-    <div id="bq-test-status"></div>
-    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:14px 0 8px;">One-time setup</div>
-    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Place your service account JSON key for project <code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">api-data-pull-492404</code> with <strong style="color:var(--text);">BigQuery Data Viewer</strong> + <strong style="color:var(--text);">BigQuery Job User</strong> roles.</div></div>
-    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Deploy the Edge Function:<br><code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase functions deploy bq-dashboard</code></div></div>
-    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Set the secret (different from Budget Tracking):<br><code style="font-family:var(--mono);font-size:10px;background:var(--bg4);padding:1px 4px;border-radius:3px;">supabase secrets set GOOGLE_SERVICE_ACCOUNT_DASHBOARD="$(cat key.json)"</code></div></div>
-    <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;"><div style="width:22px;height:22px;border-radius:50%;background:rgba(61,127,255,.1);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.5;">Click <strong style="color:var(--text);">Test Connection</strong> below — once green, hit <strong style="color:var(--text);">Refresh</strong> to load live data.</div></div>
-    <div style="padding:12px;background:rgba(61,127,255,.05);border:1px solid rgba(61,127,255,.1);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.5;margin-top:12px;">
-      <strong style="color:var(--accent);">Data source:</strong> Buildium API via BigQuery dataset <code style="font-family:var(--mono);font-size:10px;">buildium_data</code>.<br>
-      <strong style="color:var(--accent);">Note:</strong> This is completely separate from the Budget Tracking BigQuery (PointGuard).
-    </div>`;
-  $('bq-modal-footer').innerHTML=`<button class="btn-ghost" onclick="closeBQModal()">Close</button><button class="btn-primary" id="bq-test-btn" onclick="testConnection()">Test Connection</button>`;
+    <div class="kpi">
+      <div class="kpi-label">Operating Expenses</div>
+      <div class="kpi-value">${fmt$(totalExpense)}</div>
+      <div class="kpi-sub">${fmtMonth(month)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Operating Income</div>
+      <div class="kpi-value ${totalNOI >= 0 ? 'good' : 'bad'}">${fmt$(totalNOI)}</div>
+      <div class="kpi-sub">
+        ${noiChange !== 0 ? `<span class="kpi-change ${noiChange >= 0 ? 'up' : 'down'}">${noiChange >= 0 ? '▲' : '▼'} ${Math.abs(noiChange).toFixed(1)}%</span> vs prev month` : ''}
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Expense Ratio</div>
+      <div class="kpi-value ${expenseRatio > 50 ? 'warn' : ''}">${fmtPct1(expenseRatio)}</div>
+      <div class="kpi-sub">Expenses ÷ Income</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">NOI per Unit</div>
+      <div class="kpi-value">${fmt$(noiPerUnit)}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Negative NOI</div>
+      <div class="kpi-value ${negNOI > 0 ? 'bad' : 'good'}">${negNOI}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(negNOI / propCount * 100) : 0}% of properties</div>
+    </div>
+  `;
+
+  // Property Metrics
+  const occData = DATA.occupancy ? DATA.occupancy.filter(r => propSet.has(r.property_id)) : [];
+  const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
+  const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
+  const highExpRatio = monthData.filter(r => {
+    const rev = r.revenue || 0;
+    const exp = Math.abs(r.expenses || 0);
+    return rev > 0 && (exp / rev) > 0.5;
+  }).length;
+
+  document.getElementById('propMetrics').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Avg Physical Occupancy</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-sub">${occData.length} properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Negative Cash Flow</div>
+      <div class="kpi-value ${negCF > 0 ? 'bad' : 'good'}">${negCF}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(negCF / propCount * 100) : 0}% of properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Expense Ratio > 50%</div>
+      <div class="kpi-value ${highExpRatio > 0 ? 'warn' : 'good'}">${highExpRatio}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(highExpRatio / propCount * 100) : 0}% of properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total Properties</div>
+      <div class="kpi-value">${propCount}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} units</div>
+    </div>
+  `;
+
+  // Charts
+  renderIncExpChart(propIds);
+  renderNOIChart(propIds);
+
+  // Property performance table
+  renderPropPerfTable(monthData);
 }
 
-// ══════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════
-(function init(){
-  try{
-    const meta=JSON.parse(localStorage.getItem('bpos_dash_meta')||'{}');
-    const data=JSON.parse(localStorage.getItem('bpos_dash_data')||'{}');
-    if(meta.connected&&data.occupancySummary&&data.occupancySummary.length>0){
-      S.connected=meta.connected;S.lastSync=meta.lastSync;S.data=data;
-      buildPropFilter();renderAll();
+function renderIncExpChart(propIds) {
+  const canvas = document.getElementById('incExpChart');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 220 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '220px';
+  ctx.scale(2, 2);
+  const W = rect.width, H = 220;
+  ctx.clearRect(0, 0, W, H);
+
+  const propSet = new Set(propIds);
+  const months = DATA.months.slice(-12);
+  if (!months.length || !DATA.noiSummary) return;
+
+  const incomeByMonth = [], expByMonth = [];
+  months.forEach(m => {
+    const rows = DATA.noiSummary.filter(r => r.month === m && propSet.has(r.property_id));
+    incomeByMonth.push(rows.reduce((s, r) => s + (r.revenue || 0), 0));
+    expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.expenses || 0), 0));
+  });
+
+  const allVals = [...incomeByMonth, ...expByMonth];
+  const maxVal = Math.max(...allVals, 1);
+  const minVal = 0;
+  const padL = 60, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#555c66';
+    ctx.font = '10px DM Mono';
+    ctx.textAlign = 'right';
+    const val = maxVal - (maxVal / 4) * i;
+    ctx.fillText(fmt$(val), padL - 8, y + 4);
+  }
+
+  // X labels
+  ctx.fillStyle = '#555c66';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'center';
+  months.forEach((m, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
+  });
+
+  // Lines
+  function drawLine(data, color, fillColor) {
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      const y = padT + chartH - (v / maxVal) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Fill
+    ctx.lineTo(padL + chartW, padT + chartH);
+    ctx.lineTo(padL, padT + chartH);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Dots
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      const y = padT + chartH - (v / maxVal) * chartH;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(incomeByMonth, '#22c97a', 'rgba(34,201,122,0.08)');
+  drawLine(expByMonth, '#e8504a', 'rgba(232,80,74,0.08)');
+
+  // Legend
+  ctx.fillStyle = '#22c97a';
+  ctx.fillRect(padL, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'left';
+  ctx.fillText('Income', padL + 12, H - 2);
+  ctx.fillStyle = '#e8504a';
+  ctx.fillRect(padL + 70, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e';
+  ctx.fillText('Expenses', padL + 82, H - 2);
+
+  document.getElementById('chartPeriodLabel').textContent = `${fmtMonth(months[0])} – ${fmtMonth(months[months.length-1])}`;
+}
+
+function renderNOIChart(propIds) {
+  const canvas = document.getElementById('noiChart');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 220 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '220px';
+  ctx.scale(2, 2);
+  const W = rect.width, H = 220;
+  ctx.clearRect(0, 0, W, H);
+
+  const propSet = new Set(propIds);
+  const months = DATA.months.slice(-12);
+  if (!months.length || !DATA.noiSummary) return;
+
+  const noiByMonth = [];
+  months.forEach(m => {
+    const rows = DATA.noiSummary.filter(r => r.month === m && propSet.has(r.property_id));
+    noiByMonth.push(rows.reduce((s, r) => s + (r.noi || 0), 0));
+  });
+
+  const maxVal = Math.max(...noiByMonth.map(Math.abs), 1) * 1.1;
+  const padL = 60, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const zeroY = padT + chartH / 2;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#555c66';
+    ctx.font = '10px DM Mono';
+    ctx.textAlign = 'right';
+    const val = maxVal - (maxVal * 2 / 4) * i;
+    ctx.fillText(fmt$(val), padL - 8, y + 4);
+  }
+
+  // Zero line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
+
+  // X labels
+  ctx.fillStyle = '#555c66';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'center';
+  months.forEach((m, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
+  });
+
+  // NOI line
+  ctx.beginPath();
+  noiByMonth.forEach((v, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    const y = zeroY - (v / maxVal) * (chartH / 2);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#3d7fff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Dots
+  noiByMonth.forEach((v, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    const y = zeroY - (v / maxVal) * (chartH / 2);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = v >= 0 ? '#22c97a' : '#e8504a';
+    ctx.fill();
+    ctx.strokeStyle = '#0d0f12';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+}
+
+function renderPropPerfTable(monthData) {
+  const tbody = document.getElementById('propPerfBody');
+  if (!monthData.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px;">No data for selected filters</td></tr>';
+    return;
+  }
+  const rows = monthData.map(r => {
+    const p = allProperties.find(x => x.id === r.property_id);
+    const rev = r.revenue || 0;
+    const exp = Math.abs(r.expenses || 0);
+    const noi = r.noi || 0;
+    const ratio = rev > 0 ? (exp / rev * 100) : 0;
+    const units = p ? (p.units || 0) : 0;
+    const noiUnit = units > 0 ? noi / units : 0;
+    const occ = DATA.occupancy ? DATA.occupancy.find(o => o.property_id === r.property_id) : null;
+    const occPct = occ ? Math.round(occ.physical_occupancy) : null;
+    return { name: r.property_name || (p ? p.name : '?'), units, rev, exp, noi, ratio, noiUnit, occPct };
+  }).sort((a, b) => b.noi - a.noi);
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td class="r">${r.units || '—'}</td>
+      <td class="r">${fmtFull$(r.rev)}</td>
+      <td class="r">${fmtFull$(r.exp)}</td>
+      <td class="r ${r.noi >= 0 ? 'good' : 'bad'}">${fmtFull$(r.noi)}</td>
+      <td class="r ${r.ratio > 50 ? 'warn' : ''}">${fmtPct1(r.ratio)}</td>
+      <td class="r ${r.occPct !== null ? (r.occPct >= 90 ? 'good' : r.occPct >= 80 ? 'warn' : 'bad') : ''}">${r.occPct !== null ? fmtPct(r.occPct) : '—'}</td>
+      <td class="r">${fmtFull$(r.noiUnit)}</td>
+    </tr>
+  `).join('');
+
+  // Search filter
+  document.getElementById('propPerfSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = tr.children[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: P&L DETAIL
+// ════════════════════════════════════════
+function renderPnL() {
+  // Populate property dropdown
+  const sel = document.getElementById('pnlPropertySelect');
+  if (sel.children.length <= 1) {
+    sel.innerHTML = allProperties
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(p => `<option value="${p.id}">${p.name}</option>`)
+      .join('');
+  }
+
+  const propId = parseInt(sel.value);
+  const period = document.getElementById('pnlPeriodSelect').value;
+  if (!propId || !DATA.financial) {
+    document.getElementById('pnlTableContainer').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Select a property to view P&L</p></div>';
+    return;
+  }
+
+  // Filter financial data
+  let rows = DATA.financial.filter(r => r.property_id === propId);
+  let months = [...new Set(rows.map(r => r.snapshot_month))].sort();
+
+  if (period === 'trailing12') {
+    months = months.slice(-12);
+  } else if (period === 'ytd') {
+    const thisYear = selectedMonth.split('-')[0];
+    months = months.filter(m => m.startsWith(thisYear));
+  }
+
+  rows = rows.filter(r => months.includes(r.snapshot_month));
+
+  // Group by account and t12_section
+  const sections = { income: {}, expense: {}, non_operating_expense: {}, non_operating_income: {} };
+  rows.forEach(r => {
+    const sec = r.t12_section || 'expense';
+    if (!sections[sec]) sections[sec] = {};
+    if (!sections[sec][r.account_name]) sections[sec][r.account_name] = {};
+    sections[sec][r.account_name][r.snapshot_month] = (sections[sec][r.account_name][r.snapshot_month] || 0) + (r.total_amount || 0);
+  });
+
+  // Build table
+  let html = '<div class="fin-table-wrap"><table class="fin-table"><thead><tr><th>Account</th>';
+  months.forEach(m => html += `<th>${fmtMonth(m)}</th>`);
+  html += '<th>Total</th></tr></thead><tbody>';
+
+  function renderSection(label, accounts, sign) {
+    html += `<tr class="row-header"><td colspan="${months.length + 2}">${label}</td></tr>`;
+    let sectionTotals = {};
+    months.forEach(m => sectionTotals[m] = 0);
+    Object.keys(accounts).sort().forEach(acct => {
+      html += `<tr><td>${acct}</td>`;
+      let rowTotal = 0;
+      months.forEach(m => {
+        const v = accounts[acct][m] || 0;
+        sectionTotals[m] += v;
+        rowTotal += v;
+        html += `<td>${fmtFull$(v)}</td>`;
+      });
+      html += `<td>${fmtFull$(rowTotal)}</td></tr>`;
+    });
+    // Section total
+    html += `<tr class="row-total"><td>Total ${label}</td>`;
+    let grandTotal = 0;
+    months.forEach(m => {
+      grandTotal += sectionTotals[m];
+      html += `<td>${fmtFull$(sectionTotals[m])}</td>`;
+    });
+    html += `<td>${fmtFull$(grandTotal)}</td></tr>`;
+    return sectionTotals;
+  }
+
+  const incTotals = renderSection('Income', sections.income || {}, 1);
+  const expTotals = renderSection('Operating Expenses', sections.expense || {}, -1);
+
+  // NOI row
+  html += `<tr class="row-noi"><td>Net Operating Income</td>`;
+  let noiGrand = 0;
+  months.forEach(m => {
+    const noi = (incTotals[m] || 0) + (expTotals[m] || 0);
+    noiGrand += noi;
+    html += `<td>${fmtFull$(noi)}</td>`;
+  });
+  html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
+
+  // Occupancy row if available
+  if (DATA.occupancy) {
+    const occ = DATA.occupancy.find(o => o.property_id === propId);
+    if (occ) {
+      const p = allProperties.find(x => x.id === propId);
+      html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
+      months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
+      html += `<td></td></tr>`;
     }
-  }catch(e){}
-})();
+  }
+
+  // Expense Ratio row
+  html += `<tr class="pct-row"><td>Expense Ratio</td>`;
+  months.forEach(m => {
+    const inc = incTotals[m] || 0;
+    const exp = Math.abs(expTotals[m] || 0);
+    const ratio = inc > 0 ? (exp / inc * 100) : 0;
+    html += `<td class="${ratio > 50 ? 'warn' : ''}">${fmtPct1(ratio)}</td>`;
+  });
+  html += `<td></td></tr>`;
+
+  // Non-operating sections if present
+  if (Object.keys(sections.non_operating_expense || {}).length) {
+    renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
+  }
+  if (Object.keys(sections.non_operating_income || {}).length) {
+    renderSection('Non-Operating Income', sections.non_operating_income, 1);
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('pnlTableContainer').innerHTML = html;
+}
+
+// Wire up P&L dropdowns
+document.getElementById('pnlPropertySelect').addEventListener('change', renderPnL);
+document.getElementById('pnlPeriodSelect').addEventListener('change', renderPnL);
+
+
+// ════════════════════════════════════════
+//  VIEW: OCCUPANCY
+// ════════════════════════════════════════
+function renderOccupancy() {
+  if (!DATA.occupancy) {
+    document.getElementById('occKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : new Set(allProperties.map(p => p.id));
+  const occ = DATA.occupancy.filter(r => propIds.has(r.property_id));
+
+  const totalUnits    = occ.reduce((s, r) => s + (r.total_units || 0), 0);
+  const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
+  const totalVacant   = occ.reduce((s, r) => s + (r.vacant_units || 0), 0);
+  const totalPreleased = occ.reduce((s, r) => s + (r.preleased_units || 0), 0);
+  const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
+
+  document.getElementById('occKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-sub">${totalOccupied.toLocaleString()} of ${totalUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Vacant Units</div>
+      <div class="kpi-value ${totalVacant > 0 ? 'bad' : 'good'}">${totalVacant}</div>
+      <div class="kpi-sub">${totalUnits > 0 ? fmtPct(totalVacant / totalUnits * 100) : '0%'} vacancy rate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preleased</div>
+      <div class="kpi-value" style="color:var(--teal);">${totalPreleased}</div>
+      <div class="kpi-sub">Future leases signed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Vacancy Exposure</div>
+      <div class="kpi-value ${(totalVacant - totalPreleased) > 0 ? 'warn' : 'good'}">${totalVacant - totalPreleased}</div>
+      <div class="kpi-sub">Vacant minus preleased</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Properties</div>
+      <div class="kpi-value">${occ.length}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+    </div>
+  `;
+
+  // Occupancy table
+  const tbody = document.getElementById('occBody');
+  const sorted = [...occ].sort((a, b) => (a.physical_occupancy || 0) - (b.physical_occupancy || 0));
+  tbody.innerHTML = sorted.map(r => {
+    const occPct = Math.round(r.physical_occupancy || 0);
+    const netExp = (r.vacant_units || 0) - (r.preleased_units || 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td class="r">${r.total_units || 0}</td>
+      <td class="r">${r.occupied_units || 0}</td>
+      <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
+      <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
+      <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
+      <td class="r ${netExp > 0 ? 'warn' : 'good'}">${netExp}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('occSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = tr.children[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+
+  // Lease expirations
+  renderExpirations(propIds);
+}
+
+function renderExpirations(propIds) {
+  if (!DATA.expirations) return;
+  const exps = DATA.expirations.filter(r => propIds.has(r.property_id));
+
+  // Buckets
+  const buckets = { EXPIRING_30: 0, EXPIRING_60: 0, EXPIRING_90: 0, EXPIRED: 0 };
+  exps.forEach(r => { if (buckets.hasOwnProperty(r.bucket)) buckets[r.bucket]++; });
+
+  document.getElementById('expTotal').textContent = `${exps.length} expiring`;
+  document.getElementById('expBuckets').innerHTML = `
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--red);">${buckets.EXPIRED}</div>
+      <div class="eb-label">Already Expired</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--amber);">${buckets.EXPIRING_30}</div>
+      <div class="eb-label">Next 30 Days</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--text);">${buckets.EXPIRING_60}</div>
+      <div class="eb-label">31–60 Days</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count">${buckets.EXPIRING_90}</div>
+      <div class="eb-label">61–90 Days</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('expBody');
+  const sorted = [...exps].sort((a, b) => (a.lease_end || '').localeCompare(b.lease_end || ''));
+  tbody.innerHTML = sorted.map(r => {
+    const badgeClass = r.bucket === 'EXPIRED' ? 'sb-vacant' : r.bucket === 'EXPIRING_30' ? 'sb-mtm' : 'sb-current';
+    const bucketLabel = r.bucket === 'EXPIRED' ? 'Expired' : r.bucket === 'EXPIRING_30' ? '30 Days' : r.bucket === 'EXPIRING_60' ? '60 Days' : '90 Days';
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td>${r.tenant_name || '—'}</td>
+      <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+      <td>${fmtDate(r.lease_end)}</td>
+      <td><span class="status-badge ${badgeClass}">${bucketLabel}</span></td>
+      <td>${r.status || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('expSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      const match = [...cells].some(c => c.textContent.toLowerCase().includes(q));
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: UNIT TRACKER
+// ════════════════════════════════════════
+function renderUnits() {
+  if (!DATA.rentRoll) {
+    document.getElementById('unitKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : new Set(allProperties.map(p => p.id));
+  const units = DATA.rentRoll.filter(r => propIds.has(r.property_id));
+
+  const totalRent  = units.reduce((s, r) => s + (r.rent || 0), 0);
+  const totalMkt   = units.reduce((s, r) => s + (r.market_rent || 0), 0);
+  const lossToLease = totalMkt - totalRent;
+  const occupied   = units.filter(r => r.status === 'Current' || r.status === 'Active').length;
+  const mtmCount   = units.filter(r => r.is_mtm).length;
+
+  document.getElementById('unitKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Total Monthly Rent</div>
+      <div class="kpi-value">${fmt$(totalRent)}</div>
+      <div class="kpi-sub">${units.length} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Market Rent</div>
+      <div class="kpi-value">${fmt$(totalMkt)}</div>
+      <div class="kpi-sub">Potential gross</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Loss to Lease</div>
+      <div class="kpi-value ${lossToLease > 0 ? 'bad' : 'good'}">${fmt$(lossToLease)}</div>
+      <div class="kpi-sub">${totalMkt > 0 ? fmtPct1(lossToLease / totalMkt * 100) : '0%'} of market</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Occupied Units</div>
+      <div class="kpi-value good">${occupied}</div>
+      <div class="kpi-sub">${units.length > 0 ? fmtPct(occupied / units.length * 100) : '0%'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Month-to-Month</div>
+      <div class="kpi-value ${mtmCount > 0 ? 'warn' : ''}">${mtmCount}</div>
+      <div class="kpi-sub">${units.length > 0 ? fmtPct(mtmCount / units.length * 100) : '0%'} of units</div>
+    </div>
+  `;
+
+  document.getElementById('unitCount').textContent = `${units.length} units`;
+  const tbody = document.getElementById('unitBody');
+  const sorted = [...units].sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') || (a.unit_number || '').localeCompare(b.unit_number || ''));
+  tbody.innerHTML = sorted.map(r => {
+    let statusClass = 'sb-current';
+    let statusLabel = r.status || 'Occupied';
+    if (!r.status || r.status === 'Vacant') { statusClass = 'sb-vacant'; statusLabel = 'Vacant'; }
+    else if (r.is_mtm) { statusClass = 'sb-mtm'; statusLabel = 'MTM'; }
+    else if (r.status === 'Future') { statusClass = 'sb-future'; statusLabel = 'Future'; }
+    else if (r.status === 'Notice') { statusClass = 'sb-notice'; statusLabel = 'Notice'; }
+    const ltl = (r.market_rent || 0) - (r.rent || 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td>${r.bedrooms || '—'}/${r.bathrooms || '—'}</td>
+      <td>${r.tenant_name || '—'}</td>
+      <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+      <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
+      <td class="r ${ltl > 0 ? 'bad' : ltl < 0 ? 'good' : ''}">${fmtFull$(ltl)}</td>
+      <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      <td>${fmtDate(r.lease_start)}</td>
+      <td>${fmtDate(r.lease_end)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('unitSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const match = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q));
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: UNIT TURNS
+// ════════════════════════════════════════
+function renderTurns() {
+  if (!DATA.turns) {
+    document.getElementById('turnKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : null;
+  const turns = propIds ? DATA.turns.filter(r => propIds.has(r.buildium_property_id)) : DATA.turns;
+
+  const active   = turns.filter(r => r.status !== 'Complete' && r.status !== 'Archived');
+  const complete = turns.filter(r => r.status === 'Complete');
+  const makeReady = turns.filter(r => r.board === 'Make Ready');
+  const leaseUp   = turns.filter(r => r.board === 'Lease Up');
+
+  // Average turn time (completed)
+  const turnDays = complete.filter(r => r.days_in_turn > 0).map(r => r.days_in_turn);
+  const avgTurnTime = turnDays.length > 0 ? turnDays.reduce((a, b) => a + b, 0) / turnDays.length : 0;
+
+  // Average cost
+  const costs = turns.filter(r => r.estimated_cost > 0).map(r => r.estimated_cost);
+  const avgCost = costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 0;
+
+  document.getElementById('turnKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Active Turns</div>
+      <div class="kpi-value ${active.length > 0 ? 'warn' : 'good'}">${active.length}</div>
+      <div class="kpi-sub">${turns.length} total tracked</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Turn Time</div>
+      <div class="kpi-value">${avgTurnTime > 0 ? Math.round(avgTurnTime) + ' days' : '—'}</div>
+      <div class="kpi-sub">Completed turns</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Est. Cost</div>
+      <div class="kpi-value">${avgCost > 0 ? fmt$(avgCost) : '—'}</div>
+      <div class="kpi-sub">Per turn</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Completed</div>
+      <div class="kpi-value good">${complete.length}</div>
+      <div class="kpi-sub">${turns.length > 0 ? fmtPct(complete.length / turns.length * 100) : '0%'} completion</div>
+    </div>
+  `;
+
+  // Pipeline stages
+  const stages = {};
+  turns.forEach(r => {
+    const key = r.status || 'Unknown';
+    stages[key] = (stages[key] || 0) + 1;
+  });
+  document.getElementById('turnPipeline').innerHTML = Object.entries(stages)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, count]) => `
+      <div class="turn-stage">
+        <div class="ts-count">${count}</div>
+        <div class="ts-label">${label}</div>
+      </div>
+    `).join('');
+
+  document.getElementById('turnCount').textContent = `${turns.length} turns`;
+  const tbody = document.getElementById('turnBody');
+  tbody.innerHTML = turns.map(r => {
+    const daysInTurn = r.days_in_turn || (r.start_date ? Math.round((Date.now() - new Date(r.start_date)) / 86400000) : 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td><span class="status-badge ${r.status === 'Complete' ? 'sb-current' : 'sb-mtm'}">${r.status || '—'}</span></td>
+      <td>${r.board || '—'}</td>
+      <td>${r.finish_level || '—'}</td>
+      <td class="r">${r.estimated_cost ? fmtFull$(r.estimated_cost) : '—'}</td>
+      <td>${fmtDate(r.start_date)}</td>
+      <td class="r ${daysInTurn > 21 ? 'bad' : daysInTurn > 14 ? 'warn' : ''}">${daysInTurn > 0 ? daysInTurn : '—'}</td>
+      <td>${r.current_step || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('turnSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const match = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q));
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  UTILITY
+// ════════════════════════════════════════
+function getPrevMonth(m) {
+  if (!m) return '';
+  const [y, mo] = m.split('-').map(Number);
+  const d = new Date(y, mo - 2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function showToast(msg, color = 'var(--green)') {
+  const t = document.getElementById('toast');
+  t.querySelector('.dot').style.background = color;
+  t.querySelector('span').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function setApiStatus(state, label) {
+  const dot = document.getElementById('apiDot');
+  const lbl = document.getElementById('apiLabel');
+  dot.className = 'api-dot ' + (state === 'ok' ? '' : state === 'error' ? 'off' : 'pending');
+  lbl.textContent = label;
+}
+
+
+// ════════════════════════════════════════
+//  DATA LOADING
+// ════════════════════════════════════════
+async function loadDashboardData() {
+  setApiStatus('pending', 'Loading data…');
+  try {
+    // Load all data in parallel
+    const [
+      financialRes,
+      noiRes,
+      occRes,
+      rentRollRes,
+      vacancyRes,
+      expRes,
+      turnsRes,
+      propsRes,
+    ] = await Promise.all([
+      callEdgeFn('financial_summary'),
+      callEdgeFn('noi_summary'),
+      callEdgeFn('occupancy_summary'),
+      callEdgeFn('rent_roll'),
+      callEdgeFn('vacancy'),
+      callEdgeFn('lease_expirations'),
+      callEdgeFn('turns'),
+      callEdgeFn('properties'),
+    ]);
+
+    DATA.financial   = financialRes.data || [];
+    DATA.noiSummary  = noiRes.data || [];
+    DATA.occupancy   = occRes.data || [];
+    DATA.rentRoll    = rentRollRes.data || [];
+    DATA.vacancy     = vacancyRes.data || [];
+    DATA.expirations = expRes.data || [];
+    DATA.turns       = turnsRes.data || [];
+    DATA.properties  = propsRes.data || [];
+
+    // Build property list
+    allProperties = DATA.properties.map(p => ({
+      id: p.property_id,
+      name: p.t12_name || p.api_name || `Property ${p.property_id}`,
+      units: p.units || 0,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Build months list from NOI data
+    DATA.months = [...new Set(DATA.noiSummary.map(r => r.month))].sort();
+    selectedMonth = DATA.months[DATA.months.length - 1] || '';
+    populateMonthFilter(DATA.months);
+
+    // Render property dropdown
+    renderPropDropdown();
+    renderPropChips();
+
+    setApiStatus('ok', `${allProperties.length} properties loaded`);
+    showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data`);
+    renderCurrentView();
+
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+    setApiStatus('error', 'Connection failed');
+
+    // Load demo data for development
+    loadDemoData();
+  }
+}
+
+function loadDemoData() {
+  console.log('Loading demo data for development…');
+
+  // Generate demo properties
+  const demoProps = [
+    { id: 1, name: 'Capitol City Villas', units: 69 },
+    { id: 2, name: 'Brent Village', units: 48 },
+    { id: 3, name: 'Central Heights', units: 32 },
+    { id: 4, name: 'Beverly Gardens', units: 24 },
+    { id: 5, name: 'Franklin Court', units: 56 },
+    { id: 6, name: 'Dakota Bend', units: 18 },
+    { id: 7, name: 'Altoona Terrace', units: 40 },
+    { id: 8, name: 'Boulder Ridge', units: 36 },
+    { id: 9, name: 'Champion Villas', units: 82 },
+    { id: 10, name: 'Dundee Village', units: 28 },
+    { id: 11, name: 'Adventureland Village', units: 44 },
+    { id: 12, name: '4501 Tranquility', units: 26 },
+  ];
+  allProperties = demoProps;
+  DATA.properties = demoProps;
+
+  // Generate months
+  const months = [];
+  for (let y = 2025; y <= 2026; y++) {
+    const maxM = y === 2026 ? 3 : 12;
+    for (let m = 1; m <= maxM; m++) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+    }
+  }
+  DATA.months = months;
+  selectedMonth = months[months.length - 1];
+  populateMonthFilter(months);
+
+  // Generate NOI summary
+  DATA.noiSummary = [];
+  demoProps.forEach(p => {
+    months.forEach(m => {
+      const base = p.units * (400 + Math.random() * 200);
+      const rev = base * (0.9 + Math.random() * 0.2);
+      const exp = rev * (0.35 + Math.random() * 0.25);
+      DATA.noiSummary.push({
+        property_id: p.id,
+        property_name: p.name,
+        month: m,
+        revenue: rev,
+        expenses: -exp,
+        noi: rev - exp,
+      });
+    });
+  });
+
+  // Generate financial detail
+  const incomeAccounts = ['Rental Income', 'Late Fees', 'Application Fees', 'Pet Rent', 'Utility Reimbursement', 'Parking Income'];
+  const expenseAccounts = ['Repairs & Maintenance', 'Property Management', 'Insurance', 'Property Tax', 'Utilities', 'Landscaping', 'Marketing', 'Legal & Professional'];
+  DATA.financial = [];
+  demoProps.forEach(p => {
+    months.forEach(m => {
+      incomeAccounts.forEach(acct => {
+        DATA.financial.push({
+          property_id: p.id, property_name: p.name, snapshot_month: m,
+          account_name: acct, t12_section: 'income',
+          total_amount: (acct === 'Rental Income' ? p.units * 650 : p.units * (5 + Math.random() * 30)) * (0.9 + Math.random() * 0.2),
+        });
+      });
+      expenseAccounts.forEach(acct => {
+        DATA.financial.push({
+          property_id: p.id, property_name: p.name, snapshot_month: m,
+          account_name: acct, t12_section: 'expense',
+          total_amount: -(p.units * (10 + Math.random() * 60) * (0.8 + Math.random() * 0.4)),
+        });
+      });
+    });
+  });
+
+  // Generate occupancy
+  DATA.occupancy = demoProps.map(p => ({
+    property_id: p.id,
+    property_name: p.name,
+    total_units: p.units,
+    occupied_units: Math.round(p.units * (0.82 + Math.random() * 0.16)),
+    vacant_units: 0,
+    preleased_units: Math.round(Math.random() * 3),
+    physical_occupancy: 0,
+  }));
+  DATA.occupancy.forEach(r => {
+    r.vacant_units = r.total_units - r.occupied_units;
+    r.physical_occupancy = r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0;
+  });
+
+  // Generate rent roll
+  DATA.rentRoll = [];
+  const firstNames = ['John','Jane','Mike','Sarah','Tom','Lisa','Bob','Amy','David','Karen'];
+  const lastNames = ['Smith','Johnson','Williams','Brown','Jones','Davis','Miller','Wilson','Moore','Taylor'];
+  demoProps.forEach(p => {
+    for (let u = 1; u <= p.units; u++) {
+      const occupied = Math.random() > 0.08;
+      const rent = 500 + Math.round(Math.random() * 700);
+      const mkt = rent + Math.round((Math.random() - 0.3) * 100);
+      DATA.rentRoll.push({
+        property_id: p.id, property_name: p.name,
+        unit_number: String(100 + u),
+        bedrooms: Math.random() > 0.5 ? 2 : 1,
+        bathrooms: 1,
+        tenant_name: occupied ? `${firstNames[Math.floor(Math.random()*10)]} ${lastNames[Math.floor(Math.random()*10)]}` : null,
+        rent: occupied ? rent : 0,
+        market_rent: mkt,
+        status: occupied ? 'Current' : 'Vacant',
+        is_mtm: occupied && Math.random() > 0.85,
+        lease_start: occupied ? '2025-' + String(1 + Math.floor(Math.random()*12)).padStart(2,'0') + '-01' : null,
+        lease_end: occupied ? '2026-' + String(1 + Math.floor(Math.random()*12)).padStart(2,'0') + '-30' : null,
+      });
+    }
+  });
+
+  // Generate lease expirations
+  DATA.expirations = [];
+  DATA.rentRoll.filter(r => r.status === 'Current' && r.lease_end).forEach(r => {
+    const end = new Date(r.lease_end);
+    const now = new Date();
+    const diffDays = Math.round((end - now) / 86400000);
+    if (diffDays < 90) {
+      let bucket = 'EXPIRING_90';
+      if (diffDays < 0) bucket = 'EXPIRED';
+      else if (diffDays < 30) bucket = 'EXPIRING_30';
+      else if (diffDays < 60) bucket = 'EXPIRING_60';
+      DATA.expirations.push({
+        property_id: r.property_id, property_name: r.property_name,
+        unit_number: r.unit_number, tenant_name: r.tenant_name,
+        rent: r.rent, lease_end: r.lease_end,
+        bucket, status: r.is_mtm ? 'MTM' : 'Active',
+      });
+    }
+  });
+
+  // Generate turns
+  const statuses = ['In Progress', 'Waiting', 'Complete', 'Scheduled'];
+  const boards = ['Make Ready', 'Lease Up'];
+  const finishLevels = ['Classic', 'Partial Remodel', 'Full Remodel'];
+  const steps = ['Inspection', 'Cleaning', 'Paint', 'Flooring', 'Appliances', 'Final Walk'];
+  DATA.turns = [];
+  for (let i = 0; i < 40; i++) {
+    const p = demoProps[Math.floor(Math.random() * demoProps.length)];
+    DATA.turns.push({
+      buildium_property_id: p.id,
+      property_name: p.name,
+      unit_number: String(100 + Math.floor(Math.random() * 50)),
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      board: boards[Math.floor(Math.random() * boards.length)],
+      finish_level: finishLevels[Math.floor(Math.random() * finishLevels.length)],
+      estimated_cost: 500 + Math.round(Math.random() * 4500),
+      start_date: '2026-' + String(1 + Math.floor(Math.random() * 3)).padStart(2, '0') + '-' + String(1 + Math.floor(Math.random() * 28)).padStart(2, '0'),
+      days_in_turn: Math.floor(Math.random() * 35),
+      current_step: steps[Math.floor(Math.random() * steps.length)],
+    });
+  }
+
+  renderPropDropdown();
+  renderPropChips();
+  setApiStatus('ok', 'Demo data loaded');
+  showToast('Dashboard loaded with demo data — connect edge function for live data', 'var(--amber)');
+  renderCurrentView();
+}
+
+
+// ── BOOT ──
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboardData();
+});
 </script>
 </body>
 </html>

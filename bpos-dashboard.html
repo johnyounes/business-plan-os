@@ -1468,7 +1468,12 @@ function setApiStatus(state, label) {
 async function loadDashboardData() {
   setApiStatus('pending', 'Loading data…');
   try {
-    // Load all data in parallel
+    // Load all data in parallel — each query is independent so one failure won't block others
+    const safeCall = async (type) => {
+      try { return await callEdgeFn(type); }
+      catch (e) { console.warn(`Query "${type}" failed:`, e.message); return { data: [] }; }
+    };
+
     const [
       financialRes,
       noiRes,
@@ -1479,14 +1484,14 @@ async function loadDashboardData() {
       turnsRes,
       propsRes,
     ] = await Promise.all([
-      callEdgeFn('financial_summary'),
-      callEdgeFn('noi_summary'),
-      callEdgeFn('occupancy_summary'),
-      callEdgeFn('rent_roll'),
-      callEdgeFn('vacancy'),
-      callEdgeFn('lease_expirations'),
-      callEdgeFn('turns'),
-      callEdgeFn('properties'),
+      safeCall('financial_summary'),
+      safeCall('noi_summary'),
+      safeCall('occupancy_summary'),
+      safeCall('rent_roll'),
+      safeCall('vacancy'),
+      safeCall('lease_expirations'),
+      safeCall('turns'),
+      safeCall('properties'),
     ]);
 
     DATA.financial   = financialRes.data || [];
@@ -1539,9 +1544,18 @@ async function loadDashboardData() {
     renderPropDropdown();
     renderPropChips();
 
-    setApiStatus('ok', `${allProperties.length} properties loaded`);
-    showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data`);
-    renderCurrentView();
+    // If properties loaded, we're connected — even if some queries failed
+    if (allProperties.length > 0) {
+      const warnings = [];
+      if (!DATA.turns.length) warnings.push('Unit Turns');
+      if (!DATA.financial.length) warnings.push('Financials');
+      const warnMsg = warnings.length ? ` (${warnings.join(', ')} unavailable)` : '';
+      setApiStatus('ok', `${allProperties.length} properties loaded${warnMsg}`);
+      showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data${warnMsg}`);
+      renderCurrentView();
+    } else {
+      throw new Error('No properties returned — check edge function');
+    }
 
   } catch (err) {
     console.error('Dashboard load error:', err);

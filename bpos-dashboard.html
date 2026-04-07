@@ -485,7 +485,8 @@ let DATA = {
 };
 
 // ── SUPABASE HELPER ──
-async function callEdgeFn(query, params = {}) {
+// Matches existing bq-dashboard edge function: sends { type }, receives { rows }
+async function callEdgeFn(type, params = {}) {
   const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
     method: 'POST',
     headers: {
@@ -493,13 +494,15 @@ async function callEdgeFn(query, params = {}) {
       'Authorization': `Bearer ${SUPA_KEY}`,
       'apikey': SUPA_KEY,
     },
-    body: JSON.stringify({ query, ...params }),
+    body: JSON.stringify({ type, ...params }),
   });
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`Edge fn error ${res.status}: ${txt}`);
   }
-  return res.json();
+  const json = await res.json();
+  // Normalize: existing function returns { rows }, wrap for internal use
+  return { data: json.rows || json.data || [] };
 }
 
 // ── FORMAT HELPERS ──
@@ -697,8 +700,8 @@ function renderOverview() {
 
   // Current month NOI data
   const monthData = DATA.noiSummary.filter(r => r.month === month && propSet.has(r.property_id));
-  const totalIncome   = monthData.reduce((s, r) => s + (r.revenue || 0), 0);
-  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.expenses || 0), 0);
+  const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.total_income || r.revenue || 0), 0);
+  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.total_expenses || r.expenses || 0), 0);
   const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
   const expenseRatio  = totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0;
   const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
@@ -754,8 +757,8 @@ function renderOverview() {
   const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
-    const rev = r.revenue || 0;
-    const exp = Math.abs(r.expenses || 0);
+    const rev = r.total_income || r.revenue || 0;
+    const exp = Math.abs(r.total_expenses || r.expenses || 0);
     return rev > 0 && (exp / rev) > 0.5;
   }).length;
 
@@ -809,8 +812,8 @@ function renderIncExpChart(propIds) {
   const incomeByMonth = [], expByMonth = [];
   months.forEach(m => {
     const rows = DATA.noiSummary.filter(r => r.month === m && propSet.has(r.property_id));
-    incomeByMonth.push(rows.reduce((s, r) => s + (r.revenue || 0), 0));
-    expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.expenses || 0), 0));
+    incomeByMonth.push(rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0));
+    expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0));
   });
 
   const allVals = [...incomeByMonth, ...expByMonth];
@@ -978,8 +981,8 @@ function renderPropPerfTable(monthData) {
   }
   const rows = monthData.map(r => {
     const p = allProperties.find(x => x.id === r.property_id);
-    const rev = r.revenue || 0;
-    const exp = Math.abs(r.expenses || 0);
+    const rev = r.total_income || r.revenue || 0;
+    const exp = Math.abs(r.total_expenses || r.expenses || 0);
     const noi = r.noi || 0;
     const ratio = rev > 0 ? (exp / rev * 100) : 0;
     const units = p ? (p.units || 0) : 0;
@@ -1497,10 +1500,35 @@ async function loadDashboardData() {
 
     // Build property list
     allProperties = DATA.properties.map(p => ({
-      id: p.property_id,
+      id: parseInt(p.property_id) || 0,
       name: p.t12_name || p.api_name || `Property ${p.property_id}`,
-      units: p.units || 0,
+      units: parseInt(p.units) || 0,
     })).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Normalize: add property_id to any rows that only have property_name
+    const nameToId = {};
+    allProperties.forEach(p => { nameToId[p.name] = p.id; });
+    const addPropId = (rows) => rows.forEach(r => {
+      if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
+      if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+      if (arr) addPropId(arr);
+    });
+    // Coerce numeric fields from BigQuery (returned as strings)
+    DATA.noiSummary.forEach(r => {
+      r.total_income = parseFloat(r.total_income) || 0;
+      r.total_expenses = parseFloat(r.total_expenses) || 0;
+      r.noi = parseFloat(r.noi) || 0;
+      r.units = parseInt(r.units) || 0;
+    });
+    if (DATA.occupancy) DATA.occupancy.forEach(r => {
+      r.total_units = parseInt(r.total_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.physical_occupancy = parseFloat(r.physical_occupancy) || 0;
+    });
 
     // Build months list from NOI data
     DATA.months = [...new Set(DATA.noiSummary.map(r => r.month))].sort();

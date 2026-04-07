@@ -675,6 +675,16 @@ function getFilteredProps() {
   return allProperties.filter(p => selectedProps.includes(p.id));
 }
 
+// Universal row filter — matches by property_id OR property_name
+function matchesSelectedProps(r) {
+  if (selectedProps.length === 0) return true;
+  const propIds = new Set(selectedProps);
+  const propNames = new Set(getFilteredProps().map(p => p.name));
+  if (r.property_id && propIds.has(r.property_id)) return true;
+  if (r.property_name && propNames.has(r.property_name)) return true;
+  return false;
+}
+
 // ── RENDER DISPATCH ──
 function renderCurrentView() {
   switch (currentView) {
@@ -695,13 +705,11 @@ function renderOverview() {
     return;
   }
   const month = selectedMonth;
-  const propIds = selectedProps.length > 0 ? selectedProps : allProperties.map(p => p.id);
-  const propSet = new Set(propIds);
 
-  // Current month NOI data
-  const monthData = DATA.noiSummary.filter(r => r.month === month && propSet.has(r.property_id));
-  const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.total_income || r.revenue || 0), 0);
-  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.total_expenses || r.expenses || 0), 0);
+  // Current month NOI data — match by property_id or property_name
+  const monthData = DATA.noiSummary.filter(r => r.month === month && matchesSelectedProps(r));
+  const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
+  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
   const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
   const expenseRatio  = totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0;
   const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
@@ -709,7 +717,7 @@ function renderOverview() {
 
   // Previous month comparison
   const prevMonth = getPrevMonth(month);
-  const prevData  = DATA.noiSummary.filter(r => r.month === prevMonth && propSet.has(r.property_id));
+  const prevData  = DATA.noiSummary.filter(r => r.month === prevMonth && matchesSelectedProps(r));
   const prevNOI   = prevData.reduce((s, r) => s + (r.noi || 0), 0);
   const noiChange = prevNOI !== 0 ? ((totalNOI - prevNOI) / Math.abs(prevNOI) * 100) : 0;
 
@@ -753,7 +761,7 @@ function renderOverview() {
   `;
 
   // Property Metrics
-  const occData = DATA.occupancy ? DATA.occupancy.filter(r => propSet.has(r.property_id)) : [];
+  const occData = DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : [];
   const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
@@ -786,14 +794,14 @@ function renderOverview() {
   `;
 
   // Charts
-  renderIncExpChart(propIds);
-  renderNOIChart(propIds);
+  renderIncExpChart();
+  renderNOIChart();
 
   // Property performance table
   renderPropPerfTable(monthData);
 }
 
-function renderIncExpChart(propIds) {
+function renderIncExpChart() {
   const canvas = document.getElementById('incExpChart');
   const ctx = canvas.getContext('2d');
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -805,13 +813,12 @@ function renderIncExpChart(propIds) {
   const W = rect.width, H = 220;
   ctx.clearRect(0, 0, W, H);
 
-  const propSet = new Set(propIds);
   const months = DATA.months.slice(-12);
   if (!months.length || !DATA.noiSummary) return;
 
   const incomeByMonth = [], expByMonth = [];
   months.forEach(m => {
-    const rows = DATA.noiSummary.filter(r => r.month === m && propSet.has(r.property_id));
+    const rows = DATA.noiSummary.filter(r => r.month === m && matchesSelectedProps(r));
     incomeByMonth.push(rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0));
     expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0));
   });
@@ -893,7 +900,7 @@ function renderIncExpChart(propIds) {
   document.getElementById('chartPeriodLabel').textContent = `${fmtMonth(months[0])} – ${fmtMonth(months[months.length-1])}`;
 }
 
-function renderNOIChart(propIds) {
+function renderNOIChart() {
   const canvas = document.getElementById('noiChart');
   const ctx = canvas.getContext('2d');
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -905,13 +912,12 @@ function renderNOIChart(propIds) {
   const W = rect.width, H = 220;
   ctx.clearRect(0, 0, W, H);
 
-  const propSet = new Set(propIds);
   const months = DATA.months.slice(-12);
   if (!months.length || !DATA.noiSummary) return;
 
   const noiByMonth = [];
   months.forEach(m => {
-    const rows = DATA.noiSummary.filter(r => r.month === m && propSet.has(r.property_id));
+    const rows = DATA.noiSummary.filter(r => r.month === m && matchesSelectedProps(r));
     noiByMonth.push(rows.reduce((s, r) => s + (r.noi || 0), 0));
   });
 
@@ -1147,8 +1153,7 @@ function renderOccupancy() {
     document.getElementById('occKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
     return;
   }
-  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : new Set(allProperties.map(p => p.id));
-  const occ = DATA.occupancy.filter(r => propIds.has(r.property_id));
+  const occ = DATA.occupancy.filter(r => matchesSelectedProps(r));
 
   const totalUnits    = occ.reduce((s, r) => s + (r.total_units || 0), 0);
   const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
@@ -1209,12 +1214,12 @@ function renderOccupancy() {
   };
 
   // Lease expirations
-  renderExpirations(propIds);
+  renderExpirations();
 }
 
-function renderExpirations(propIds) {
+function renderExpirations() {
   if (!DATA.expirations) return;
-  const exps = DATA.expirations.filter(r => propIds.has(r.property_id));
+  const exps = DATA.expirations.filter(r => matchesSelectedProps(r));
 
   // Buckets
   const buckets = { EXPIRING_30: 0, EXPIRING_60: 0, EXPIRING_90: 0, EXPIRED: 0 };
@@ -1275,8 +1280,7 @@ function renderUnits() {
     document.getElementById('unitKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
     return;
   }
-  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : new Set(allProperties.map(p => p.id));
-  const units = DATA.rentRoll.filter(r => propIds.has(r.property_id));
+  const units = DATA.rentRoll.filter(r => matchesSelectedProps(r));
 
   const totalRent  = units.reduce((s, r) => s + (r.rent || 0), 0);
   const totalMkt   = units.reduce((s, r) => s + (r.market_rent || 0), 0);
@@ -1355,8 +1359,12 @@ function renderTurns() {
     document.getElementById('turnKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
     return;
   }
-  const propIds = selectedProps.length > 0 ? new Set(selectedProps) : null;
-  const turns = propIds ? DATA.turns.filter(r => propIds.has(r.buildium_property_id)) : DATA.turns;
+  const turns = DATA.turns.filter(r => {
+    if (selectedProps.length === 0) return true;
+    const propNames = new Set(getFilteredProps().map(p => p.name));
+    return (r.buildium_property_id && new Set(selectedProps).has(parseInt(r.buildium_property_id)))
+        || (r.property_name && propNames.has(r.property_name));
+  });
 
   const active   = turns.filter(r => r.status !== 'Complete' && r.status !== 'Archived');
   const complete = turns.filter(r => r.status === 'Complete');

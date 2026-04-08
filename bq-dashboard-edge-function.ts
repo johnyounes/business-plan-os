@@ -36,7 +36,8 @@ const QUERIES: Record<string, string> = {
       snapshot_month AS month,
       SUM(CASE WHEN t12_section = 'income' THEN total_amount ELSE 0 END) AS revenue,
       SUM(CASE WHEN t12_section = 'expense' THEN total_amount ELSE 0 END) AS expenses,
-      SUM(CASE WHEN t12_section IN ('income','expense') THEN total_amount ELSE 0 END) AS noi
+      SUM(CASE WHEN t12_section = 'income' THEN total_amount ELSE 0 END)
+      - SUM(CASE WHEN t12_section = 'expense' THEN total_amount ELSE 0 END) AS noi
     FROM \`${PROJECT_ID}.${DATASET_BUILDIUM}.financial_snapshots\`
     GROUP BY property_id, property_name, snapshot_month
     ORDER BY property_name, snapshot_month

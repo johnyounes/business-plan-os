@@ -295,7 +295,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <div class="section-head"><h2>Property Metrics</h2></div>
-    <div class="kpi-grid cols-4" id="propMetrics"></div>
+    <div class="kpi-grid cols-5" id="propMetrics"></div>
     <div class="section-head"><h2>Property Performance</h2></div>
     <div class="data-table-wrap">
       <div class="dt-header">
@@ -346,6 +346,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- VIEW: OCCUPANCY -->
   <div class="view-panel" id="view-occupancy" style="display:none;">
     <div class="kpi-grid cols-5" id="occKpis"></div>
+    <!-- Occupancy Trend Chart -->
+    <div class="section-head"><h2>Occupancy Trend</h2><span class="badge" id="occTrendPeriod"></span></div>
+    <div class="chart-wrap" style="margin-bottom:24px;">
+      <canvas id="occTrendChart"></canvas>
+    </div>
     <div class="section-head"><h2>Occupancy by Property</h2></div>
     <div class="data-table-wrap">
       <div class="dt-header">
@@ -361,6 +366,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
               <th class="r">Occupied</th>
               <th class="r">Vacant</th>
               <th class="r">Physical Occ.</th>
+              <th class="r">Preleased Occ.</th>
               <th class="r">Preleased</th>
               <th class="r">Net Exposure</th>
             </tr>
@@ -484,6 +490,7 @@ let currentView    = 'overview';
 let DATA = {
   financial: null,    // financial_snapshots aggregated
   occupancy: null,    // v_occupancy_summary
+  occupancySnapshots: null, // v_occupancy_snapshot_summary (monthly trends)
   rentRoll: null,     // v_rent_roll
   vacancy: null,      // v_vacancy
   expirations: null,  // v_lease_expirations
@@ -785,7 +792,11 @@ function renderOverview() {
 
   // Property Metrics
   const occData = DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : [];
-  const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
+  const occTotalUnits = occData.reduce((s, r) => s + (r.total_units || 0), 0);
+  const occTotalOcc = occData.reduce((s, r) => s + (r.occupied_units || 0), 0);
+  const occTotalPre = occData.reduce((s, r) => s + (r.preleased_units || 0), 0);
+  const avgPhysOcc = occTotalUnits > 0 ? (occTotalOcc / occTotalUnits * 100) : 0;
+  const avgPreOcc = occTotalUnits > 0 ? ((occTotalOcc + occTotalPre) / occTotalUnits * 100) : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
     const rev = r.total_income || r.revenue || 0;
@@ -795,9 +806,14 @@ function renderOverview() {
 
   document.getElementById('propMetrics').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Avg Physical Occupancy</div>
-      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
-      <div class="kpi-sub">${occData.length} properties</div>
+      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-value ${avgPhysOcc >= 90 ? 'good' : avgPhysOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgPhysOcc)}</div>
+      <div class="kpi-sub">${occTotalOcc.toLocaleString()} of ${occTotalUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preleased Occupancy</div>
+      <div class="kpi-value" style="color:var(--teal);">${fmtPct(avgPreOcc)}</div>
+      <div class="kpi-sub">${occTotalPre} preleased units</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Negative Cash Flow</div>
@@ -1138,12 +1154,34 @@ function renderPnL() {
   });
   html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
 
-  // Occupancy row if available — match by name or id
-  if (DATA.occupancy) {
+  // Occupancy rows if available — match by name or id
+  // Use snapshot data for monthly occupancy when available, fall back to current occupancy
+  if (DATA.occupancySnapshots && DATA.occupancySnapshots.length > 0) {
+    const propSnaps = DATA.occupancySnapshots.filter(o => o.property_id === propId || o.property_name === propName);
+    if (propSnaps.length > 0) {
+      const snapByMonth = {};
+      propSnaps.forEach(s => { snapByMonth[s.snapshot_month] = s; });
+      html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
+      months.forEach(m => {
+        const s = snapByMonth[m];
+        html += `<td>${s ? fmtPct(s.physical_occupancy_pct) : '—'}</td>`;
+      });
+      html += `<td></td></tr>`;
+      html += `<tr class="pct-row"><td>Preleased Occupancy</td>`;
+      months.forEach(m => {
+        const s = snapByMonth[m];
+        html += `<td style="color:var(--teal);">${s ? fmtPct(s.preleased_occupancy_pct) : '—'}</td>`;
+      });
+      html += `<td></td></tr>`;
+    }
+  } else if (DATA.occupancy) {
     const occ = DATA.occupancy.find(o => o.property_id === propId || o.property_name === propName);
     if (occ) {
       html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
       months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
+      html += `<td></td></tr>`;
+      html += `<tr class="pct-row"><td>Preleased Occupancy</td>`;
+      months.forEach(() => html += `<td style="color:var(--teal);">${fmtPct(occ.preleased_occupancy)}</td>`);
       html += `<td></td></tr>`;
     }
   }
@@ -1252,48 +1290,58 @@ function renderOccupancy() {
   const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
   const totalVacant   = occ.reduce((s, r) => s + (r.vacant_units || 0), 0);
   const totalPreleased = occ.reduce((s, r) => s + (r.preleased_units || 0), 0);
-  const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
+  const physOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
+  // Critical Rule #4: Physical ≠ Preleased. Preleased = (occupied + preleased) / total
+  const preleasedOcc = totalUnits > 0 ? ((totalOccupied + totalPreleased) / totalUnits * 100) : 0;
+  const totalMktRent = occ.reduce((s, r) => s + (r.total_market_rent || 0), 0);
+  const totalActRent = occ.reduce((s, r) => s + (r.total_actual_rent || 0), 0);
+  const vacLoss = occ.reduce((s, r) => s + (r.vacancy_loss_market || 0), 0);
 
   document.getElementById('occKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Physical Occupancy</div>
-      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-value ${physOcc >= 90 ? 'good' : physOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(physOcc)}</div>
       <div class="kpi-sub">${totalOccupied.toLocaleString()} of ${totalUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preleased Occupancy</div>
+      <div class="kpi-value ${preleasedOcc >= 95 ? 'good' : preleasedOcc >= 90 ? 'warn' : 'bad'}" style="color:var(--teal);">${fmtPct(preleasedOcc)}</div>
+      <div class="kpi-sub">${(totalOccupied + totalPreleased).toLocaleString()} occupied + preleased</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Vacant Units</div>
       <div class="kpi-value ${totalVacant > 0 ? 'bad' : 'good'}">${totalVacant}</div>
+      <div class="kpi-sub">${totalPreleased} preleased · ${totalVacant - totalPreleased} unpreleased</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Vacancy Loss (Market)</div>
+      <div class="kpi-value ${vacLoss > 0 ? 'warn' : 'good'}">${fmt$(vacLoss)}</div>
       <div class="kpi-sub">${totalUnits > 0 ? fmtPct(totalVacant / totalUnits * 100) : '0%'} vacancy rate</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Preleased</div>
-      <div class="kpi-value" style="color:var(--teal);">${totalPreleased}</div>
-      <div class="kpi-sub">Future leases signed</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Net Vacancy Exposure</div>
-      <div class="kpi-value ${(totalVacant - totalPreleased) > 0 ? 'warn' : 'good'}">${totalVacant - totalPreleased}</div>
-      <div class="kpi-sub">Vacant minus preleased</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Properties</div>
-      <div class="kpi-value">${occ.length}</div>
-      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+      <div class="kpi-label">Rent vs Market</div>
+      <div class="kpi-value">${fmt$(totalActRent)}</div>
+      <div class="kpi-sub">${totalMktRent > 0 ? fmtPct1((totalActRent / totalMktRent) * 100) : '—'} of market · ${occ.length} properties</div>
     </div>
   `;
 
-  // Occupancy table
+  // Occupancy trend chart
+  renderOccupancyTrend();
+
+  // Occupancy table — add preleased occupancy column per Rule #4
   const tbody = document.getElementById('occBody');
   const sorted = [...occ].sort((a, b) => (a.physical_occupancy || 0) - (b.physical_occupancy || 0));
   tbody.innerHTML = sorted.map(r => {
-    const occPct = Math.round(r.physical_occupancy || 0);
+    const physPct = Math.round(r.physical_occupancy || 0);
+    const prePct = Math.round(r.preleased_occupancy || 0);
     const netExp = (r.vacant_units || 0) - (r.preleased_units || 0);
     return `<tr>
       <td>${r.property_name || '—'}</td>
       <td class="r">${r.total_units || 0}</td>
       <td class="r">${r.occupied_units || 0}</td>
       <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
-      <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
+      <td class="r ${physPct >= 90 ? 'good' : physPct >= 80 ? 'warn' : 'bad'}">${fmtPct(physPct)}</td>
+      <td class="r" style="color:var(--teal);">${fmtPct(prePct)}</td>
       <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
       <td class="r ${netExp > 0 ? 'warn' : 'good'}">${netExp}</td>
     </tr>`;
@@ -1308,6 +1356,97 @@ function renderOccupancy() {
 
   // Lease expirations
   renderExpirations();
+}
+
+// ── OCCUPANCY TREND CHART (from v_occupancy_snapshot_summary) ──
+function renderOccupancyTrend() {
+  const canvas = document.getElementById('occTrendChart');
+  if (!canvas || !DATA.occupancySnapshots || !DATA.occupancySnapshots.length) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 220 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '220px';
+  ctx.scale(2, 2);
+  const W = rect.width, H = 220;
+  ctx.clearRect(0, 0, W, H);
+
+  const snapshots = DATA.occupancySnapshots.filter(r => matchesSelectedProps(r));
+  const months = [...new Set(snapshots.map(r => r.snapshot_month))].sort();
+  if (months.length < 2) return;
+
+  // Aggregate by month
+  const physByMonth = [], preByMonth = [], unitsByMonth = [], occByMonth = [];
+  months.forEach(m => {
+    const rows = snapshots.filter(r => r.snapshot_month === m);
+    const totUnits = rows.reduce((s, r) => s + (r.total_units || 0), 0);
+    const totOcc = rows.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    const totPre = rows.reduce((s, r) => s + (r.preleased_units || 0), 0);
+    unitsByMonth.push(totUnits);
+    occByMonth.push(totOcc);
+    physByMonth.push(totUnits > 0 ? (totOcc / totUnits * 100) : 0);
+    preByMonth.push(totUnits > 0 ? ((totOcc + totPre) / totUnits * 100) : 0);
+  });
+
+  const maxPct = 100;
+  const minPct = Math.max(0, Math.min(...physByMonth, ...preByMonth) - 5);
+  const padL = 50, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const scaleY = (v) => padT + chartH - ((v - minPct) / (maxPct - minPct)) * chartH;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  const gridSteps = [minPct, minPct + (maxPct - minPct) * 0.25, minPct + (maxPct - minPct) * 0.5, minPct + (maxPct - minPct) * 0.75, maxPct];
+  gridSteps.forEach(v => {
+    const y = scaleY(v);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#555c66'; ctx.font = '10px DM Mono'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(v) + '%', padL - 8, y + 4);
+  });
+
+  // X labels
+  ctx.fillStyle = '#555c66'; ctx.font = '10px DM Sans'; ctx.textAlign = 'center';
+  months.forEach((m, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    ctx.fillText(fmtMonth(m).replace(' 20', " '"), x, H - 10);
+  });
+
+  // Draw line helper
+  function drawLine(data, color, dashed) {
+    ctx.beginPath();
+    if (dashed) ctx.setLineDash([4, 3]);
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      const y = scaleY(v);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.setLineDash([]);
+    // Dots
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      ctx.beginPath(); ctx.arc(x, scaleY(v), 3, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+    });
+  }
+
+  drawLine(physByMonth, '#3d7fff', false);    // Physical: solid blue
+  drawLine(preByMonth, '#2ec4b6', true);      // Preleased: dashed teal
+
+  // Legend
+  ctx.fillStyle = '#3d7fff'; ctx.fillRect(padL, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e'; ctx.font = '10px DM Sans'; ctx.textAlign = 'left';
+  ctx.fillText('Physical', padL + 12, H - 2);
+  ctx.fillStyle = '#2ec4b6'; ctx.fillRect(padL + 75, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e';
+  ctx.fillText('Preleased', padL + 87, H - 2);
+
+  // Period label
+  const periodEl = document.getElementById('occTrendPeriod');
+  if (periodEl) periodEl.textContent = `${fmtMonth(months[0])} – ${fmtMonth(months[months.length - 1])}`;
 }
 
 function renderExpirations() {
@@ -1580,6 +1719,7 @@ async function loadDashboardData() {
       noiRes,
       incStmtRes,
       occRes,
+      occSnapRes,
       rentRollRes,
       vacancyRes,
       expRes,
@@ -1590,6 +1730,7 @@ async function loadDashboardData() {
       safeCall('noi_summary'),
       safeCall('income_statement_snapshot'),
       safeCall('occupancy_summary'),
+      safeCall('occupancy_snapshot_summary'),
       safeCall('rent_roll'),
       safeCall('vacancy'),
       safeCall('lease_expirations'),
@@ -1601,6 +1742,7 @@ async function loadDashboardData() {
     DATA.noiSummary  = noiRes.data || [];
     DATA.incomeStatement = incStmtRes.data || [];
     DATA.occupancy   = occRes.data || [];
+    DATA.occupancySnapshots = occSnapRes.data || [];
     DATA.rentRoll    = rentRollRes.data || [];
     DATA.vacancy     = vacancyRes.data || [];
     DATA.expirations = expRes.data || [];
@@ -1640,7 +1782,7 @@ async function loadDashboardData() {
       if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
-    [DATA.noiSummary, DATA.incomeStatement, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+    [DATA.noiSummary, DATA.incomeStatement, DATA.occupancy, DATA.occupancySnapshots, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
     });
 
@@ -1700,13 +1842,37 @@ async function loadDashboardData() {
     }
 
     // ── COERCE OCCUPANCY DATA ──
+    // v_occupancy_summary returns: property_name, reported_units, api_units, occupied_units,
+    //   vacant_units, preleased_units, unpreleased_vacant, physical_occupancy_pct,
+    //   preleased_occupancy_pct, total_market_rent, total_actual_rent, vacancy_loss_market, rent_vs_market_delta
     if (DATA.occupancy) DATA.occupancy.forEach(r => {
+      // Normalize unit counts — view uses api_units as the canonical unit count
+      r.total_units = parseInt(r.api_units || r.total_units || r.reported_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.unpreleased_vacant = parseInt(r.unpreleased_vacant) || 0;
+      // Normalize occupancy pct — view uses _pct suffix
+      r.physical_occupancy = parseFloat(r.physical_occupancy_pct || r.physical_occupancy) || 0;
+      r.preleased_occupancy = parseFloat(r.preleased_occupancy_pct || r.preleased_occupancy) || 0;
+      // Rent analysis fields
+      r.total_market_rent = parseFloat(r.total_market_rent) || 0;
+      r.total_actual_rent = parseFloat(r.total_actual_rent) || 0;
+      r.vacancy_loss_market = parseFloat(r.vacancy_loss_market) || 0;
+      r.rent_vs_market_delta = parseFloat(r.rent_vs_market_delta) || 0;
+      // Ensure property_id is set via name lookup
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE OCCUPANCY SNAPSHOTS ──
+    if (DATA.occupancySnapshots) DATA.occupancySnapshots.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
       r.total_units = parseInt(r.total_units) || 0;
       r.occupied_units = parseInt(r.occupied_units) || 0;
       r.vacant_units = parseInt(r.vacant_units) || 0;
       r.preleased_units = parseInt(r.preleased_units) || 0;
-      r.physical_occupancy = parseFloat(r.physical_occupancy) || 0;
-      // Ensure property_id is set via name lookup
+      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.preleased_occupancy_pct = parseFloat(r.preleased_occupancy_pct) || 0;
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
     });
 
@@ -1846,19 +2012,39 @@ function loadDemoData() {
     });
   });
 
-  // Generate occupancy
-  DATA.occupancy = demoProps.map(p => ({
-    property_id: p.id,
-    property_name: p.name,
-    total_units: p.units,
-    occupied_units: Math.round(p.units * (0.82 + Math.random() * 0.16)),
-    vacant_units: 0,
-    preleased_units: Math.round(Math.random() * 3),
-    physical_occupancy: 0,
-  }));
-  DATA.occupancy.forEach(r => {
-    r.vacant_units = r.total_units - r.occupied_units;
-    r.physical_occupancy = r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0;
+  // Generate occupancy (current)
+  DATA.occupancy = demoProps.map(p => {
+    const occ = Math.round(p.units * (0.82 + Math.random() * 0.16));
+    const pre = Math.round(Math.random() * 3);
+    const vac = p.units - occ;
+    const mktRent = p.units * (600 + Math.random() * 200);
+    const actRent = occ * (550 + Math.random() * 200);
+    return {
+      property_id: p.id, property_name: p.name,
+      total_units: p.units, occupied_units: occ, vacant_units: vac,
+      preleased_units: pre, unpreleased_vacant: vac - pre,
+      physical_occupancy: p.units > 0 ? (occ / p.units * 100) : 0,
+      preleased_occupancy: p.units > 0 ? ((occ + pre) / p.units * 100) : 0,
+      total_market_rent: mktRent, total_actual_rent: actRent,
+      vacancy_loss_market: (p.units - occ) * (mktRent / p.units),
+      rent_vs_market_delta: actRent - mktRent,
+    };
+  });
+
+  // Generate occupancy snapshots (monthly trend)
+  DATA.occupancySnapshots = [];
+  demoProps.forEach(p => {
+    months.forEach(m => {
+      const occ = Math.round(p.units * (0.80 + Math.random() * 0.18));
+      const pre = Math.round(Math.random() * 3);
+      DATA.occupancySnapshots.push({
+        snapshot_month: m, property_id: p.id, property_name: p.name,
+        total_units: p.units, occupied_units: occ,
+        vacant_units: p.units - occ, preleased_units: pre,
+        physical_occupancy_pct: p.units > 0 ? (occ / p.units * 100) : 0,
+        preleased_occupancy_pct: p.units > 0 ? ((occ + pre) / p.units * 100) : 0,
+      });
+    });
   });
 
   // Generate rent roll

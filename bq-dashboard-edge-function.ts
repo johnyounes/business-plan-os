@@ -74,6 +74,22 @@ const QUERIES: Record<string, string> = {
     ORDER BY property_name
   `,
 
+  // Monthly occupancy trends (15 months of snapshots)
+  occupancy_snapshot_summary: `
+    SELECT
+      snapshot_month,
+      property_id,
+      property_name,
+      total_units,
+      occupied_units,
+      vacant_units,
+      preleased_units,
+      physical_occupancy_pct,
+      preleased_occupancy_pct
+    FROM \`${PROJECT_ID}.${DATASET_BUILDIUM}.v_occupancy_snapshot_summary\`
+    ORDER BY property_name, snapshot_month
+  `,
+
   // Rent roll (current)
   rent_roll: `
     SELECT * FROM \`${PROJECT_ID}.${DATASET_BUILDIUM}.v_rent_roll\`

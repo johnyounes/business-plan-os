@@ -1161,10 +1161,10 @@ function renderPnL() {
   // ── NON-OPERATING BREAKDOWN (from v_income_statement_snapshot) ──
   // Build month→row lookup from income statement data for this property
   const isRows = (DATA.incomeStatement || []).filter(r =>
-    (r.property_id === propId || r.property_name === propName) && months.includes(r.snapshot_month)
+    (r.property_id === propId || r.property_name === propName) && months.includes(r.snapshot_month || r.month)
   );
   const isByMonth = {};
-  isRows.forEach(r => isByMonth[r.snapshot_month] = r);
+  isRows.forEach(r => isByMonth[r.snapshot_month || r.month] = r);
 
   const hasNonOp = isRows.some(r => r.total_non_operating_expense > 0 || r.non_operating_income > 0);
 

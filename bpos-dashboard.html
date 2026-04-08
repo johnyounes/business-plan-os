@@ -490,6 +490,7 @@ let DATA = {
   turns: null,        // propup turnovers + steps
   properties: null,   // property list with units
   noiSummary: null,   // v_noi_summary
+  incomeStatement: null, // v_income_statement_snapshot (pre-aggregated non-op breakdowns)
   pnlDetail: null,    // income statement detail for selected property
   months: [],         // available months
 };
@@ -1157,12 +1158,75 @@ function renderPnL() {
   });
   html += `<td></td></tr>`;
 
-  // Non-operating sections if present
-  if (Object.keys(sections.non_operating_expense || {}).length) {
-    renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
-  }
-  if (Object.keys(sections.non_operating_income || {}).length) {
-    renderSection('Non-Operating Income', sections.non_operating_income, 1);
+  // ── NON-OPERATING BREAKDOWN (from v_income_statement_snapshot) ──
+  // Build month→row lookup from income statement data for this property
+  const isRows = (DATA.incomeStatement || []).filter(r =>
+    (r.property_id === propId || r.property_name === propName) && months.includes(r.snapshot_month)
+  );
+  const isByMonth = {};
+  isRows.forEach(r => isByMonth[r.snapshot_month] = r);
+
+  const hasNonOp = isRows.some(r => r.total_non_operating_expense > 0 || r.non_operating_income > 0);
+
+  if (hasNonOp) {
+    // Helper to render a single non-operating summary row
+    function renderNonOpRow(label, field, cssClass) {
+      html += `<tr class="${cssClass || ''}"><td>${label}</td>`;
+      let rowGrand = 0;
+      months.forEach(m => {
+        const val = isByMonth[m] ? isByMonth[m][field] || 0 : 0;
+        rowGrand += val;
+        html += `<td>${fmtFull$(val)}</td>`;
+      });
+      html += `<td>${fmtFull$(rowGrand)}</td></tr>`;
+    }
+
+    // Non-Operating Expenses header
+    html += `<tr class="row-header"><td colspan="${months.length + 2}">Non-Operating Expenses</td></tr>`;
+
+    // Capital Improvements subtotal
+    renderNonOpRow('Capital Improvements', 'capital_improvements', '');
+
+    // Mortgage Payment subtotal
+    renderNonOpRow('Mortgage Payment', 'mortgage_payment', '');
+
+    // Asset Management Fee
+    if (isRows.some(r => r.asset_management_fee > 0)) {
+      renderNonOpRow('Asset Management Fee', 'asset_management_fee', '');
+    }
+
+    // Parent Company Expenses
+    if (isRows.some(r => r.parent_company_expenses > 0)) {
+      renderNonOpRow('Parent Company Expenses', 'parent_company_expenses', '');
+    }
+
+    // Total Non-Operating Expenses
+    renderNonOpRow('Total Non-Operating Expenses', 'total_non_operating_expense', 'row-total');
+
+    // Non-Operating Income (if any)
+    if (isRows.some(r => r.non_operating_income > 0)) {
+      html += `<tr class="row-header"><td colspan="${months.length + 2}">Non-Operating Income</td></tr>`;
+      renderNonOpRow('Non-Operating Income', 'non_operating_income', 'row-total');
+    }
+
+    // ── NET INCOME ROW ──
+    html += `<tr class="row-noi"><td>Net Income</td>`;
+    let niGrand = 0;
+    months.forEach(m => {
+      const ni = isByMonth[m] ? isByMonth[m].net_income || 0 : 0;
+      niGrand += ni;
+      html += `<td class="${ni >= 0 ? 'good' : 'bad'}">${fmtFull$(ni)}</td>`;
+    });
+    html += `<td class="${niGrand >= 0 ? 'good' : 'bad'}">${fmtFull$(niGrand)}</td></tr>`;
+
+  } else {
+    // Fallback: render non-operating from financial_summary detail if income_statement not available
+    if (Object.keys(sections.non_operating_expense || {}).length) {
+      renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
+    }
+    if (Object.keys(sections.non_operating_income || {}).length) {
+      renderSection('Non-Operating Income', sections.non_operating_income, 1);
+    }
   }
 
   html += '</tbody></table></div>';
@@ -1514,6 +1578,7 @@ async function loadDashboardData() {
     const [
       financialRes,
       noiRes,
+      incStmtRes,
       occRes,
       rentRollRes,
       vacancyRes,
@@ -1523,6 +1588,7 @@ async function loadDashboardData() {
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
+      safeCall('income_statement'),
       safeCall('occupancy_summary'),
       safeCall('rent_roll'),
       safeCall('vacancy'),
@@ -1533,6 +1599,7 @@ async function loadDashboardData() {
 
     DATA.financial   = financialRes.data || [];
     DATA.noiSummary  = noiRes.data || [];
+    DATA.incomeStatement = incStmtRes.data || [];
     DATA.occupancy   = occRes.data || [];
     DATA.rentRoll    = rentRollRes.data || [];
     DATA.vacancy     = vacancyRes.data || [];
@@ -1573,7 +1640,7 @@ async function loadDashboardData() {
       if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
-    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+    [DATA.noiSummary, DATA.incomeStatement, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
     });
 
@@ -1582,6 +1649,18 @@ async function loadDashboardData() {
       r.property_id = parseInt(r.property_id) || 0;
       r.total_amount = parseFloat(r.total_amount) || 0;
       r.transaction_count = parseInt(r.transaction_count) || 0;
+    });
+
+    // ── COERCE INCOME STATEMENT DATA ──
+    DATA.incomeStatement.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.units = parseInt(r.units) || 0;
+      ['total_income','total_expenses','noi','capital_improvements','mortgage_payment',
+       'asset_management_fee','parent_company_expenses','total_non_operating_expense',
+       'non_operating_income','net_income','income_per_unit','expense_per_unit',
+       'noi_per_unit','net_income_per_unit'].forEach(f => {
+        r[f] = parseFloat(r[f]) || 0;
+      });
     });
 
     // ── BUILD MONTHS FROM FINANCIAL DATA ──

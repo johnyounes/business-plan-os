@@ -1588,7 +1588,7 @@ async function loadDashboardData() {
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
-      safeCall('income_statement'),
+      safeCall('income_statement_snapshot'),
       safeCall('occupancy_summary'),
       safeCall('rent_roll'),
       safeCall('vacancy'),

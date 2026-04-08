@@ -43,6 +43,21 @@ const QUERIES: Record<string, string> = {
     ORDER BY property_name, snapshot_month
   `,
 
+  // Income statement snapshot (pre-aggregated from v_income_statement_snapshot)
+  income_statement: `
+    SELECT
+      snapshot_month, property_id, property_name,
+      total_income, total_expenses, noi,
+      capital_improvements, mortgage_payment,
+      asset_management_fee, parent_company_expenses,
+      total_non_operating_expense, non_operating_income,
+      net_income, units,
+      income_per_unit, expense_per_unit,
+      noi_per_unit, net_income_per_unit
+    FROM \`${PROJECT_ID}.${DATASET_BUILDIUM}.v_income_statement_snapshot\`
+    ORDER BY property_name, snapshot_month
+  `,
+
   // Financial detail (all accounts by property by month)
   financial_summary: `
     SELECT

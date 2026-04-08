@@ -1131,7 +1131,7 @@ function renderPnL() {
   html += `<tr class="row-noi"><td>Net Operating Income</td>`;
   let noiGrand = 0;
   months.forEach(m => {
-    const noi = (incTotals[m] || 0) + (expTotals[m] || 0);
+    const noi = (incTotals[m] || 0) - (expTotals[m] || 0);
     noiGrand += noi;
     html += `<td>${fmtFull$(noi)}</td>`;
   });
@@ -1608,13 +1608,9 @@ async function loadDashboardData() {
           noiMap[key].non_operating += r.total_amount;
         }
       });
-      // Compute NOI = income + expenses (expenses are typically negative from BQ)
+      // NOI = Income minus Expenses (Buildium stores both as positive)
       Object.values(noiMap).forEach(r => {
-        r.noi = r.total_income + r.total_expenses;
-        // If expenses came as positive values, make them negative for NOI calc
-        if (r.total_expenses > 0 && r.total_income > 0) {
-          r.noi = r.total_income - r.total_expenses;
-        }
+        r.noi = r.total_income - r.total_expenses;
         // Add units from property lookup
         const prop = nameToProp[r.property_name];
         r.units = prop ? prop.units : 0;

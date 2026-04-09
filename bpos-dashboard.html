@@ -81,6 +81,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .prop-dd-item .units{font-size:11px;color:var(--text3);margin-left:auto;}
 .prop-dd-empty{padding:20px;text-align:center;font-size:13px;color:var(--text3);}
 
+/* ── GROUP FILTER ── */
+.group-filter{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 32px 7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;min-width:180px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;cursor:pointer;}
+.group-filter:focus{border-color:var(--accent);}
+
 /* ── KPI CARDS ── */
 .kpi-grid{display:grid;gap:12px;margin-bottom:24px;}
 .kpi-grid.cols-4{grid-template-columns:repeat(4,1fr);}
@@ -214,58 +218,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 }
 
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
-
-/* ── UNIT TRACKER LAYOUT ── */
-.ut-layout{display:grid;grid-template-columns:1fr 1.7fr;gap:16px;margin-bottom:24px;align-items:start;}
-.ut-left .data-table-wrap{max-height:720px;overflow-y:auto;}
-.ut-right{display:flex;flex-direction:column;gap:16px;}
-.ut-right .data-table-wrap{max-height:420px;overflow-y:auto;}
-.ut-full{margin-bottom:24px;}
-
-/* Compact property overview table */
-.ut-prop-table{width:100%;border-collapse:collapse;font-size:11px;}
-.ut-prop-table th{background:var(--bg3);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:7px 8px;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;position:sticky;top:0;z-index:2;}
-.ut-prop-table th:first-child{text-align:left;min-width:140px;}
-.ut-prop-table td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-size:11px;color:var(--text2);}
-.ut-prop-table td:first-child{text-align:left;font-family:var(--font);color:var(--text);font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ut-prop-table tr:hover td{background:rgba(255,255,255,.015);}
-.ut-prop-table tr.grand-total td{font-weight:700;color:var(--text);border-top:2px solid var(--border2);background:var(--bg3);font-size:12px;}
-.ut-prop-table .occ-good{color:var(--green);}
-.ut-prop-table .occ-warn{color:var(--amber);}
-.ut-prop-table .occ-bad{color:var(--red);}
-
-/* Lease expiry dot indicator */
-.lease-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-.lease-dot.exp-30{background:var(--red);}
-.lease-dot.exp-60{background:var(--amber);}
-.lease-dot.exp-90{background:var(--green);}
-.lease-dot.exp-mtm{background:var(--purple);}
-
-/* Days vacant badge */
-.days-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;font-family:var(--mono);}
-.days-badge.high{background:rgba(232,80,74,.12);color:var(--red);}
-.days-badge.med{background:rgba(245,166,35,.12);color:var(--amber);}
-.days-badge.low{background:rgba(34,201,122,.12);color:var(--green);}
-
-/* Board badge */
-.board-badge{display:inline-block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px;}
-.board-badge.make-ready{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
-.board-badge.lease-up{background:rgba(46,196,182,.1);color:var(--teal);border:1px solid rgba(46,196,182,.2);}
-
-/* Pagination */
-.table-pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);}
-.table-pagination button{background:none;border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:3px 8px;cursor:pointer;font-size:11px;font-family:var(--font);transition:all .15s;}
-.table-pagination button:hover:not(:disabled){background:rgba(255,255,255,.04);color:var(--text);}
-.table-pagination button:disabled{opacity:.3;cursor:not-allowed;}
-
-/* Legend bar */
-.ut-legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0;font-size:11px;color:var(--text3);}
-.ut-legend-item{display:flex;align-items:center;gap:5px;}
-
-@media(max-width:1200px){
-  .ut-layout{grid-template-columns:1fr;}
-  .ut-left .data-table-wrap{max-height:400px;}
-}
 </style>
 </head>
 <body>
@@ -315,6 +267,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <span class="filter-label">Month</span>
       <select class="filter-select" id="monthFilter"></select>
     </div>
+    <div class="filter-group">
+      <span class="filter-label">Group</span>
+      <select class="filter-select group-filter" id="groupFilter" style="min-width:180px;">
+        <option value="">All Groups</option>
+      </select>
+    </div>
     <div class="filter-group prop-multi" id="propMulti">
       <span class="filter-label">Properties</span>
       <div class="prop-multi-trigger" id="propTrigger" tabindex="0">
@@ -336,6 +294,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- VIEW: FINANCIAL OVERVIEW -->
   <div class="view-panel" id="view-overview">
     <div class="kpi-grid cols-6" id="finKpis"></div>
+    <div class="kpi-grid cols-4" id="operationalKpis"></div>
     <div class="chart-row" id="finCharts">
       <div class="chart-card">
         <div class="cc-head"><span class="cc-title">Income vs Expenses</span><span class="cc-subtitle" id="chartPeriodLabel"></span></div>
@@ -347,7 +306,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <div class="section-head"><h2>Property Metrics</h2></div>
-    <div class="kpi-grid cols-5" id="propMetrics"></div>
+    <div class="kpi-grid cols-4" id="propMetrics"></div>
     <div class="section-head"><h2>Property Performance</h2></div>
     <div class="data-table-wrap">
       <div class="dt-header">
@@ -398,11 +357,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- VIEW: OCCUPANCY -->
   <div class="view-panel" id="view-occupancy" style="display:none;">
     <div class="kpi-grid cols-5" id="occKpis"></div>
-    <!-- Occupancy Trend Chart -->
-    <div class="section-head"><h2>Occupancy Trend</h2><span class="badge" id="occTrendPeriod"></span></div>
-    <div class="chart-wrap" style="margin-bottom:24px;">
-      <canvas id="occTrendChart"></canvas>
-    </div>
     <div class="section-head"><h2>Occupancy by Property</h2></div>
     <div class="data-table-wrap">
       <div class="dt-header">
@@ -418,7 +372,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
               <th class="r">Occupied</th>
               <th class="r">Vacant</th>
               <th class="r">Physical Occ.</th>
-              <th class="r">Preleased Occ.</th>
               <th class="r">Preleased</th>
               <th class="r">Net Exposure</th>
             </tr>
@@ -455,146 +408,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   <!-- VIEW: UNIT TRACKER -->
   <div class="view-panel" id="view-units" style="display:none;">
-    <div class="kpi-grid cols-6" id="unitKpis"></div>
-
-    <!-- Split layout: All Properties (left) + Vacant/Occupied (right) -->
-    <div class="ut-layout">
-
-      <!-- LEFT: All Properties Overview -->
-      <div class="ut-left">
-        <div class="data-table-wrap">
-          <div class="dt-header">
-            <span class="dt-title">All Properties</span>
-            <span class="dt-count" id="propOverviewCount"></span>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="ut-prop-table" id="propOverviewTable">
-              <thead>
-                <tr>
-                  <th>Property</th>
-                  <th>Units</th>
-                  <th>Vac</th>
-                  <th>AV</th>
-                  <th>MR</th>
-                  <th>Occ</th>
-                  <th>Occ %</th>
-                  <th>PL</th>
-                  <th>PL %</th>
-                </tr>
-              </thead>
-              <tbody id="propOverviewBody"></tbody>
-            </table>
-          </div>
-        </div>
+    <div class="kpi-grid cols-5" id="unitKpis"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Rent Roll</span>
+        <span class="dt-count" id="unitCount"></span>
+        <input class="dt-search" id="unitSearch" placeholder="Search unit, tenant…"/>
       </div>
-
-      <!-- RIGHT: Stacked tables -->
-      <div class="ut-right">
-
-        <!-- Vacant Units Board -->
-        <div class="data-table-wrap">
-          <div class="dt-header">
-            <span class="dt-title">Vacant Units</span>
-            <span class="dt-count" id="vacantCount"></span>
-            <input class="dt-search" id="vacantSearch" placeholder="Search vacant…"/>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="data-table" id="vacantTable">
-              <thead>
-                <tr>
-                  <th>Property</th>
-                  <th>Unit</th>
-                  <th>Type</th>
-                  <th>Finish</th>
-                  <th>Status</th>
-                  <th>Move Out</th>
-                  <th>Initial Walk</th>
-                  <th>Final Walk</th>
-                  <th>Available</th>
-                  <th class="r">Mkt Rent</th>
-                  <th class="r">Days Vacant</th>
-                </tr>
-              </thead>
-              <tbody id="vacantBody"></tbody>
-            </table>
-          </div>
-          <div class="table-pagination" id="vacantPagination"></div>
-        </div>
-
-        <!-- Occupied Units -->
-        <div class="data-table-wrap">
-          <div class="dt-header">
-            <span class="dt-title">Occupied Units</span>
-            <span class="dt-count" id="occupiedCount"></span>
-            <input class="dt-search" id="occupiedSearch" placeholder="Search occupied…"/>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="data-table" id="occupiedTable">
-              <thead>
-                <tr>
-                  <th>Property</th>
-                  <th>Unit</th>
-                  <th>Type</th>
-                  <th>Finish</th>
-                  <th>Lease Exp *</th>
-                  <th>MTM</th>
-                  <th>Lease Ending</th>
-                  <th class="r">Mkt Rent</th>
-                  <th class="r">Purc Rent</th>
-                  <th class="r">Rent</th>
-                  <th class="r">Agro Meter</th>
-                  <th class="r">AM +/-</th>
-                </tr>
-              </thead>
-              <tbody id="occupiedBody"></tbody>
-            </table>
-          </div>
-          <div class="ut-legend">
-            <span class="ut-legend-item"><span class="lease-dot exp-30"></span> = 30 days</span>
-            <span class="ut-legend-item"><span class="lease-dot exp-60"></span> = 60 days</span>
-            <span class="ut-legend-item"><span class="lease-dot exp-90"></span> = 90 days</span>
-          </div>
-          <div class="table-pagination" id="occupiedPagination"></div>
-        </div>
-
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="unitTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>BR/BA</th>
+              <th>Tenant</th>
+              <th class="r">Rent</th>
+              <th class="r">Market Rent</th>
+              <th class="r">Loss to Lease</th>
+              <th>Status</th>
+              <th>Lease Start</th>
+              <th>Lease End</th>
+            </tr>
+          </thead>
+          <tbody id="unitBody"></tbody>
+        </table>
       </div>
     </div>
-
-    <!-- FULL WIDTH: All Units -->
-    <div class="ut-full">
-      <div class="data-table-wrap">
-        <div class="dt-header">
-          <span class="dt-title">All Units</span>
-          <span class="dt-count" id="allUnitsCount"></span>
-          <input class="dt-search" id="allUnitsSearch" placeholder="Search all units…"/>
-        </div>
-        <div style="overflow-x:auto;">
-          <table class="data-table" id="allUnitsTable">
-            <thead>
-              <tr>
-                <th>Property</th>
-                <th>Unit</th>
-                <th>Type</th>
-                <th>Finish</th>
-                <th>Lease Starting</th>
-                <th>Lease Ending</th>
-                <th class="r">Mkt Rent</th>
-                <th class="r">Rent</th>
-                <th class="r">Purc Rent</th>
-                <th class="r">Prev Rent</th>
-                <th class="r">Pro Forma Rent</th>
-                <th class="r">PF +/-</th>
-                <th class="r">Agro Meter</th>
-                <th class="r">AM +/-</th>
-              </tr>
-            </thead>
-            <tbody id="allUnitsBody"></tbody>
-          </table>
-        </div>
-        <div class="table-pagination" id="allUnitsPagination"></div>
-      </div>
-    </div>
-
   </div>
 
   <!-- VIEW: UNIT TURNS -->
@@ -649,22 +489,26 @@ const FN_NAME   = 'bq-dashboard';
 let allProperties = [];
 let selectedProps  = []; // empty = "all"
 let selectedMonth  = '';
+let selectedGroup  = '';
 let currentView    = 'overview';
 
 // Cached data from BigQuery
 let DATA = {
   financial: null,    // financial_snapshots aggregated
   occupancy: null,    // v_occupancy_summary
-  occupancySnapshots: null, // v_occupancy_snapshot_summary (monthly trends)
   rentRoll: null,     // v_rent_roll
   vacancy: null,      // v_vacancy
   expirations: null,  // v_lease_expirations
   turns: null,        // propup turnovers + steps
   properties: null,   // property list with units
   noiSummary: null,   // v_noi_summary
-  incomeStatement: null, // v_income_statement_snapshot (pre-aggregated non-op breakdowns)
   pnlDetail: null,    // income statement detail for selected property
   months: [],         // available months
+  economicOccupancy: null,  // v_economic_occupancy
+  propertyGroups: null,     // property groups mapping
+  utilitySummary: null,     // utility summary
+  snapshotMeta: null,       // snapshot metadata
+  incomeStatement: null,    // income statement snapshot
 };
 
 // ── SUPABASE HELPER ──
@@ -730,19 +574,14 @@ const fmtBedBath = (v) => {
 // ── NAVIGATION ──
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
-    let view = el.dataset.view;
-    // Redirect turns → units (turns data merged into unit tracker)
-    if (view === 'turns') view = 'units';
+    const view = el.dataset.view;
     if (view === currentView) return;
     document.querySelector('.sb-item.active')?.classList.remove('active');
-    // Highlight the correct sidebar item
-    const targetEl = document.querySelector(`.sb-item[data-view="${view}"]`);
-    if (targetEl) targetEl.classList.add('active');
-    else el.classList.add('active');
+    el.classList.add('active');
     currentView = view;
     document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
     document.getElementById('view-' + view).style.display = '';
-    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker' };
+    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Turns' };
     document.getElementById('viewTitle').textContent = titles[view] || '';
     renderCurrentView();
   });
@@ -781,7 +620,10 @@ document.getElementById('clearAllProps').addEventListener('click', (e) => {
 function renderPropDropdown() {
   const q = propSearch.value.toLowerCase().trim();
   const list = document.getElementById('propDropdownList');
-  const filtered = allProperties.filter(p => !q || p.name.toLowerCase().includes(q));
+  // Scope by group first
+  const groupIds = getGroupPropertyIds();
+  const displayProps = groupIds ? allProperties.filter(p => groupIds.includes(p.id)) : allProperties;
+  const filtered = displayProps.filter(p => !q || p.name.toLowerCase().includes(q));
   if (!filtered.length) {
     list.innerHTML = '<div class="prop-dd-empty">No matching properties</div>';
     return;
@@ -857,7 +699,44 @@ monthFilter.addEventListener('change', () => {
 });
 
 function populateMonthFilter(months) {
-  monthFilter.innerHTML = months.map(m => `<option value="${m}"${m === selectedMonth ? ' selected' : ''}>${fmtMonth(m)}</option>`).join('');
+  // Detect current month from snapshot_metadata (unlocked = live)
+  const liveMonths = new Set();
+  if (DATA.snapshotMeta) {
+    DATA.snapshotMeta.forEach(sm => {
+      if (sm.is_locked === 'false' || sm.is_locked === false) liveMonths.add(sm.snapshot_month);
+    });
+  }
+  monthFilter.innerHTML = months.map(m => {
+    const isLive = liveMonths.has(m);
+    const label = fmtMonth(m) + (isLive ? ' (Live)' : '');
+    return `<option value="${m}"${m === selectedMonth ? ' selected' : ''}>${label}</option>`;
+  }).join('');
+}
+
+// ── GROUP FILTER ──
+const groupFilter = document.getElementById('groupFilter');
+groupFilter.addEventListener('change', () => {
+  selectedGroup = groupFilter.value;
+  // Re-scope property dropdown when group changes
+  renderPropDropdown();
+  renderPropChips();
+  // Clear property selection when group changes
+  selectedProps = [];
+  onFiltersChanged();
+});
+
+function populateGroupFilter(groups) {
+  const uniqueGroups = [...new Set(groups.map(g => g.group_name))].sort();
+  groupFilter.innerHTML = '<option value="">All Groups</option>' +
+    uniqueGroups.map(g => `<option value="${g}"${g === selectedGroup ? ' selected' : ''}>${g}</option>`).join('');
+}
+
+function getGroupPropertyIds() {
+  if (!selectedGroup || !DATA.propertyGroups) return null;
+  return DATA.propertyGroups
+    .filter(g => g.group_name === selectedGroup)
+    .map(g => parseInt(g.property_id))
+    .filter(Boolean);
 }
 
 // ── FILTER CHANGE HANDLER ──
@@ -866,16 +745,34 @@ function onFiltersChanged() {
 }
 
 function getFilteredProps() {
-  if (selectedProps.length === 0) return allProperties;
-  return allProperties.filter(p => selectedProps.includes(p.id));
+  let props = allProperties;
+  // Scope by group first
+  const groupIds = getGroupPropertyIds();
+  if (groupIds) props = props.filter(p => groupIds.includes(p.id));
+  // Then by individual property selection
+  if (selectedProps.length > 0) props = props.filter(p => selectedProps.includes(p.id));
+  return props;
 }
 
 // Universal row filter — matches by property_id OR property_name (api_name or t12_name)
 function matchesSelectedProps(r) {
-  if (selectedProps.length === 0) return true;
-  const propIds = new Set(selectedProps);
-  if (r.property_id && propIds.has(r.property_id)) return true;
-  // Also match by property_name → look up the id
+  const groupIds = getGroupPropertyIds();
+  const hasGroupFilter = groupIds !== null;
+  const hasPropFilter = selectedProps.length > 0;
+
+  if (!hasGroupFilter && !hasPropFilter) return true;
+
+  // Build effective property set
+  let allowedIds;
+  if (hasGroupFilter && hasPropFilter) {
+    allowedIds = new Set(selectedProps.filter(id => groupIds.includes(id)));
+  } else if (hasGroupFilter) {
+    allowedIds = new Set(groupIds);
+  } else {
+    allowedIds = new Set(selectedProps);
+  }
+
+  if (r.property_id && allowedIds.has(parseInt(r.property_id))) return true;
   if (r.property_name) {
     const fp = getFilteredProps();
     for (const p of fp) {
@@ -892,7 +789,7 @@ function renderCurrentView() {
     case 'pnl': renderPnL(); break;
     case 'occupancy': renderOccupancy(); break;
     case 'units': renderUnits(); break;
-    case 'turns': currentView = 'units'; document.querySelectorAll('.sb-item').forEach(s => { s.classList.toggle('active', s.dataset.view === 'units'); }); renderUnits(); break;
+    case 'turns': renderTurns(); break;
   }
 }
 
@@ -962,11 +859,7 @@ function renderOverview() {
 
   // Property Metrics
   const occData = DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : [];
-  const occTotalUnits = occData.reduce((s, r) => s + (r.total_units || 0), 0);
-  const occTotalOcc = occData.reduce((s, r) => s + (r.occupied_units || 0), 0);
-  const occTotalPre = occData.reduce((s, r) => s + (r.preleased_units || 0), 0);
-  const avgPhysOcc = occTotalUnits > 0 ? (occTotalOcc / occTotalUnits * 100) : 0;
-  const avgPreOcc = occTotalUnits > 0 ? ((occTotalOcc + occTotalPre) / occTotalUnits * 100) : 0;
+  const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
     const rev = r.total_income || r.revenue || 0;
@@ -976,14 +869,9 @@ function renderOverview() {
 
   document.getElementById('propMetrics').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Physical Occupancy</div>
-      <div class="kpi-value ${avgPhysOcc >= 90 ? 'good' : avgPhysOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgPhysOcc)}</div>
-      <div class="kpi-sub">${occTotalOcc.toLocaleString()} of ${occTotalUnits.toLocaleString()} units</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Preleased Occupancy</div>
-      <div class="kpi-value" style="color:var(--teal);">${fmtPct(avgPreOcc)}</div>
-      <div class="kpi-sub">${occTotalPre} preleased units</div>
+      <div class="kpi-label">Avg Physical Occupancy</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-sub">${occData.length} properties</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Negative Cash Flow</div>
@@ -999,6 +887,66 @@ function renderOverview() {
       <div class="kpi-label">Total Properties</div>
       <div class="kpi-value">${propCount}</div>
       <div class="kpi-sub">${totalUnits.toLocaleString()} units</div>
+    </div>
+  `;
+
+  // ── OPERATIONAL KPIs (second row) ──
+  const month = selectedMonth; // already defined above
+
+  // CAPEX: from income_statement_snapshot
+  let capex = 0;
+  if (DATA.incomeStatement) {
+    const capexRows = DATA.incomeStatement.filter(r => r.month === month && matchesSelectedProps(r));
+    capex = capexRows.reduce((s, r) => s + (r.capital_improvements || 0), 0);
+  }
+
+  // UTILITY REIMBURSEMENT: utility income / utility expense
+  let utilIncome = 0, utilExpense = 0, utilReimb = 0;
+  if (DATA.utilitySummary) {
+    const utilRows = DATA.utilitySummary.filter(r => r.snapshot_month === month && matchesSelectedProps(r));
+    utilIncome = utilRows.reduce((s, r) => s + r.utility_income, 0);
+    utilExpense = utilRows.reduce((s, r) => s + r.utility_expense, 0);
+    utilReimb = utilExpense > 0 ? (utilIncome / utilExpense * 100) : 0;
+  }
+
+  // PHYSICAL OCCUPANCY: from occupancy snapshot summary for selected month, or current occupancy
+  let physOcc = 0, totalOccUnits = 0, totalAllUnits = 0;
+  if (DATA.occupancy) {
+    const occRows = DATA.occupancy.filter(r => matchesSelectedProps(r));
+    totalOccUnits = occRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    totalAllUnits = occRows.reduce((s, r) => s + (r.total_units || 0), 0);
+    physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
+  }
+
+  // ECONOMIC OCCUPANCY: from v_economic_occupancy
+  let econOcc = 0;
+  if (DATA.economicOccupancy) {
+    const econRows = DATA.economicOccupancy.filter(r => r.snapshot_month === month && matchesSelectedProps(r));
+    const totalRecurring = econRows.reduce((s, r) => s + r.recurring_income, 0);
+    const totalPotential = econRows.reduce((s, r) => s + r.estimated_rent_potential, 0);
+    econOcc = totalPotential > 0 ? (totalRecurring / totalPotential * 100) : 0;
+  }
+
+  document.getElementById('operationalKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Total Capex</div>
+      <div class="kpi-value">${fmt$(capex)}</div>
+      <div class="kpi-sub">${fmtMonth(month)} · Capital Improvements</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Utility Reimbursement</div>
+      <div class="kpi-value ${utilReimb >= 80 ? 'good' : utilReimb >= 50 ? 'warn' : 'bad'}">${fmtPct1(utilReimb)}</div>
+      <div class="kpi-sub">${fmt$(utilIncome)} income ÷ ${fmt$(utilExpense)} expense</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-value ${physOcc >= 90 ? 'good' : physOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(physOcc)}</div>
+      <div class="kpi-sub">${totalOccUnits.toLocaleString()} ÷ ${totalAllUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Economic Occupancy</div>
+      <div class="kpi-value ${econOcc >= 90 ? 'good' : econOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(econOcc)}</div>
+      <div class="kpi-sub">Recurring Income ÷ Rent Potential</div>
     </div>
   `;
 
@@ -1324,34 +1272,12 @@ function renderPnL() {
   });
   html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
 
-  // Occupancy rows if available — match by name or id
-  // Use snapshot data for monthly occupancy when available, fall back to current occupancy
-  if (DATA.occupancySnapshots && DATA.occupancySnapshots.length > 0) {
-    const propSnaps = DATA.occupancySnapshots.filter(o => o.property_id === propId || o.property_name === propName);
-    if (propSnaps.length > 0) {
-      const snapByMonth = {};
-      propSnaps.forEach(s => { snapByMonth[s.snapshot_month] = s; });
-      html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
-      months.forEach(m => {
-        const s = snapByMonth[m];
-        html += `<td>${s ? fmtPct(s.physical_occupancy_pct) : '—'}</td>`;
-      });
-      html += `<td></td></tr>`;
-      html += `<tr class="pct-row"><td>Preleased Occupancy</td>`;
-      months.forEach(m => {
-        const s = snapByMonth[m];
-        html += `<td style="color:var(--teal);">${s ? fmtPct(s.preleased_occupancy_pct) : '—'}</td>`;
-      });
-      html += `<td></td></tr>`;
-    }
-  } else if (DATA.occupancy) {
+  // Occupancy row if available — match by name or id
+  if (DATA.occupancy) {
     const occ = DATA.occupancy.find(o => o.property_id === propId || o.property_name === propName);
     if (occ) {
       html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
       months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
-      html += `<td></td></tr>`;
-      html += `<tr class="pct-row"><td>Preleased Occupancy</td>`;
-      months.forEach(() => html += `<td style="color:var(--teal);">${fmtPct(occ.preleased_occupancy)}</td>`);
       html += `<td></td></tr>`;
     }
   }
@@ -1366,75 +1292,12 @@ function renderPnL() {
   });
   html += `<td></td></tr>`;
 
-  // ── NON-OPERATING BREAKDOWN (from v_income_statement_snapshot) ──
-  // Build month→row lookup from income statement data for this property
-  const isRows = (DATA.incomeStatement || []).filter(r =>
-    (r.property_id === propId || r.property_name === propName) && months.includes(r.snapshot_month || r.month)
-  );
-  const isByMonth = {};
-  isRows.forEach(r => isByMonth[r.snapshot_month || r.month] = r);
-
-  const hasNonOp = isRows.some(r => r.total_non_operating_expense > 0 || r.non_operating_income > 0);
-
-  if (hasNonOp) {
-    // Helper to render a single non-operating summary row
-    function renderNonOpRow(label, field, cssClass) {
-      html += `<tr class="${cssClass || ''}"><td>${label}</td>`;
-      let rowGrand = 0;
-      months.forEach(m => {
-        const val = isByMonth[m] ? isByMonth[m][field] || 0 : 0;
-        rowGrand += val;
-        html += `<td>${fmtFull$(val)}</td>`;
-      });
-      html += `<td>${fmtFull$(rowGrand)}</td></tr>`;
-    }
-
-    // Non-Operating Expenses header
-    html += `<tr class="row-header"><td colspan="${months.length + 2}">Non-Operating Expenses</td></tr>`;
-
-    // Capital Improvements subtotal
-    renderNonOpRow('Capital Improvements', 'capital_improvements', '');
-
-    // Mortgage Payment subtotal
-    renderNonOpRow('Mortgage Payment', 'mortgage_payment', '');
-
-    // Asset Management Fee
-    if (isRows.some(r => r.asset_management_fee > 0)) {
-      renderNonOpRow('Asset Management Fee', 'asset_management_fee', '');
-    }
-
-    // Parent Company Expenses
-    if (isRows.some(r => r.parent_company_expenses > 0)) {
-      renderNonOpRow('Parent Company Expenses', 'parent_company_expenses', '');
-    }
-
-    // Total Non-Operating Expenses
-    renderNonOpRow('Total Non-Operating Expenses', 'total_non_operating_expense', 'row-total');
-
-    // Non-Operating Income (if any)
-    if (isRows.some(r => r.non_operating_income > 0)) {
-      html += `<tr class="row-header"><td colspan="${months.length + 2}">Non-Operating Income</td></tr>`;
-      renderNonOpRow('Non-Operating Income', 'non_operating_income', 'row-total');
-    }
-
-    // ── NET INCOME ROW ──
-    html += `<tr class="row-noi"><td>Net Income</td>`;
-    let niGrand = 0;
-    months.forEach(m => {
-      const ni = isByMonth[m] ? isByMonth[m].net_income || 0 : 0;
-      niGrand += ni;
-      html += `<td class="${ni >= 0 ? 'good' : 'bad'}">${fmtFull$(ni)}</td>`;
-    });
-    html += `<td class="${niGrand >= 0 ? 'good' : 'bad'}">${fmtFull$(niGrand)}</td></tr>`;
-
-  } else {
-    // Fallback: render non-operating from financial_summary detail if income_statement not available
-    if (Object.keys(sections.non_operating_expense || {}).length) {
-      renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
-    }
-    if (Object.keys(sections.non_operating_income || {}).length) {
-      renderSection('Non-Operating Income', sections.non_operating_income, 1);
-    }
+  // Non-operating sections if present
+  if (Object.keys(sections.non_operating_expense || {}).length) {
+    renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
+  }
+  if (Object.keys(sections.non_operating_income || {}).length) {
+    renderSection('Non-Operating Income', sections.non_operating_income, 1);
   }
 
   html += '</tbody></table></div>';
@@ -1460,58 +1323,48 @@ function renderOccupancy() {
   const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
   const totalVacant   = occ.reduce((s, r) => s + (r.vacant_units || 0), 0);
   const totalPreleased = occ.reduce((s, r) => s + (r.preleased_units || 0), 0);
-  const physOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
-  // Critical Rule #4: Physical ≠ Preleased. Preleased = (occupied + preleased) / total
-  const preleasedOcc = totalUnits > 0 ? ((totalOccupied + totalPreleased) / totalUnits * 100) : 0;
-  const totalMktRent = occ.reduce((s, r) => s + (r.total_market_rent || 0), 0);
-  const totalActRent = occ.reduce((s, r) => s + (r.total_actual_rent || 0), 0);
-  const vacLoss = occ.reduce((s, r) => s + (r.vacancy_loss_market || 0), 0);
+  const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
 
   document.getElementById('occKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Physical Occupancy</div>
-      <div class="kpi-value ${physOcc >= 90 ? 'good' : physOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(physOcc)}</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
       <div class="kpi-sub">${totalOccupied.toLocaleString()} of ${totalUnits.toLocaleString()} units</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Preleased Occupancy</div>
-      <div class="kpi-value ${preleasedOcc >= 95 ? 'good' : preleasedOcc >= 90 ? 'warn' : 'bad'}" style="color:var(--teal);">${fmtPct(preleasedOcc)}</div>
-      <div class="kpi-sub">${(totalOccupied + totalPreleased).toLocaleString()} occupied + preleased</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Vacant Units</div>
       <div class="kpi-value ${totalVacant > 0 ? 'bad' : 'good'}">${totalVacant}</div>
-      <div class="kpi-sub">${totalPreleased} preleased · ${totalVacant - totalPreleased} unpreleased</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Vacancy Loss (Market)</div>
-      <div class="kpi-value ${vacLoss > 0 ? 'warn' : 'good'}">${fmt$(vacLoss)}</div>
       <div class="kpi-sub">${totalUnits > 0 ? fmtPct(totalVacant / totalUnits * 100) : '0%'} vacancy rate</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Rent vs Market</div>
-      <div class="kpi-value">${fmt$(totalActRent)}</div>
-      <div class="kpi-sub">${totalMktRent > 0 ? fmtPct1((totalActRent / totalMktRent) * 100) : '—'} of market · ${occ.length} properties</div>
+      <div class="kpi-label">Preleased</div>
+      <div class="kpi-value" style="color:var(--teal);">${totalPreleased}</div>
+      <div class="kpi-sub">Future leases signed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Vacancy Exposure</div>
+      <div class="kpi-value ${(totalVacant - totalPreleased) > 0 ? 'warn' : 'good'}">${totalVacant - totalPreleased}</div>
+      <div class="kpi-sub">Vacant minus preleased</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Properties</div>
+      <div class="kpi-value">${occ.length}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
     </div>
   `;
 
-  // Occupancy trend chart
-  renderOccupancyTrend();
-
-  // Occupancy table — add preleased occupancy column per Rule #4
+  // Occupancy table
   const tbody = document.getElementById('occBody');
   const sorted = [...occ].sort((a, b) => (a.physical_occupancy || 0) - (b.physical_occupancy || 0));
   tbody.innerHTML = sorted.map(r => {
-    const physPct = Math.round(r.physical_occupancy || 0);
-    const prePct = Math.round(r.preleased_occupancy || 0);
+    const occPct = Math.round(r.physical_occupancy || 0);
     const netExp = (r.vacant_units || 0) - (r.preleased_units || 0);
     return `<tr>
       <td>${r.property_name || '—'}</td>
       <td class="r">${r.total_units || 0}</td>
       <td class="r">${r.occupied_units || 0}</td>
       <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
-      <td class="r ${physPct >= 90 ? 'good' : physPct >= 80 ? 'warn' : 'bad'}">${fmtPct(physPct)}</td>
-      <td class="r" style="color:var(--teal);">${fmtPct(prePct)}</td>
+      <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
       <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
       <td class="r ${netExp > 0 ? 'warn' : 'good'}">${netExp}</td>
     </tr>`;
@@ -1526,97 +1379,6 @@ function renderOccupancy() {
 
   // Lease expirations
   renderExpirations();
-}
-
-// ── OCCUPANCY TREND CHART (from v_occupancy_snapshot_summary) ──
-function renderOccupancyTrend() {
-  const canvas = document.getElementById('occTrendChart');
-  if (!canvas || !DATA.occupancySnapshots || !DATA.occupancySnapshots.length) return;
-  const ctx = canvas.getContext('2d');
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width * 2;
-  canvas.height = 220 * 2;
-  canvas.style.width = rect.width + 'px';
-  canvas.style.height = '220px';
-  ctx.scale(2, 2);
-  const W = rect.width, H = 220;
-  ctx.clearRect(0, 0, W, H);
-
-  const snapshots = DATA.occupancySnapshots.filter(r => matchesSelectedProps(r));
-  const months = [...new Set(snapshots.map(r => r.snapshot_month))].sort();
-  if (months.length < 2) return;
-
-  // Aggregate by month
-  const physByMonth = [], preByMonth = [], unitsByMonth = [], occByMonth = [];
-  months.forEach(m => {
-    const rows = snapshots.filter(r => r.snapshot_month === m);
-    const totUnits = rows.reduce((s, r) => s + (r.total_units || 0), 0);
-    const totOcc = rows.reduce((s, r) => s + (r.occupied_units || 0), 0);
-    const totPre = rows.reduce((s, r) => s + (r.preleased_units || 0), 0);
-    unitsByMonth.push(totUnits);
-    occByMonth.push(totOcc);
-    physByMonth.push(totUnits > 0 ? (totOcc / totUnits * 100) : 0);
-    preByMonth.push(totUnits > 0 ? ((totOcc + totPre) / totUnits * 100) : 0);
-  });
-
-  const maxPct = 100;
-  const minPct = Math.max(0, Math.min(...physByMonth, ...preByMonth) - 5);
-  const padL = 50, padR = 20, padT = 20, padB = 40;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-  const scaleY = (v) => padT + chartH - ((v - minPct) / (maxPct - minPct)) * chartH;
-
-  // Grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  ctx.lineWidth = 1;
-  const gridSteps = [minPct, minPct + (maxPct - minPct) * 0.25, minPct + (maxPct - minPct) * 0.5, minPct + (maxPct - minPct) * 0.75, maxPct];
-  gridSteps.forEach(v => {
-    const y = scaleY(v);
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-    ctx.fillStyle = '#555c66'; ctx.font = '10px DM Mono'; ctx.textAlign = 'right';
-    ctx.fillText(Math.round(v) + '%', padL - 8, y + 4);
-  });
-
-  // X labels
-  ctx.fillStyle = '#555c66'; ctx.font = '10px DM Sans'; ctx.textAlign = 'center';
-  months.forEach((m, i) => {
-    const x = padL + (chartW / (months.length - 1)) * i;
-    ctx.fillText(fmtMonth(m).replace(' 20', " '"), x, H - 10);
-  });
-
-  // Draw line helper
-  function drawLine(data, color, dashed) {
-    ctx.beginPath();
-    if (dashed) ctx.setLineDash([4, 3]);
-    data.forEach((v, i) => {
-      const x = padL + (chartW / (months.length - 1)) * i;
-      const y = scaleY(v);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
-    ctx.setLineDash([]);
-    // Dots
-    data.forEach((v, i) => {
-      const x = padL + (chartW / (months.length - 1)) * i;
-      ctx.beginPath(); ctx.arc(x, scaleY(v), 3, 0, Math.PI * 2);
-      ctx.fillStyle = color; ctx.fill();
-    });
-  }
-
-  drawLine(physByMonth, '#3d7fff', false);    // Physical: solid blue
-  drawLine(preByMonth, '#2ec4b6', true);      // Preleased: dashed teal
-
-  // Legend
-  ctx.fillStyle = '#3d7fff'; ctx.fillRect(padL, H - 6, 8, 3);
-  ctx.fillStyle = '#8c939e'; ctx.font = '10px DM Sans'; ctx.textAlign = 'left';
-  ctx.fillText('Physical', padL + 12, H - 2);
-  ctx.fillStyle = '#2ec4b6'; ctx.fillRect(padL + 75, H - 6, 8, 3);
-  ctx.fillStyle = '#8c939e';
-  ctx.fillText('Preleased', padL + 87, H - 2);
-
-  // Period label
-  const periodEl = document.getElementById('occTrendPeriod');
-  if (periodEl) periodEl.textContent = `${fmtMonth(months[0])} – ${fmtMonth(months[months.length - 1])}`;
 }
 
 function renderExpirations() {
@@ -1675,353 +1437,77 @@ function renderExpirations() {
 
 
 // ════════════════════════════════════════
-//  VIEW: UNIT TRACKER (Redesigned)
+//  VIEW: UNIT TRACKER
 // ════════════════════════════════════════
-
-// Pagination state
-const UT_PAGE = { vacant: 1, occupied: 1, allUnits: 1 };
-const UT_PER_PAGE = { vacant: 50, occupied: 50, allUnits: 50 };
-
 function renderUnits() {
-  if (!DATA.rentRoll && !DATA.occupancy) {
+  if (!DATA.rentRoll) {
     document.getElementById('unitKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
     return;
   }
+  const units = DATA.rentRoll.filter(r => matchesSelectedProps(r));
 
-  const rentRoll = (DATA.rentRoll || []).filter(r => matchesSelectedProps(r));
-  const vacancyData = (DATA.vacancy || []).filter(r => matchesSelectedProps(r));
-  const turnsData = (DATA.turns || []).filter(r => {
-    if (selectedProps.length === 0) return true;
-    const propNames = new Set(getFilteredProps().map(p => p.name));
-    return (r.buildium_property_id && new Set(selectedProps).has(parseInt(r.buildium_property_id)))
-        || (r.property_name && propNames.has(r.property_name));
-  });
-  const occData = (DATA.occupancy || []).filter(r => matchesSelectedProps(r));
-
-  // Build turns lookup: property_name|unit_number → turn record
-  const turnsMap = {};
-  turnsData.forEach(t => {
-    const key = `${(t.property_name || '').trim()}|${(t.unit_number || '').trim()}`;
-    turnsMap[key] = t;
-  });
-
-  // Build turns counts by property for AV/MR columns
-  const propTurnCounts = {};
-  turnsData.forEach(t => {
-    const pn = (t.property_name || '').trim();
-    if (!propTurnCounts[pn]) propTurnCounts[pn] = { av: 0, mr: 0 };
-    if (t.board === 'Lease Up') propTurnCounts[pn].av++;
-    else if (t.board === 'Make Ready') propTurnCounts[pn].mr++;
-  });
-
-  // ── KPIs ──
-  const totalUnits = occData.reduce((s, r) => s + (r.total_units || 0), 0);
-  const totalOccupied = occData.reduce((s, r) => s + (r.occupied_units || 0), 0);
-  const totalVacant = occData.reduce((s, r) => s + (r.vacant_units || 0), 0);
-  const totalPreleased = occData.reduce((s, r) => s + (r.preleased_units || 0), 0);
-  const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
-  const avgPLOcc = totalUnits > 0 ? ((totalOccupied + totalPreleased) / totalUnits * 100) : 0;
-  const mtmCount = rentRoll.filter(r => r.is_mtm).length;
-  const totalMR = Object.values(propTurnCounts).reduce((s, c) => s + c.mr, 0);
-  const totalAV = Object.values(propTurnCounts).reduce((s, c) => s + c.av, 0);
+  const totalRent  = units.reduce((s, r) => s + (r.rent || 0), 0);
+  const totalMkt   = units.reduce((s, r) => s + (r.market_rent || 0), 0);
+  const lossToLease = totalMkt - totalRent;
+  const occupied   = units.filter(r => r.status === 'Current' || r.status === 'Active').length;
+  const mtmCount   = units.filter(r => r.is_mtm).length;
 
   document.getElementById('unitKpis').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Total Units</div>
-      <div class="kpi-value">${totalUnits.toLocaleString()}</div>
-      <div class="kpi-sub">${occData.length} properties</div>
+      <div class="kpi-label">Total Monthly Rent</div>
+      <div class="kpi-value">${fmt$(totalRent)}</div>
+      <div class="kpi-sub">${units.length} units</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Occupied</div>
-      <div class="kpi-value good">${totalOccupied.toLocaleString()}</div>
-      <div class="kpi-sub">${fmtPct1(avgOcc)} occupancy</div>
+      <div class="kpi-label">Market Rent</div>
+      <div class="kpi-value">${fmt$(totalMkt)}</div>
+      <div class="kpi-sub">Potential gross</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Vacant</div>
-      <div class="kpi-value ${totalVacant > 0 ? 'bad' : ''}">${totalVacant}</div>
-      <div class="kpi-sub">${totalAV} available · ${totalMR} make ready</div>
+      <div class="kpi-label">Loss to Lease</div>
+      <div class="kpi-value ${lossToLease > 0 ? 'bad' : 'good'}">${fmt$(lossToLease)}</div>
+      <div class="kpi-sub">${totalMkt > 0 ? fmtPct1(lossToLease / totalMkt * 100) : '0%'} of market</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Preleased</div>
-      <div class="kpi-value" style="color:var(--teal)">${totalPreleased}</div>
-      <div class="kpi-sub">${fmtPct1(avgPLOcc)} preleased occ</div>
+      <div class="kpi-label">Occupied Units</div>
+      <div class="kpi-value good">${occupied}</div>
+      <div class="kpi-sub">${units.length > 0 ? fmtPct(occupied / units.length * 100) : '0%'}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Month-to-Month</div>
       <div class="kpi-value ${mtmCount > 0 ? 'warn' : ''}">${mtmCount}</div>
-      <div class="kpi-sub">${totalOccupied > 0 ? fmtPct1(mtmCount / totalOccupied * 100) : '0%'} of occupied</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Loss to Lease</div>
-      <div class="kpi-value bad">${fmt$(rentRoll.reduce((s, r) => s + ((r.market_rent || 0) - (r.rent || 0)), 0))}</div>
-      <div class="kpi-sub">${(() => { const mkt = rentRoll.reduce((s, r) => s + (r.market_rent || 0), 0); return mkt > 0 ? fmtPct1(rentRoll.reduce((s, r) => s + ((r.market_rent || 0) - (r.rent || 0)), 0) / mkt * 100) : '0%'; })()} of market</div>
+      <div class="kpi-sub">${units.length > 0 ? fmtPct(mtmCount / units.length * 100) : '0%'} of units</div>
     </div>
   `;
 
-  // ═══════════════════════════════════════
-  //  1. ALL PROPERTIES OVERVIEW (left)
-  // ═══════════════════════════════════════
-  const propRows = occData.map(r => {
-    const pn = (r.property_name || '').trim();
-    const tc = propTurnCounts[pn] || { av: 0, mr: 0 };
-    const occPct = r.physical_occupancy || 0;
-    const plPct = r.preleased_occupancy || 0;
-    return {
-      name: pn,
-      units: r.total_units || 0,
-      vac: r.vacant_units || 0,
-      av: tc.av,
-      mr: tc.mr,
-      occ: r.occupied_units || 0,
-      occPct,
-      pl: r.preleased_units || 0,
-      plPct
-    };
-  }).sort((a, b) => b.units - a.units);
+  document.getElementById('unitCount').textContent = `${units.length} units`;
+  const tbody = document.getElementById('unitBody');
+  const sorted = [...units].sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') || (a.unit_number || '').localeCompare(b.unit_number || ''));
+  tbody.innerHTML = sorted.map(r => {
+    let statusClass = 'sb-current';
+    let statusLabel = r.status || 'Occupied';
+    if (!r.status || r.status === 'Vacant') { statusClass = 'sb-vacant'; statusLabel = 'Vacant'; }
+    else if (r.is_mtm) { statusClass = 'sb-mtm'; statusLabel = 'MTM'; }
+    else if (r.status === 'Future') { statusClass = 'sb-future'; statusLabel = 'Future'; }
+    else if (r.status === 'Notice') { statusClass = 'sb-notice'; statusLabel = 'Notice'; }
+    const ltl = (r.market_rent || 0) - (r.rent || 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td>${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}</td>
+      <td>${r.tenant_name || '—'}</td>
+      <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+      <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
+      <td class="r ${ltl > 0 ? 'bad' : ltl < 0 ? 'good' : ''}">${fmtFull$(ltl)}</td>
+      <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      <td>${fmtDate(r.lease_start)}</td>
+      <td>${fmtDate(r.lease_end)}</td>
+    </tr>`;
+  }).join('');
 
-  const grandTotals = {
-    units: propRows.reduce((s, r) => s + r.units, 0),
-    vac: propRows.reduce((s, r) => s + r.vac, 0),
-    av: propRows.reduce((s, r) => s + r.av, 0),
-    mr: propRows.reduce((s, r) => s + r.mr, 0),
-    occ: propRows.reduce((s, r) => s + r.occ, 0),
-    pl: propRows.reduce((s, r) => s + r.pl, 0),
-  };
-  grandTotals.occPct = grandTotals.units > 0 ? (grandTotals.occ / grandTotals.units * 100) : 0;
-  grandTotals.plPct = grandTotals.units > 0 ? ((grandTotals.occ + grandTotals.pl) / grandTotals.units * 100) : 0;
-
-  const occClass = (pct) => pct >= 95 ? 'occ-good' : pct >= 90 ? 'occ-warn' : 'occ-bad';
-
-  document.getElementById('propOverviewCount').textContent = `${propRows.length} properties`;
-  document.getElementById('propOverviewBody').innerHTML = propRows.map(r => `
-    <tr>
-      <td title="${r.name}">${r.name}</td>
-      <td>${r.units.toLocaleString()}</td>
-      <td>${r.vac}</td>
-      <td>${r.av}</td>
-      <td>${r.mr}</td>
-      <td>${r.occ.toLocaleString()}</td>
-      <td class="${occClass(r.occPct)}">${fmtPct(r.occPct)}</td>
-      <td>${r.pl}</td>
-      <td class="${occClass(r.plPct)}">${fmtPct(r.plPct)}</td>
-    </tr>
-  `).join('') + `
-    <tr class="grand-total">
-      <td>Grand Total</td>
-      <td>${grandTotals.units.toLocaleString()}</td>
-      <td>${grandTotals.vac}</td>
-      <td>${grandTotals.av}</td>
-      <td>${grandTotals.mr}</td>
-      <td>${grandTotals.occ.toLocaleString()}</td>
-      <td class="${occClass(grandTotals.occPct)}">${fmtPct(grandTotals.occPct)}</td>
-      <td>${grandTotals.pl}</td>
-      <td class="${occClass(grandTotals.plPct)}">${fmtPct(grandTotals.plPct)}</td>
-    </tr>
-  `;
-
-  // ═══════════════════════════════════════
-  //  2. VACANT UNITS BOARD (top right)
-  // ═══════════════════════════════════════
-  const vacantUnits = vacancyData.map(v => {
-    const key = `${(v.property_name || '').trim()}|${(v.unit_number || '').trim()}`;
-    const turn = turnsMap[key];
-    return {
-      property: v.property_name || '—',
-      unit: v.unit_number || '—',
-      type: fmtBedBath(v.bedrooms || '') + (v.bathrooms ? '/' + fmtBedBath(v.bathrooms) : ''),
-      finish: turn ? (turn.finish_level || '—') : '—',
-      board: turn ? (turn.board || '') : '',
-      moveOut: v.move_out_date || v.lease_end || '',
-      startDate: turn ? (turn.start_date || '') : '',
-      endDate: turn ? (turn.end_date || '') : '',
-      available: turn && turn.board === 'Lease Up' ? (turn.end_date || '') : '',
-      marketRent: v.market_rent || 0,
-      daysVacant: v.days_vacant || 0,
-      isPreleased: v.is_preleased || false,
-    };
-  }).sort((a, b) => b.daysVacant - a.daysVacant);
-
-  const renderVacantPage = () => {
-    const page = UT_PAGE.vacant;
-    const perPage = UT_PER_PAGE.vacant;
-    const start = (page - 1) * perPage;
-    const pageData = vacantUnits.slice(start, start + perPage);
-    const total = vacantUnits.length;
-
-    document.getElementById('vacantCount').textContent = `${total} units`;
-    document.getElementById('vacantBody').innerHTML = pageData.map(r => {
-      const daysClass = r.daysVacant > 60 ? 'high' : r.daysVacant > 30 ? 'med' : 'low';
-      let boardBadge = '';
-      if (r.board === 'Make Ready') boardBadge = '<span class="board-badge make-ready">Make Ready</span>';
-      else if (r.board === 'Lease Up') boardBadge = '<span class="board-badge lease-up">Available</span>';
-      return `<tr>
-        <td>${r.property}</td>
-        <td>${r.unit}</td>
-        <td>${r.type || '—'}</td>
-        <td>${r.finish}</td>
-        <td>${boardBadge || '—'}</td>
-        <td>${fmtDate(r.moveOut)}</td>
-        <td>${fmtDate(r.startDate)}</td>
-        <td>${fmtDate(r.endDate)}</td>
-        <td>${fmtDate(r.available)}</td>
-        <td class="r">${r.marketRent ? fmtFull$(r.marketRent) : '—'}</td>
-        <td class="r"><span class="days-badge ${daysClass}">${r.daysVacant}</span></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('vacantPagination').innerHTML = renderPagination(total, page, perPage, 'vacant');
-  };
-  renderVacantPage();
-
-  setupTableSearch('vacantSearch', 'vacantBody');
-
-  // ═══════════════════════════════════════
-  //  3. OCCUPIED UNITS (bottom right)
-  // ═══════════════════════════════════════
-  const occupiedUnits = rentRoll
-    .filter(r => r.status === 'Current' || r.status === 'Active' || r.is_mtm || r.status === 'Notice')
-    .map(r => {
-      const daysExp = r.days_until_expiry || 0;
-      let expDotClass = '';
-      if (r.is_mtm) expDotClass = 'exp-mtm';
-      else if (daysExp > 0 && daysExp <= 30) expDotClass = 'exp-30';
-      else if (daysExp > 30 && daysExp <= 60) expDotClass = 'exp-60';
-      else if (daysExp > 60 && daysExp <= 90) expDotClass = 'exp-90';
-      return {
-        property: r.property_name || '—',
-        unit: r.unit_number || '—',
-        type: fmtBedBath(r.bedrooms) + (r.bathrooms ? '/' + fmtBedBath(r.bathrooms) : ''),
-        finish: '—',
-        expDotClass,
-        is_mtm: r.is_mtm,
-        leaseEnd: r.lease_end || '',
-        marketRent: r.market_rent || 0,
-        purchaseRent: 0, // placeholder
-        rent: r.rent || 0,
-        agroMeter: 0, // placeholder
-        amDelta: 0, // placeholder
-        daysExp,
-        sortKey: r.is_mtm ? -1 : daysExp,
-      };
-    })
-    .sort((a, b) => a.sortKey - b.sortKey || (a.property).localeCompare(b.property));
-
-  const renderOccupiedPage = () => {
-    const page = UT_PAGE.occupied;
-    const perPage = UT_PER_PAGE.occupied;
-    const start = (page - 1) * perPage;
-    const pageData = occupiedUnits.slice(start, start + perPage);
-    const total = occupiedUnits.length;
-
-    const occRentTotal = occupiedUnits.reduce((s, r) => s + r.rent, 0);
-    const occMktTotal = occupiedUnits.reduce((s, r) => s + r.marketRent, 0);
-    document.getElementById('occupiedCount').textContent = `${total} units · ${fmt$(occRentTotal)} rent · ${fmt$(occMktTotal)} market`;
-    document.getElementById('occupiedBody').innerHTML = pageData.map(r => {
-      const dotHtml = r.expDotClass ? `<span class="lease-dot ${r.expDotClass}"></span>` : '';
-      return `<tr>
-        <td>${r.property}</td>
-        <td>${r.unit}</td>
-        <td>${r.type || '—'}</td>
-        <td>${r.finish}</td>
-        <td>${dotHtml}${r.is_mtm ? '' : (r.daysExp > 0 && r.daysExp <= 90 ? r.daysExp + 'd' : '')}</td>
-        <td>${r.is_mtm ? '<span class="status-badge sb-mtm">MTM</span>' : ''}</td>
-        <td>${fmtDate(r.leaseEnd)}</td>
-        <td class="r">${r.marketRent ? fmtFull$(r.marketRent) : '—'}</td>
-        <td class="r">${r.purchaseRent ? fmtFull$(r.purchaseRent) : '—'}</td>
-        <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
-        <td class="r">—</td>
-        <td class="r">—</td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('occupiedPagination').innerHTML = renderPagination(total, page, perPage, 'occupied');
-  };
-  renderOccupiedPage();
-
-  setupTableSearch('occupiedSearch', 'occupiedBody');
-
-  // ═══════════════════════════════════════
-  //  4. ALL UNITS (full width bottom)
-  // ═══════════════════════════════════════
-  const allUnits = rentRoll.map(r => ({
-    property: r.property_name || '—',
-    unit: r.unit_number || '—',
-    type: fmtBedBath(r.bedrooms) + (r.bathrooms ? '/' + fmtBedBath(r.bathrooms) : ''),
-    finish: '—',
-    leaseStart: r.lease_start || '',
-    leaseEnd: r.lease_end || '',
-    marketRent: r.market_rent || 0,
-    rent: r.rent || 0,
-    purchaseRent: 0,
-    prevRent: 0,
-    proFormaRent: 0,
-    pfDelta: 0,
-    agroMeter: 0,
-    amDelta: 0,
-    status: r.status || '',
-    is_mtm: r.is_mtm,
-  })).sort((a, b) => a.property.localeCompare(b.property) || a.unit.localeCompare(b.unit));
-
-  const renderAllUnitsPage = () => {
-    const page = UT_PAGE.allUnits;
-    const perPage = UT_PER_PAGE.allUnits;
-    const start = (page - 1) * perPage;
-    const pageData = allUnits.slice(start, start + perPage);
-    const total = allUnits.length;
-
-    document.getElementById('allUnitsCount').textContent = `${total} units`;
-    document.getElementById('allUnitsBody').innerHTML = pageData.map(r => {
-      return `<tr>
-        <td>${r.property}</td>
-        <td>${r.unit}</td>
-        <td>${r.type || '—'}</td>
-        <td>${r.finish}</td>
-        <td>${fmtDate(r.leaseStart)}</td>
-        <td>${fmtDate(r.leaseEnd)}</td>
-        <td class="r">${r.marketRent ? fmtFull$(r.marketRent) : '—'}</td>
-        <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
-        <td class="r">${r.purchaseRent ? fmtFull$(r.purchaseRent) : '—'}</td>
-        <td class="r">${r.prevRent ? fmtFull$(r.prevRent) : '—'}</td>
-        <td class="r">${r.proFormaRent ? fmtFull$(r.proFormaRent) : '—'}</td>
-        <td class="r">—</td>
-        <td class="r">—</td>
-        <td class="r">—</td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('allUnitsPagination').innerHTML = renderPagination(total, page, perPage, 'allUnits');
-  };
-  renderAllUnitsPage();
-
-  setupTableSearch('allUnitsSearch', 'allUnitsBody');
-}
-
-// ── Pagination helper ──
-function renderPagination(total, page, perPage, tableKey) {
-  const totalPages = Math.ceil(total / perPage);
-  if (totalPages <= 1) return `<span>${total} total</span>`;
-  const start = (page - 1) * perPage + 1;
-  const end = Math.min(page * perPage, total);
-  return `
-    <span>${start} - ${end} / ${total}</span>
-    <button onclick="utChangePage('${tableKey}', -1)" ${page <= 1 ? 'disabled' : ''}>&lt;</button>
-    <button onclick="utChangePage('${tableKey}', 1)" ${page >= totalPages ? 'disabled' : ''}>&gt;</button>
-  `;
-}
-
-function utChangePage(tableKey, delta) {
-  UT_PAGE[tableKey] = (UT_PAGE[tableKey] || 1) + delta;
-  if (UT_PAGE[tableKey] < 1) UT_PAGE[tableKey] = 1;
-  renderUnits();
-}
-
-// ── Table search helper ──
-function setupTableSearch(inputId, tbodyId) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-  input.oninput = function() {
+  document.getElementById('unitSearch').oninput = function() {
     const q = this.value.toLowerCase();
-    document.getElementById(tbodyId).querySelectorAll('tr').forEach(tr => {
+    tbody.querySelectorAll('tr').forEach(tr => {
       const match = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q));
       tr.style.display = match ? '' : 'none';
     });
@@ -2163,37 +1649,46 @@ async function loadDashboardData() {
     const [
       financialRes,
       noiRes,
-      incStmtRes,
       occRes,
-      occSnapRes,
       rentRollRes,
       vacancyRes,
       expRes,
       turnsRes,
       propsRes,
+      econOccRes,
+      groupsRes,
+      utilityRes,
+      metaRes,
+      incStmtRes,
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
-      safeCall('income_statement_snapshot'),
       safeCall('occupancy_summary'),
-      safeCall('occupancy_snapshot_summary'),
       safeCall('rent_roll'),
       safeCall('vacancy'),
       safeCall('lease_expirations'),
       safeCall('turns'),
       safeCall('properties'),
+      safeCall('economic_occupancy'),
+      safeCall('property_groups'),
+      safeCall('utility_summary'),
+      safeCall('snapshot_metadata'),
+      safeCall('income_statement_snapshot'),
     ]);
 
     DATA.financial   = financialRes.data || [];
     DATA.noiSummary  = noiRes.data || [];
-    DATA.incomeStatement = incStmtRes.data || [];
     DATA.occupancy   = occRes.data || [];
-    DATA.occupancySnapshots = occSnapRes.data || [];
     DATA.rentRoll    = rentRollRes.data || [];
     DATA.vacancy     = vacancyRes.data || [];
     DATA.expirations = expRes.data || [];
     DATA.turns       = turnsRes.data || [];
     DATA.properties  = propsRes.data || [];
+    DATA.economicOccupancy = econOccRes.data || [];
+    DATA.propertyGroups = groupsRes.data || [];
+    DATA.utilitySummary = utilityRes.data || [];
+    DATA.snapshotMeta = metaRes.data || [];
+    DATA.incomeStatement = incStmtRes.data || [];
 
     // ── BUILD PROPERTY LIST ──
     // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views
@@ -2228,7 +1723,7 @@ async function loadDashboardData() {
       if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
-    [DATA.noiSummary, DATA.incomeStatement, DATA.occupancy, DATA.occupancySnapshots, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
     });
 
@@ -2239,18 +1734,6 @@ async function loadDashboardData() {
       r.transaction_count = parseInt(r.transaction_count) || 0;
     });
 
-    // ── COERCE INCOME STATEMENT DATA ──
-    DATA.incomeStatement.forEach(r => {
-      r.property_id = parseInt(r.property_id) || 0;
-      r.units = parseInt(r.units) || 0;
-      ['total_income','total_expenses','noi','capital_improvements','mortgage_payment',
-       'asset_management_fee','parent_company_expenses','total_non_operating_expense',
-       'non_operating_income','net_income','income_per_unit','expense_per_unit',
-       'noi_per_unit','net_income_per_unit'].forEach(f => {
-        r[f] = parseFloat(r[f]) || 0;
-      });
-    });
-
     // ── BUILD MONTHS FROM FINANCIAL DATA ──
     // financial_summary has all months (15+), noiSummary may only have 1
     const finMonths = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean).sort();
@@ -2258,6 +1741,9 @@ async function loadDashboardData() {
     DATA.months = finMonths.length > noiMonths.length ? finMonths : noiMonths;
     selectedMonth = DATA.months[DATA.months.length - 1] || '';
     populateMonthFilter(DATA.months);
+
+    // Populate group filter
+    if (DATA.propertyGroups.length > 0) populateGroupFilter(DATA.propertyGroups);
 
     // ── COMPUTE NOI SUMMARY FROM FINANCIAL DATA (for all months) ──
     // Since v_noi_summary may only have 1 month, build comprehensive NOI from financial_snapshots
@@ -2288,37 +1774,13 @@ async function loadDashboardData() {
     }
 
     // ── COERCE OCCUPANCY DATA ──
-    // v_occupancy_summary returns: property_name, reported_units, api_units, occupied_units,
-    //   vacant_units, preleased_units, unpreleased_vacant, physical_occupancy_pct,
-    //   preleased_occupancy_pct, total_market_rent, total_actual_rent, vacancy_loss_market, rent_vs_market_delta
     if (DATA.occupancy) DATA.occupancy.forEach(r => {
-      // Normalize unit counts — view uses api_units as the canonical unit count
-      r.total_units = parseInt(r.api_units || r.total_units || r.reported_units) || 0;
-      r.occupied_units = parseInt(r.occupied_units) || 0;
-      r.vacant_units = parseInt(r.vacant_units) || 0;
-      r.preleased_units = parseInt(r.preleased_units) || 0;
-      r.unpreleased_vacant = parseInt(r.unpreleased_vacant) || 0;
-      // Normalize occupancy pct — view uses _pct suffix
-      r.physical_occupancy = parseFloat(r.physical_occupancy_pct || r.physical_occupancy) || 0;
-      r.preleased_occupancy = parseFloat(r.preleased_occupancy_pct || r.preleased_occupancy) || 0;
-      // Rent analysis fields
-      r.total_market_rent = parseFloat(r.total_market_rent) || 0;
-      r.total_actual_rent = parseFloat(r.total_actual_rent) || 0;
-      r.vacancy_loss_market = parseFloat(r.vacancy_loss_market) || 0;
-      r.rent_vs_market_delta = parseFloat(r.rent_vs_market_delta) || 0;
-      // Ensure property_id is set via name lookup
-      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
-    });
-
-    // ── COERCE OCCUPANCY SNAPSHOTS ──
-    if (DATA.occupancySnapshots) DATA.occupancySnapshots.forEach(r => {
-      r.property_id = parseInt(r.property_id) || 0;
       r.total_units = parseInt(r.total_units) || 0;
       r.occupied_units = parseInt(r.occupied_units) || 0;
       r.vacant_units = parseInt(r.vacant_units) || 0;
       r.preleased_units = parseInt(r.preleased_units) || 0;
-      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
-      r.preleased_occupancy_pct = parseFloat(r.preleased_occupancy_pct) || 0;
+      r.physical_occupancy = parseFloat(r.physical_occupancy) || 0;
+      // Ensure property_id is set via name lookup
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
     });
 
@@ -2357,6 +1819,34 @@ async function loadDashboardData() {
       r.market_rent = parseFloat(r.market_rent) || 0;
       r.days_vacant = parseInt(r.days_vacant) || 0;
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE ECONOMIC OCCUPANCY DATA ──
+    if (DATA.economicOccupancy) DATA.economicOccupancy.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_income = parseFloat(r.total_income) || 0;
+      r.non_recurring_income = parseFloat(r.non_recurring_income) || 0;
+      r.recurring_income = parseFloat(r.recurring_income) || 0;
+      r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
+      r.economic_occupancy_pct = parseFloat(r.economic_occupancy_pct) || 0;
+    });
+
+    // ── COERCE UTILITY DATA ──
+    if (DATA.utilitySummary) DATA.utilitySummary.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.utility_income = parseFloat(r.utility_income) || 0;
+      r.utility_expense = parseFloat(r.utility_expense) || 0;
+    });
+
+    // ── COERCE INCOME STATEMENT SNAPSHOT DATA ──
+    if (DATA.incomeStatement) DATA.incomeStatement.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.capital_improvements = parseFloat(r.capital_improvements) || 0;
+      r.total_income = parseFloat(r.total_income) || 0;
+      r.total_expenses = parseFloat(r.total_expenses) || 0;
+      r.noi = parseFloat(r.noi) || 0;
+      r.mortgage_payment = parseFloat(r.mortgage_payment) || 0;
+      r.net_income = parseFloat(r.net_income) || 0;
     });
 
     // Render property dropdown
@@ -2458,39 +1948,19 @@ function loadDemoData() {
     });
   });
 
-  // Generate occupancy (current)
-  DATA.occupancy = demoProps.map(p => {
-    const occ = Math.round(p.units * (0.82 + Math.random() * 0.16));
-    const pre = Math.round(Math.random() * 3);
-    const vac = p.units - occ;
-    const mktRent = p.units * (600 + Math.random() * 200);
-    const actRent = occ * (550 + Math.random() * 200);
-    return {
-      property_id: p.id, property_name: p.name,
-      total_units: p.units, occupied_units: occ, vacant_units: vac,
-      preleased_units: pre, unpreleased_vacant: vac - pre,
-      physical_occupancy: p.units > 0 ? (occ / p.units * 100) : 0,
-      preleased_occupancy: p.units > 0 ? ((occ + pre) / p.units * 100) : 0,
-      total_market_rent: mktRent, total_actual_rent: actRent,
-      vacancy_loss_market: (p.units - occ) * (mktRent / p.units),
-      rent_vs_market_delta: actRent - mktRent,
-    };
-  });
-
-  // Generate occupancy snapshots (monthly trend)
-  DATA.occupancySnapshots = [];
-  demoProps.forEach(p => {
-    months.forEach(m => {
-      const occ = Math.round(p.units * (0.80 + Math.random() * 0.18));
-      const pre = Math.round(Math.random() * 3);
-      DATA.occupancySnapshots.push({
-        snapshot_month: m, property_id: p.id, property_name: p.name,
-        total_units: p.units, occupied_units: occ,
-        vacant_units: p.units - occ, preleased_units: pre,
-        physical_occupancy_pct: p.units > 0 ? (occ / p.units * 100) : 0,
-        preleased_occupancy_pct: p.units > 0 ? ((occ + pre) / p.units * 100) : 0,
-      });
-    });
+  // Generate occupancy
+  DATA.occupancy = demoProps.map(p => ({
+    property_id: p.id,
+    property_name: p.name,
+    total_units: p.units,
+    occupied_units: Math.round(p.units * (0.82 + Math.random() * 0.16)),
+    vacant_units: 0,
+    preleased_units: Math.round(Math.random() * 3),
+    physical_occupancy: 0,
+  }));
+  DATA.occupancy.forEach(r => {
+    r.vacant_units = r.total_units - r.occupied_units;
+    r.physical_occupancy = r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0;
   });
 
   // Generate rent roll

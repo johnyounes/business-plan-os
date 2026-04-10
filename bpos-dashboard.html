@@ -2199,12 +2199,21 @@ async function loadDashboardData() {
     }
 
     // ── COERCE OCCUPANCY DATA ──
+    // v_occupancy_summary returns total_units=0 and physical_occupancy=0 for many rows
+    // even when occupied/vacant are populated. Derive both from occ+vac whenever missing
+    // so every view (Overview, Occupancy, Unit Tracker, Property Performance) gets right values.
     if (DATA.occupancy) DATA.occupancy.forEach(r => {
-      r.total_units = parseInt(r.total_units) || 0;
       r.occupied_units = parseInt(r.occupied_units) || 0;
       r.vacant_units = parseInt(r.vacant_units) || 0;
       r.preleased_units = parseInt(r.preleased_units) || 0;
-      r.physical_occupancy = parseFloat(r.physical_occupancy) || 0;
+      // Derive total_units from occ+vac if missing/zero
+      const rawTotal = parseInt(r.total_units) || 0;
+      r.total_units = rawTotal > 0 ? rawTotal : (r.occupied_units + r.vacant_units);
+      // Derive physical_occupancy if missing/zero
+      const rawOcc = parseFloat(r.physical_occupancy) || 0;
+      r.physical_occupancy = rawOcc > 0
+        ? rawOcc
+        : (r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0);
       // Ensure property_id is set via name lookup
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
     });

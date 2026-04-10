@@ -199,7 +199,7 @@ function sqlPortfolioSummary(year: number, month: number): string {
       GROUP BY fs.property_id, fs.property_name, fs.snapshot_month
     )
     SELECT
-      COALESCE(p.t12_name, a.raw_name)         AS PropertyName,
+      COALESCE(p.api_name, a.raw_name)         AS PropertyName,
       CAST(a.snapshot_month AS STRING)         AS Date,
       a.total_income                           AS TotalIncome,
       a.total_expenses                         AS TotalExpense,

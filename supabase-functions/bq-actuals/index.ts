@@ -153,20 +153,42 @@ async function runQuery(token: string, sql: string): Promise<any[]> {
 //      TotalNonOperating (= capital_improvements + mortgage_payment — Buildium's
 //      two primary non-op buckets that are reliably exposed by this view).
 function sqlPortfolioSummary(year: number, month: number): string {
+  // Strategy: ALWAYS return the latest available month from the snapshot view.
+  //
+  // Why not filter by the requested year/month?
+  //   - snapshot_month is stored as a STRING, so EXTRACT is illegal.
+  //   - Buildium's API pull lags the calendar — when the tracker asks for
+  //     "April 2026" on April 10, BigQuery may still only have March data.
+  //   - The frontend's one-month fallback (month → month-1) isn't enough if
+  //     the view is more than 1 month behind, so rows come back empty and
+  //     the UI silently shows zeros.
+  //
+  // Instead we find the MAX(snapshot_month) first and return rows for that
+  // month only. If the requested year-month IS present it will naturally
+  // be the max; if it isn't, we return the most recent month available,
+  // which is exactly what "live current financials" means for John.
+  //
+  // year/month are accepted but currently unused — kept in the signature
+  // so the frontend contract doesn't need to change. Linter-suppressed.
+  void year; void month;
   return `
+    WITH latest AS (
+      SELECT MAX(CAST(snapshot_month AS STRING)) AS m
+      FROM ${T}.v_income_statement_snapshot\`
+    )
     SELECT
-      property_name                                                        AS PropertyName,
-      CAST(snapshot_month AS STRING)                                       AS Date,
-      total_income                                                         AS TotalIncome,
-      total_expenses                                                       AS TotalExpense,
-      net_income                                                           AS NetIncome,
-      total_income                                                         AS RentIncome,
-      capital_improvements                                                 AS CAPEX,
-      (COALESCE(capital_improvements, 0) + COALESCE(mortgage_payment, 0))  AS TotalNonOperating
-    FROM ${T}.v_income_statement_snapshot\`
-    WHERE EXTRACT(YEAR  FROM snapshot_month) = ${year}
-      AND EXTRACT(MONTH FROM snapshot_month) = ${month}
-    ORDER BY property_name
+      s.property_name                                                          AS PropertyName,
+      CAST(s.snapshot_month AS STRING)                                         AS Date,
+      s.total_income                                                           AS TotalIncome,
+      s.total_expenses                                                         AS TotalExpense,
+      s.net_income                                                             AS NetIncome,
+      s.total_income                                                           AS RentIncome,
+      s.capital_improvements                                                   AS CAPEX,
+      (COALESCE(s.capital_improvements, 0) + COALESCE(s.mortgage_payment, 0))  AS TotalNonOperating
+    FROM ${T}.v_income_statement_snapshot\` s
+    CROSS JOIN latest l
+    WHERE CAST(s.snapshot_month AS STRING) = l.m
+    ORDER BY s.property_name
   `;
 }
 
@@ -198,16 +220,16 @@ function sqlPortfolioOccupancy(): string {
       GROUP BY property_name
     )
     SELECT
-      s.property_name                                  AS PropertyName,
-      s.total_units                                    AS TotalUnits,
-      s.occupied_units                                 AS Occupied,
-      s.vacant_units                                   AS Vacant,
-      0                                                AS MakeReady,
-      s.vacant_units                                   AS Available,
-      COALESCE(s.preleased_units, 0)                   AS Preleased,
-      ROUND(COALESCE(s.physical_occupancy_pct, 0), 2)  AS OccupancyPct,
-      COALESCE(ec.exp_30d, 0)                          AS LeasesExpiring30d,
-      COALESCE(ec.exp_60d, 0)                          AS LeasesExpiring60d
+      s.property_name                                                        AS PropertyName,
+      s.total_units                                                          AS TotalUnits,
+      s.occupied_units                                                       AS Occupied,
+      (s.total_units - s.occupied_units)                                     AS Vacant,
+      0                                                                      AS MakeReady,
+      (s.total_units - s.occupied_units)                                     AS Available,
+      0                                                                      AS Preleased,
+      ROUND(SAFE_DIVIDE(s.occupied_units, s.total_units) * 100, 2)           AS OccupancyPct,
+      COALESCE(ec.exp_30d, 0)                                                AS LeasesExpiring30d,
+      COALESCE(ec.exp_60d, 0)                                                AS LeasesExpiring60d
     FROM ${T}.v_occupancy_snapshot_summary\` s
     CROSS JOIN latest l
     LEFT JOIN exp_counts ec

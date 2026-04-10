@@ -1818,16 +1818,21 @@ function renderUtPropertiesTable(occSummary, turns) {
     else if (b.includes('make ready')) propTurns[name].mr++;
   });
 
-  const rows = [...occSummary].sort((a, b) => (b.total_units || 0) - (a.total_units || 0));
+  const rows = [...occSummary].sort((a, b) => {
+    const aUnits = a.total_units || ((a.occupied_units || 0) + (a.vacant_units || 0));
+    const bUnits = b.total_units || ((b.occupied_units || 0) + (b.vacant_units || 0));
+    return bUnits - aUnits;
+  });
   const grand = { units: 0, vac: 0, av: 0, mr: 0, occ: 0, pl: 0 };
   const tbody = document.getElementById('utPropBody');
   if (!tbody) return;
 
   tbody.innerHTML = rows.map(p => {
     const pt = propTurns[p.property_name] || { av: 0, mr: 0 };
-    const units = p.total_units || 0;
     const vac = p.vacant_units || 0;
     const occ = p.occupied_units || 0;
+    // v_occupancy_summary often returns total_units=0 but has occ/vac — derive it
+    const units = p.total_units || (occ + vac);
     const pl = p.preleased_units || 0;
     const occPct = units > 0 ? (occ / units * 100) : 0;
     const plPct = vac > 0 ? (pl / vac * 100) : 0;

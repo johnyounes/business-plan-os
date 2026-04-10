@@ -503,54 +503,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .ph-left h1{font-size:16px;}
   .prop-select{font-size:15px;padding:14px 36px 14px 14px;}
   .pkpi-value{font-size:20px;}
-  .pace-tracker-grid{grid-template-columns:1fr !important;}
-}
-
-/* ══════════════════════════════════════
-   PACE TRACKER PANEL
-   ══════════════════════════════════════ */
-.pace-tracker-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden;}
-.ptp-head{padding:14px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s;}
-.ptp-head:hover{background:rgba(61,127,255,.04);}
-.ptp-icon{font-size:15px;}
-.ptp-title{font-size:14px;font-weight:600;color:var(--accent);flex:1;}
-.ptp-summary{display:flex;align-items:center;gap:8px;}
-.ptp-pill{font-size:11px;font-weight:600;border-radius:10px;padding:2px 9px;display:inline-flex;align-items:center;gap:4px;}
-.ptp-pill.on-track{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.18);}
-.ptp-pill.off-track{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.18);}
-.ptp-pill.critical{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.18);}
-.ptp-chev{font-size:12px;color:var(--text3);transition:transform .2s;}
-.ptp-chev.open{transform:rotate(180deg);}
-.ptp-body{display:none;padding:0 20px 16px;}
-.ptp-body.open{display:block;}
-.ptp-month-note{font-size:11px;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
-.ptp-month-note .ptp-pct{font-family:var(--mono);font-weight:500;color:var(--accent);}
-.ptp-early-note{font-size:11px;color:var(--text3);padding:12px 0;text-align:center;font-style:italic;}
-
-/* Pace tracker category columns */
-.pace-tracker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
-.ptg-col{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
-.ptg-col-header{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
-.ptg-col-header .ptg-dir{font-size:9px;font-weight:500;color:var(--text3);opacity:.7;text-transform:none;letter-spacing:0;}
-.ptg-prop-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
-.ptg-prop-row:last-child{border-bottom:none;}
-.ptg-prop-name{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.ptg-prop-name:hover{color:var(--text);}
-.ptg-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.ptg-status-dot.on-track{background:var(--green);box-shadow:0 0 4px rgba(34,201,122,.4);}
-.ptg-status-dot.off-track{background:var(--amber);box-shadow:0 0 4px rgba(245,166,35,.4);}
-.ptg-status-dot.critical{background:var(--red);box-shadow:0 0 4px rgba(232,80,74,.4);}
-.ptg-pct{font-family:var(--mono);font-size:11px;font-weight:500;white-space:nowrap;}
-.ptg-pct.on-track{color:var(--green);}
-.ptg-pct.off-track{color:var(--amber);}
-.ptg-pct.critical{color:var(--red);}
-
-/* Pace note in alerts */
-.pace-note{font-size:10px;color:var(--text3);margin-top:6px;font-style:italic;}
-
-@media (max-width:768px){
-  .pace-tracker-grid{grid-template-columns:repeat(2,1fr);}
-  .ptp-summary{flex-wrap:wrap;}
 }
 </style>
 
@@ -755,6 +707,7 @@ let THRESHOLDS = {
   capexHit:        {enabled:true,  value:100, label:'CapEx budget reached or exceeded',unit:'%'},
   capexPace:       {enabled:true,  value:5,   label:'CapEx exceeds expected annual pace by more than', unit:'%'},
   unitRentBelowPct:{enabled:true,  value:5,   label:'Unit rented below budget rate by more than',unit:'%'},
+  collectionsMin:  {enabled:true,  value:95,  label:'Collections rate drops below',    unit:'%'},
   cfNegative:      {enabled:true,  value:0,   label:'Cash flow goes negative',         unit:'$'},
 };
 const THRESH_DEFAULTS = JSON.parse(JSON.stringify(THRESHOLDS));
@@ -942,206 +895,6 @@ function getPaceCheckpoint(monthPct) {
   return null;
 }
 
-// ══════════════════════════════════════
-// PACE TRACKING ENGINE
-// Computes daily pace status per property per category
-// Thresholds: On Track (≤5%), Off Track (5–15%), Critical (>15%)
-// Suppresses alerts for days 1–5 (too little data)
-// Direction-aware: Income/NOI/Net Income under pace = bad, Expenses/CAPEX over pace = bad
-// Note: Annual/quarterly items (taxes, insurance) may spike early — known quirk
-// ══════════════════════════════════════
-const PACE_THRESHOLDS = { onTrack: 5, offTrack: 15 }; // ≤5% = on track, 5–15% = off track, >15% = critical
-const PACE_SUPPRESS_DAYS = 5; // suppress alerts for first 5 days
-
-function getPaceStatus(variancePct) {
-  // variancePct is always computed so positive = bad direction
-  // (income behind pace, expenses over pace, etc.)
-  // Negative variance = good (ahead on income, under on expenses) → always on-track
-  if (variancePct <= PACE_THRESHOLDS.onTrack)  return 'on-track';
-  if (variancePct <= PACE_THRESHOLDS.offTrack) return 'off-track';
-  return 'critical';
-}
-
-function getPaceStatusLabel(status) {
-  if (status === 'on-track')  return 'On Track';
-  if (status === 'off-track') return 'Off Track';
-  return 'Critical';
-}
-
-/**
- * Compute pace data for a single property.
- * Returns object with category keys: { income, expenses, noi, capex, netIncome }
- * Each category: { budgetMo, actualMo, expectedPct, actualPct, variancePct, status, direction, suppressed }
- */
-function computePropertyPace(prop) {
-  const a = prop.actuals;
-  const b = prop.budget;
-  const expectedPct = MONTH_PCT * 100; // e.g. day 10 of 30 = 33.3%
-  const suppressed = DAY_OF_MONTH <= PACE_SUPPRESS_DAYS;
-
-  // --- Income ---
-  const budIncome = b.income.reduce((s,r)=>s+r.monthly,0);
-  const actIncome = a.income.reduce((s,r)=>s+r,0);
-  const incPct = budIncome > 0 ? (actIncome / budIncome * 100) : 0;
-  // Income: under pace is bad → positive variance means behind
-  const incVariance = expectedPct - incPct; // positive = behind pace (bad)
-
-  // --- Expenses ---
-  const budExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
-  const actExp = a.expenses.reduce((s,r)=>s+r,0);
-  const expPct = budExp > 0 ? (actExp / budExp * 100) : 0;
-  // Expenses: over pace is bad → positive variance means over-spending
-  const expVariance = expPct - expectedPct; // positive = over pace (bad)
-
-  // --- NOI ---
-  const budNOI = budIncome - budExp;
-  const actNOI = actIncome - actExp;
-  const noiPct = budNOI > 0 ? (actNOI / budNOI * 100) : (budNOI < 0 && actNOI < 0 ? (actNOI / budNOI * 100) : 0);
-  const noiVariance = expectedPct - noiPct; // positive = behind pace (bad)
-
-  // --- CAPEX ---
-  const capexBudMo = (b.nonop || []).reduce((sum, r) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
-  }, 0);
-  const capexActMo = (b.nonop || []).reduce((sum, r, i) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
-  }, 0);
-  const capexPct = capexBudMo > 0 ? (capexActMo / capexBudMo * 100) : 0;
-  const capexVariance = capexPct - expectedPct; // positive = over pace (bad)
-
-  // --- Net Income (NOI minus all non-operating) ---
-  const budNonop = (b.nonop || []).reduce((s,r) => s + (r.monthly || 0), 0);
-  const actNonop = (a.nonop || []).reduce((s,v) => s + v, 0);
-  const budNetIncome = budNOI - budNonop;
-  const actNetIncome = actNOI - actNonop;
-  const niPct = budNetIncome !== 0 ? (actNetIncome / budNetIncome * 100) : 0;
-  const niVariance = expectedPct - niPct; // positive = behind pace (bad)
-
-  function mkCat(budgetMo, actualMo, actualPctVal, variancePctVal, dir) {
-    return {
-      budgetMo, actualMo,
-      expectedPct,
-      actualPct: actualPctVal,
-      variancePct: variancePctVal,
-      status: suppressed ? 'on-track' : getPaceStatus(variancePctVal),
-      direction: dir,
-      suppressed
-    };
-  }
-
-  return {
-    income:    mkCat(budIncome, actIncome, incPct, incVariance, 'higher-good'),
-    expenses:  mkCat(budExp, actExp, expPct, expVariance, 'lower-good'),
-    noi:       mkCat(budNOI, actNOI, noiPct, noiVariance, 'higher-good'),
-    capex:     mkCat(capexBudMo, capexActMo, capexPct, capexVariance, 'lower-good'),
-    netIncome: mkCat(budNetIncome, actNetIncome, niPct, niVariance, 'higher-good'),
-  };
-}
-
-/**
- * Compute pace data for all properties. Returns array of {prop, pace}.
- */
-function computeAllPaceData() {
-  return properties.map(p => ({ prop: p, pace: computePropertyPace(p) }));
-}
-
-/**
- * Get worst status across all categories for a property
- */
-function getWorstPaceStatus(pace) {
-  const statuses = ['income','expenses','noi','capex','netIncome'].map(k => pace[k].status);
-  if (statuses.includes('critical'))  return 'critical';
-  if (statuses.includes('off-track')) return 'off-track';
-  return 'on-track';
-}
-
-/**
- * Render the pace tracker panel HTML
- */
-function renderPaceTrackerPanel() {
-  const allPace = computeAllPaceData();
-  const suppressed = DAY_OF_MONTH <= PACE_SUPPRESS_DAYS;
-
-  // Count properties per overall status
-  const counts = { 'on-track':0, 'off-track':0, 'critical':0 };
-  allPace.forEach(d => { counts[getWorstPaceStatus(d.pace)]++; });
-
-  const categories = [
-    { key:'income',    label:'Income',      dir:'↑ higher = good' },
-    { key:'expenses',  label:'Expenses',    dir:'↓ lower = good' },
-    { key:'noi',       label:'NOI',         dir:'↑ higher = good' },
-    { key:'capex',     label:'CAPEX',       dir:'↓ lower = good' },
-    { key:'netIncome', label:'Net Income',  dir:'↑ higher = good' },
-  ];
-
-  let bodyContent;
-  if (suppressed) {
-    bodyContent = `<div class="ptp-early-note">Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH} — Pace tracking suppressed for first ${PACE_SUPPRESS_DAYS} days of month (insufficient data)</div>`;
-  } else {
-    bodyContent = `
-      <div class="ptp-month-note">
-        <span class="ptp-pct">${(MONTH_PCT*100).toFixed(0)}%</span> through ${MONTH_LABEL} (Day ${DAY_OF_MONTH} of ${DAYS_IN_MONTH}) — expected pace: <strong>${(MONTH_PCT*100).toFixed(0)}%</strong> of monthly budget
-        <span style="margin-left:auto;font-size:10px;color:var(--text3);">⚠ Annual items (taxes, insurance) may cause temporary spikes</span>
-      </div>
-      <div class="pace-tracker-grid">
-        ${categories.map(cat => {
-          // Sort properties: critical first, then off-track, then on-track
-          const sorted = [...allPace].sort((a,b) => {
-            const order = {'critical':0,'off-track':1,'on-track':2};
-            return order[a.pace[cat.key].status] - order[b.pace[cat.key].status];
-          });
-          return `<div class="ptg-col">
-            <div class="ptg-col-header">
-              <span>${cat.label}</span>
-              <span class="ptg-dir">${cat.dir}</span>
-            </div>
-            ${sorted.map(d => {
-              const c = d.pace[cat.key];
-              const sign = c.direction === 'higher-good'
-                ? (c.variancePct > 0 ? '−' : '+')
-                : (c.variancePct > 0 ? '+' : '−');
-              const displayVar = Math.abs(c.variancePct).toFixed(1);
-              return `<div class="ptg-prop-row">
-                <span class="ptg-status-dot ${c.status}"></span>
-                <span class="ptg-prop-name" onclick="selectProp(${d.prop.id})" title="${d.prop.name}">${d.prop.name}</span>
-                <span class="ptg-pct ${c.status}">${c.actualPct.toFixed(0)}%</span>
-              </div>`;
-            }).join('')}
-          </div>`;
-        }).join('')}
-      </div>`;
-  }
-
-  return `
-    <div class="pace-tracker-panel">
-      <div class="ptp-head" onclick="togglePaceTracker()">
-        <span class="ptp-icon">◉</span>
-        <span class="ptp-title">Monthly pace tracker</span>
-        <div class="ptp-summary">
-          ${counts['on-track'] > 0 ? `<span class="ptp-pill on-track">✓ ${counts['on-track']} on track</span>` : ''}
-          ${counts['off-track'] > 0 ? `<span class="ptp-pill off-track">⚠ ${counts['off-track']} off track</span>` : ''}
-          ${counts['critical'] > 0 ? `<span class="ptp-pill critical">✕ ${counts['critical']} critical</span>` : ''}
-          ${suppressed ? '<span style="font-size:11px;color:var(--text3);">Early month — suppressed</span>' : ''}
-        </div>
-        <span class="ptp-chev ${paceTrackerOpen?'open':''}" id="ptp-chev">▾</span>
-      </div>
-      <div class="ptp-body ${paceTrackerOpen?'open':''}" id="ptp-body">
-        ${bodyContent}
-      </div>
-    </div>`;
-}
-
-let paceTrackerOpen = true;
-function togglePaceTracker() {
-  paceTrackerOpen = !paceTrackerOpen;
-  const body = document.getElementById('ptp-body');
-  const chev = document.getElementById('ptp-chev');
-  if (body) body.classList.toggle('open', paceTrackerOpen);
-  if (chev) chev.classList.toggle('open', paceTrackerOpen);
-}
-
 function getAlerts(prop) {
   const alerts = [];
   const a = prop.actuals;
@@ -1208,56 +961,20 @@ function getAlerts(prop) {
       alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
   }
 
-  // ── CapEx: compute dynamically from line items (stored capexBudget/capexSpent may be stale) ──
-  const capexBudgetMo = (b.nonop || []).reduce((sum, r) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
-  }, 0);
-  const capexActualMo = (b.nonop || []).reduce((sum, r, i) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
-  }, 0);
-  const capexBudgetAnn = capexBudgetMo * 12;
-  const capexSpentAnn  = capexActualMo * 12;
+  // ── CapEx: budget hit ──
+  if (T.capexHit.enabled && b.capexBudget > 0 && a.capexSpent >= b.capexBudget)
+    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
 
-  // ── CapEx: budget hit (monthly actual >= monthly budget) ──
-  if (T.capexHit.enabled && capexBudgetMo > 0 && capexActualMo >= capexBudgetMo)
-    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(capexActualMo)} spent</strong> vs. ${fd(capexBudgetMo)} monthly budget`});
-
-  // ── CapEx: pace-based (monthly budget, prorated to checkpoint) ──
-  if (T.capexPace.enabled && checkpoint && capexBudgetMo > 0 && capexActualMo < capexBudgetMo) {
-    const expectedCapex = capexBudgetMo * checkpoint.pct;
+  // ── CapEx: pace-based (annual budget, prorated to current month) ──
+  if (T.capexPace.enabled && b.capexBudget > 0 && a.capexSpent < b.capexBudget) {
+    const monthsElapsed = now.getMonth() + MONTH_PCT; // fractional month
+    const expectedCapex = (b.capexBudget / 12) * monthsElapsed;
     if (expectedCapex > 0) {
-      const capexExcess = ((capexActualMo - expectedCapex) / expectedCapex * 100);
+      const capexExcess = ((a.capexSpent - expectedCapex) / expectedCapex * 100);
       if (capexExcess > T.capexPace.value)
         alerts.push({sev: capexExcess > T.capexPace.value * 2 ? 'red' : 'amber', icon:'▣',
-          text:`CapEx at <strong>${((capexActualMo/capexBudgetMo)*100).toFixed(0)}% of monthly budget</strong> at ${cpLabel} checkpoint — ${capexExcess.toFixed(1)}% ahead of expected pace`});
+          text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — ${capexExcess.toFixed(1)}% ahead of expected pace`});
     }
-  }
-
-  // ── Daily pace tracking alerts (suppressed days 1–5) ──
-  if (DAY_OF_MONTH > PACE_SUPPRESS_DAYS) {
-    const pace = computePropertyPace(prop);
-    const cats = [
-      { key:'income',    label:'Income',     icon:'▲' },
-      { key:'expenses',  label:'Expenses',   icon:'◈' },
-      { key:'noi',       label:'NOI',        icon:'⚑' },
-      { key:'capex',     label:'CAPEX',      icon:'▣' },
-      { key:'netIncome', label:'Net Income',  icon:'◐' },
-    ];
-    cats.forEach(cat => {
-      const c = pace[cat.key];
-      if (c.status === 'off-track' || c.status === 'critical') {
-        const dirMsg = c.direction === 'higher-good'
-          ? `at <strong>${c.actualPct.toFixed(0)}%</strong> of budget vs. ${c.expectedPct.toFixed(0)}% expected — ${Math.abs(c.variancePct).toFixed(1)}% behind pace`
-          : `at <strong>${c.actualPct.toFixed(0)}%</strong> of budget vs. ${c.expectedPct.toFixed(0)}% expected — ${Math.abs(c.variancePct).toFixed(1)}% ahead of pace`;
-        alerts.push({
-          sev: c.status === 'critical' ? 'red' : 'amber',
-          icon: cat.icon,
-          text: `${cat.label} pace: ${dirMsg} (Day ${DAY_OF_MONTH}/${DAYS_IN_MONTH})`
-        });
-      }
-    });
   }
 
   // ── Unit rents below budget ──
@@ -1268,6 +985,10 @@ function getAlerts(prop) {
         alerts.push({sev:'amber', icon:'◑', text:`${u.type}: renting at <strong>${fd(u.actualRate)}</strong> vs. budget rate ${fd(u.budgetRate)} — ${miss.toFixed(1)}% below`});
     });
   }
+
+  // ── Collections ──
+  if (T.collectionsMin.enabled && a.collections > 0 && a.collections < T.collectionsMin.value)
+    alerts.push({sev:'red', icon:'◉', text:`Collections at <strong>${fp(a.collections)}</strong> — below ${T.collectionsMin.value}% threshold`});
 
   // ── Cash flow negative ──
   const cf = actualNOI;
@@ -1385,9 +1106,6 @@ function renderPage() {
       </div>
     </div>
 
-    <!-- PACE TRACKER PANEL -->
-    ${renderPaceTrackerPanel()}
-
     <!-- PROPERTY DETAIL SELECTOR -->
     <div class="prop-selector-row">
       <span class="prop-selector-label">View property:</span>
@@ -1428,16 +1146,6 @@ function renderPropDetail(prop) {
 
   // Expected pace
   const expPaceExpected = MONTH_PCT * 100;
-
-  // CapEx: compute dynamically from line items (stored capexBudget/capexSpent may be stale from DB)
-  const capexBudMo = (b.nonop || []).reduce((sum, r) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (r.monthly || 0) : sum;
-  }, 0);
-  const capexActMo = (b.nonop || []).reduce((sum, r, i) => {
-    const cat = r.category || categorizeNonopLabel(r.label);
-    return cat === 'capex' ? sum + (a.nonop?.[i] || 0) : sum;
-  }, 0);
 
   // Month progress
   const monthProgressHtml = `
@@ -1494,6 +1202,15 @@ function renderPropDetail(prop) {
       midMonth:incPace<expPaceExpected-5?`${incPace.toFixed(0)}% collected with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
     },
     {
+      label:'Collections rate', budget:fp(THRESHOLDS.collectionsMin.value), actual:fp(a.collections),
+      cls:a.collections>=95?'on-track':a.collections>=90?'warn':'bad',
+      barPct:Math.min(a.collections,100),
+      barColor:a.collections>=95?'var(--green)':a.collections>=90?'var(--amber)':'var(--red)',
+      variance:a.collections>=95?'On target':`${(THRESHOLDS.collectionsMin.value-a.collections).toFixed(1)}% below threshold`,
+      varCls:a.collections>=95?'pos':'neg',
+      alert:alerts.find(al=>al.text.includes('Collections')),
+    },
+    {
       label:'Expense pace', budget:`${expPaceExpected.toFixed(0)}% expected`, actual:`${expPace.toFixed(0)}% of budget`,
       cls:expPace<=expPaceExpected+5?'on-track':expPace<=expPaceExpected+15?'warn':'bad',
       barPct:Math.min(expPace,130),
@@ -1504,12 +1221,12 @@ function renderPropDetail(prop) {
       midMonth:expPace>expPaceExpected+5?`${expPace.toFixed(0)}% spent with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`:null,
     },
     {
-      label:'CapEx spend', budget:fd(capexBudMo)+'/mo budget', actual:fd(capexActMo)+'/mo spent',
-      cls:capexActMo<capexBudMo*0.85?'on-track':capexActMo<capexBudMo?'warn':'bad',
-      barPct:capexBudMo>0?Math.min(capexActMo/capexBudMo*100,130):0,
-      barColor:capexActMo<capexBudMo*0.85?'var(--green)':capexActMo<capexBudMo?'var(--amber)':'var(--red)',
-      variance:capexActMo>=capexBudMo?fd(capexActMo-capexBudMo)+' over budget':fd(capexBudMo-capexActMo)+' remaining',
-      varCls:capexActMo>=capexBudMo?'neg':'pos',
+      label:'CapEx spend', budget:fd(b.capexBudget)+' budget', actual:fd(a.capexSpent)+' spent',
+      cls:a.capexSpent<b.capexBudget*0.85?'on-track':a.capexSpent<b.capexBudget?'warn':'bad',
+      barPct:b.capexBudget>0?Math.min(a.capexSpent/b.capexBudget*100,130):0,
+      barColor:a.capexSpent<b.capexBudget*0.85?'var(--green)':a.capexSpent<b.capexBudget?'var(--amber)':'var(--red)',
+      variance:a.capexSpent>=b.capexBudget?fd(a.capexSpent-b.capexBudget)+' over budget':fd(b.capexBudget-a.capexSpent)+' remaining',
+      varCls:a.capexSpent>=b.capexBudget?'neg':'pos',
       alert:alerts.find(al=>al.text.includes('CapEx')),
     },
   ];
@@ -2367,11 +2084,16 @@ function closeAlertSettings(){document.getElementById('alert-modal').classList.r
 // ══════════════════════════════════════
 let uploadState = {
   step: 1,
-  allSheets: [],      // [{sheetName, displayName, year, income, expenses, nonop}]
-  selectedSheets: {}, // {sheetName: true/false}
-  matchMap: {},       // {sheetName: propId|'new'|'skip'}
+  allSheets: [],       // [{sheetName, displayName, year, income, expenses, nonop}]
+  selectedSheets: {},  // {sheetName: true/false}
+  matchMap: {},        // {sheetName: propId|'new'|'skip'}
+  buildiumMap: {},     // {sheetName: buildium_property_id|'unlinked'} — deterministic BQ link
+  buildiumProps: null, // lazy-loaded active Buildium property list
+  buildiumLoading: false,
+  buildiumShowAll: {}, // {sheetName: true} — expanded full searchable list
+  buildiumSearch: {},  // {sheetName: filter string}
   fileName: '',
-  budgetYear: null,   // user-chosen year (set in Step 4)
+  budgetYear: null,    // user-chosen year (set in Step 4)
 };
 
 const UPLOAD_SKIP = new Set([
@@ -2401,7 +2123,12 @@ function ensureNonopCategories(nonopArr) {
 }
 
 function openUploadModal() {
-  uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:'', budgetYear:null};
+  uploadState = {
+    step:1, allSheets:[], selectedSheets:{}, matchMap:{},
+    buildiumMap:{}, buildiumProps:null, buildiumLoading:false,
+    buildiumShowAll:{}, buildiumSearch:{},
+    fileName:'', budgetYear:null
+  };
   document.getElementById('upload-modal').classList.add('open');
   renderUploadStep();
 }
@@ -2530,16 +2257,34 @@ function renderUploadStep() {
         Next: Match ${selectedCount} propert${selectedCount!==1?'ies':'y'} →
       </button>`;
 
-  // ── STEP 3: Match each selected sheet to existing property or create new ──
+  // ── STEP 3: Match each selected sheet to existing property + Buildium property ──
   } else if (step === 3) {
+    // Lazy-load Buildium property list the first time step 3 is shown
+    if (!uploadState.buildiumProps && !uploadState.buildiumLoading) {
+      loadBuildiumProperties();
+    }
     const toImport = uploadState.allSheets.filter(s=>uploadState.selectedSheets[s.sheetName]!==false);
-    const allMapped = toImport.every(s=>
+    const allTrackerMapped = toImport.every(s=>
       uploadState.matchMap[s.sheetName] &&
       uploadState.matchMap[s.sheetName] !== '__picking__'
     );
+    // Every non-skipped sheet must also have a Buildium mapping (or explicit 'unlinked')
+    const allBuildiumMapped = toImport.every(s=>
+      uploadState.matchMap[s.sheetName] === 'skip' ||
+      !!uploadState.buildiumMap[s.sheetName]
+    );
+    const allMapped = allTrackerMapped && allBuildiumMapped && !uploadState.buildiumLoading;
+    const loadingBadge = uploadState.buildiumLoading
+      ? '<span style="font-size:11px;color:var(--text3);">⟳ Loading Buildium properties…</span>'
+      : (uploadState.buildiumProps
+          ? '<span style="font-size:11px;color:var(--green);">● '+uploadState.buildiumProps.length+' Buildium properties loaded</span>'
+          : '');
     body.innerHTML = stepsHtml + `
-      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
-        The app has checked your portfolio for matching properties. Confirm each match or reassign before saving.
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--text3);">
+          Confirm each budget's tracker property <strong>and</strong> its Buildium property (needed to pull live actuals).
+        </div>
+        ${loadingBadge}
       </div>
       <div style="max-height:450px;overflow-y:auto;">
         ${toImport.map(s=>renderMatchConfirmCard(s)).join('')}
@@ -2855,6 +2600,174 @@ function parsePGMSheet(rows, sheetName) {
   return result;
 }
 
+// ══════════════════════════════════════
+// BUILDIUM PROPERTY PICKER (budget upload Step 3)
+// Lets the user deterministically link each uploaded sheet to a Buildium
+// property_id, replacing the broken fuzzy name-matching that was running
+// in refreshAllActuals(). Once linked, the ID is saved on prop.buildiumPropertyId
+// and persisted to Supabase (properties.buildium_property_id).
+// ══════════════════════════════════════
+async function loadBuildiumProperties() {
+  if (uploadState.buildiumProps || uploadState.buildiumLoading) return;
+  uploadState.buildiumLoading = true;
+  try {
+    const data = await bqFetch({ type: 'buildium_properties' });
+    uploadState.buildiumProps = (data.rows || []).map(function(r) {
+      return {
+        id:    String(r.id || ''),
+        name:  String(r.name || r.legal_name || ''),
+        legal: String(r.legal_name || ''),
+        units: +r.units || 0
+      };
+    }).filter(function(r){ return r.id && r.name; });
+    autoSuggestBuildiumMatches();
+  } catch (e) {
+    console.error('[BPOS] loadBuildiumProperties:', e.message);
+    showToast('Failed to load Buildium property list: ' + e.message, true);
+    uploadState.buildiumProps = [];
+  } finally {
+    uploadState.buildiumLoading = false;
+    renderUploadStep();
+  }
+}
+
+function scoreBuildiumMatch(sheetName, bqName) {
+  const stop = ['the','a','an','of','at','in','and','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan','llc'];
+  function norm(s) {
+    return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  }
+  const a = norm(sheetName);
+  const b = norm(bqName);
+  if (!a || !b) return 0;
+  if (a === b) return 100;
+  if (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return 92;
+  const aw = a.split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)<0; });
+  const bw = b.split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)<0; });
+  if (!aw.length || !bw.length) return 0;
+  let hit = 0;
+  aw.forEach(function(w){ if (bw.indexOf(w) >= 0) hit++; });
+  const ratio = hit / Math.max(aw.length, bw.length);
+  return Math.round(ratio * 100);
+}
+
+function autoSuggestBuildiumMatches() {
+  if (!uploadState.buildiumProps || !uploadState.buildiumProps.length) return;
+  uploadState.allSheets.forEach(function(s) {
+    if (uploadState.buildiumMap[s.sheetName]) return; // user already chose
+    const name = s.displayName || s.sheetName;
+    const scored = uploadState.buildiumProps.map(function(bp) {
+      return { id: bp.id, name: bp.name, score: scoreBuildiumMatch(name, bp.name) };
+    }).sort(function(a,b){ return b.score - a.score; });
+    // Only auto-pick if a single clear winner: top ≥ 92 AND ≥15 ahead of runner-up
+    const top = scored[0], next = scored[1];
+    if (top && top.score >= 92 && (!next || (top.score - next.score) >= 15)) {
+      uploadState.buildiumMap[s.sheetName] = top.id;
+    }
+  });
+}
+
+function setBuildiumMatch(sheetName, id) {
+  uploadState.buildiumMap[sheetName] = id;
+  renderUploadStep();
+}
+
+function toggleBuildiumShowAll(sheetName) {
+  uploadState.buildiumShowAll[sheetName] = !uploadState.buildiumShowAll[sheetName];
+  renderUploadStep();
+}
+
+function setBuildiumSearch(sheetName, val) {
+  uploadState.buildiumSearch[sheetName] = val;
+  renderUploadStep();
+  // Restore focus + cursor on the re-rendered search input
+  setTimeout(function() {
+    const inp = document.getElementById('bqsearch-' + cssEscapeId(sheetName));
+    if (inp) { inp.focus(); inp.setSelectionRange(val.length, val.length); }
+  }, 0);
+}
+
+// Safe ID escape for use in an element id (sheetNames can contain spaces)
+function cssEscapeId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+function renderBuildiumPicker(s) {
+  const sheetName    = s.sheetName;
+  const displayName  = s.displayName || sheetName;
+  const bp           = uploadState.buildiumProps;
+  const current      = uploadState.buildiumMap[sheetName] || null;
+  const showAll      = !!uploadState.buildiumShowAll[sheetName];
+  const search       = uploadState.buildiumSearch[sheetName] || '';
+  const safeId       = cssEscapeId(sheetName);
+
+  if (uploadState.buildiumLoading && !bp) {
+    return '<div style="margin-top:12px;padding:10px 12px;background:rgba(124,77,255,.05);border:1px solid rgba(124,77,255,.2);border-radius:8px;font-size:11px;color:var(--text3);">⟳ Loading Buildium property list…</div>';
+  }
+  if (!bp || !bp.length) {
+    return '<div style="margin-top:12px;padding:10px 12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;font-size:11px;color:var(--amber);">⚠ Buildium list unavailable — you can still save the budget, but actuals won\'t auto-populate until you link it later.</div>';
+  }
+
+  const scored = bp.map(function(p) {
+    return { id: p.id, name: p.name, units: p.units, score: scoreBuildiumMatch(displayName, p.name) };
+  }).sort(function(a,b){ return b.score - a.score; });
+  const scoreMap = {};
+  scored.forEach(function(sc){ scoreMap[sc.id] = sc.score; });
+
+  const currentProp = (current && current !== 'unlinked') ? bp.find(function(p){ return p.id === current; }) : null;
+  const headerLabel = current === 'unlinked'
+    ? '<span style="color:var(--amber);">○ Unlinked — no Buildium actuals will pull</span>'
+    : currentProp
+      ? '<span style="color:var(--green);">✓ Linked to <strong>'+esc(currentProp.name)+'</strong> <span style="color:var(--text3);font-family:var(--mono);font-size:10px;">(ID '+esc(currentProp.id)+')</span></span>'
+      : '<span style="color:var(--text3);">— Pick a Buildium property —</span>';
+
+  let list;
+  if (showAll) {
+    const q = search.toLowerCase();
+    list = q
+      ? bp.filter(function(p){ return p.name.toLowerCase().indexOf(q) >= 0 || p.id.indexOf(q) >= 0; })
+      : bp;
+  } else {
+    list = scored.filter(function(p){ return p.score > 0; }).slice(0,5);
+  }
+
+  const listHtml = list.map(function(p) {
+    const sel = current === p.id;
+    const sc  = scoreMap[p.id] || 0;
+    return '<label class="match-card '+(sel?'selected':'')+'" style="cursor:pointer;padding:7px 10px;" onclick="setBuildiumMatch(\''+esc(sheetName)+'\',\''+esc(p.id)+'\')">'
+      + '<span class="mc-icon">⬢</span>'
+      + '<div class="mc-info">'
+      +   '<div class="mc-name" style="font-size:12px;">'+esc(p.name)+'</div>'
+      +   '<div class="mc-sub" style="font-size:10px;">ID '+esc(p.id)+(p.units?' · '+p.units+' units':'')+'</div>'
+      + '</div>'
+      + (showAll ? '' : '<span class="mc-score">'+sc+'%</span>')
+      + '</label>';
+  }).join('') || '<div style="font-size:11px;color:var(--text3);padding:6px;">No matches. Try a broader search.</div>';
+
+  return '<div style="margin-top:12px;padding:10px 12px;background:rgba(124,77,255,.05);border:1px solid rgba(124,77,255,.2);border-radius:8px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">'
+    +   '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#a88aff;">⬢ Buildium property (for live actuals)</div>'
+    +   '<div style="font-size:11px;text-align:right;">'+headerLabel+'</div>'
+    + '</div>'
+    + (showAll ? '<input type="text" id="bqsearch-'+safeId+'" placeholder="Search '+bp.length+' Buildium properties…" value="'+esc(search)+'" oninput="setBuildiumSearch(\''+esc(sheetName)+'\',this.value)" style="width:100%;padding:7px 10px;margin-bottom:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;box-sizing:border-box;"/>' : '')
+    + '<div style="display:flex;flex-direction:column;gap:4px;max-height:'+(showAll?'260px':'200px')+';overflow-y:auto;">'
+    +   listHtml
+    + '</div>'
+    + '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">'
+    +   '<button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="toggleBuildiumShowAll(\''+esc(sheetName)+'\')">'
+    +     (showAll ? '← Show top 5 suggestions' : 'Search all '+bp.length+' →')
+    +   '</button>'
+    +   '<button class="btn-ghost" style="font-size:11px;padding:4px 10px;'+(current==='unlinked'?'color:var(--amber);':'')+'" onclick="setBuildiumMatch(\''+esc(sheetName)+'\',\'unlinked\')">'
+    +     (current==='unlinked'?'○ Unlinked':'No Buildium match (skip actuals)')
+    +   '</button>'
+    + '</div>'
+    + '</div>';
+}
+
+// Minimal HTML attribute escaper (sheet names / property names may contain ' or <)
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function autoSuggestMatches() {
   uploadState.allSheets.forEach(s => {
     if (uploadState.matchMap[s.sheetName]) return; // already set
@@ -2905,6 +2818,8 @@ function confirmSaveBudget() {
     const mid = uploadState.matchMap[s.sheetName];
     const isNew = mid==='new';
     const year = uploadState.budgetYear || s.year;
+    const biRaw = uploadState.buildiumMap[s.sheetName];
+    const biid  = (biRaw && biRaw !== 'unlinked') ? String(biRaw) : null;
 
     const budget = {
       income:   s.income.map(r=>({label:r.label, monthly:r.monthly, annual:r.annual||(r.monthly*12), actual2025:r.actual2025})),
@@ -2921,6 +2836,7 @@ function confirmSaveBudget() {
         budgetYear: year,
         budget,
         budgetHistory: {[year]: budget},
+        buildiumPropertyId: biid,
         actuals:{
           occupancy:0, collections:0,
           income: budget.income.map(()=>0),
@@ -2939,6 +2855,8 @@ function confirmSaveBudget() {
         prop.budgetHistory[year] = budget;
         prop.budget = budget;
         prop.budgetYear = year;
+        // Overwrite link to Buildium if user picked one in this upload
+        if (biid) prop.buildiumPropertyId = biid;
         // Resize actuals arrays to match new budget line counts
         if (prop.actuals.income.length !== budget.income.length)
           prop.actuals.income = budget.income.map(()=>0);
@@ -3168,6 +3086,8 @@ function renderMatchConfirmCard(s) {
           </label>
         </div>`:''
       }
+
+      ${current !== 'skip' ? renderBuildiumPicker(s) : ''}
     </div>`;
 }
 
@@ -3756,13 +3676,56 @@ let bitqueryConfig = {
 const BQ_NAME_OVERRIDES = {
   '504-604 cordes': 'CORDES',
 };
-function matchBQProp(bqName, props) {
-  // Check manual overrides first
+// matchBQProp — find the tracker property that corresponds to a BigQuery row.
+//
+// Primary strategy: deterministic ID match on buildium_property_id. The tracker
+// upload flow now asks the user to confirm each budget's Buildium property_id
+// during Step 3; that ID is persisted to properties.buildium_property_id in
+// Supabase. As long as it's present, matching is exact and cannot drift.
+//
+// Fallback: for any tracker property that was NOT yet linked (legacy rows
+// from before this feature shipped, or rows the user explicitly left
+// 'Unlinked'), fall back to the old fuzzy name match so occupancy data and
+// endpoints that don't return an ID still work. The fallback only considers
+// UNLINKED tracker properties — linked props are reserved to their own
+// Buildium ID and cannot be stolen by a stray fuzzy match.
+//
+// Arguments:
+//   rowOrName — a BigQuery row object (preferred, carries .BuildiumPropertyId
+//               and .PropertyName) OR a raw name string for legacy callers.
+//   props     — the tracker properties array.
+function matchBQProp(rowOrName, props) {
+  var bqId   = null;
+  var bqName = '';
+  if (rowOrName && typeof rowOrName === 'object') {
+    bqId   = rowOrName.BuildiumPropertyId != null ? String(rowOrName.BuildiumPropertyId) : null;
+    bqName = String(rowOrName.PropertyName || '');
+  } else {
+    bqName = String(rowOrName || '');
+  }
+
+  // 1. Deterministic: Buildium property_id match.
+  if (bqId) {
+    var byId = null;
+    for (var i = 0; i < props.length; i++) {
+      if (props[i].buildiumPropertyId && String(props[i].buildiumPropertyId) === bqId) {
+        byId = props[i];
+        break;
+      }
+    }
+    if (byId) return byId;
+  }
+
+  // 2. Name fallback — ONLY unlinked props can be matched by name.
+  var unlinked = props.filter(function(p) { return !p.buildiumPropertyId; });
+  if (!unlinked.length || !bqName) return null;
+
+  // Manual overrides first
   var bqLower = bqName.toLowerCase();
   for (var key in BQ_NAME_OVERRIDES) {
     if (bqLower.indexOf(key) >= 0) {
       var target = BQ_NAME_OVERRIDES[key].toLowerCase();
-      var found = props.find(function(p) { return p.name.toLowerCase() === target; });
+      var found = unlinked.find(function(p) { return p.name.toLowerCase() === target; });
       if (found) return found;
     }
   }
@@ -3772,19 +3735,16 @@ function matchBQProp(bqName, props) {
   }
   const bqWords = sigWords(bqName);
   var bestProp = null, bestScore = 0;
-  props.forEach(function(p) {
+  unlinked.forEach(function(p) {
     var pWords = sigWords(p.name);
     var overlap = 0;
     pWords.forEach(function(pw) {
       if (bqWords.some(function(bw) { return bw === pw || bw.includes(pw) || pw.includes(bw); })) overlap++;
     });
-    // Score = overlap / max(words) — prefer higher overlap ratio
     var score = pWords.length > 0 ? overlap / Math.max(pWords.length, bqWords.length) : 0;
-    // Boost exact multi-word matches
     if (overlap >= 2) score += 0.5;
     if (score > bestScore) { bestScore = score; bestProp = p; }
   });
-  // Require at least one significant word match
   return bestScore >= 0.3 ? bestProp : null;
 }
 
@@ -3889,15 +3849,17 @@ async function refreshAllActuals() {
     const occData = await bqFetch({ type: 'portfolio_occupancy' });
     let updated = 0;
     (data.rows || []).forEach(function(row) {
-      const bqName = String(row.PropertyName || '');
-      const prop = matchBQProp(bqName, properties);
+      // Pass the full row so matchBQProp can use BuildiumPropertyId (primary)
+      // and fall back to PropertyName only for unlinked tracker props.
+      const prop = matchBQProp(row, properties);
       if (!prop) return;
       applyBQActuals(prop, row);
       updated++;
     });
     (occData.rows || []).forEach(function(row) {
-      const bqName = String(row.PropertyName || '');
-      const prop = matchBQProp(bqName, properties);
+      // Occupancy endpoint doesn't return BuildiumPropertyId yet — pass row
+      // anyway; matchBQProp falls back to PropertyName for unlinked props.
+      const prop = matchBQProp(row, properties);
       if (!prop) return;
       prop.bqOccupancy = {
         total: +row.TotalUnits||0, occupied: +row.Occupied||0,
@@ -4218,6 +4180,7 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
       pm:          row.pm      || 'AppFolio',
       market:      row.market  || '',
       type:        row.type    || 'existing',
+      buildiumPropertyId: row.buildium_property_id || null,
       budgetYear:  latest?.year || curYear,
       budget,
       budgetHistory,
@@ -4307,19 +4270,10 @@ async function boot() {
       THRESHOLDS.capexPace.enabled         = t.capex_pace_enabled ?? true;
       THRESHOLDS.unitRentBelowPct.value    = t.unit_rent_below_pct ?? 5;
       THRESHOLDS.unitRentBelowPct.enabled  = t.unit_rent_enabled  ?? true;
+      THRESHOLDS.collectionsMin.value      = t.collections_min    ?? 95;
+      THRESHOLDS.collectionsMin.enabled    = t.collections_enabled ?? true;
       THRESHOLDS.cfNegative.enabled        = t.cf_negative_enabled ?? true;
     }
-
-    // Re-apply localStorage overrides so locally-saved user changes always win
-    try {
-      const localThresh = localStorage.getItem('bpos_thresholds');
-      if (localThresh) {
-        const parsed = JSON.parse(localThresh);
-        Object.keys(parsed).forEach(k => {
-          if (THRESHOLDS[k]) Object.assign(THRESHOLDS[k], parsed[k]);
-        });
-      }
-    } catch(e) { /* ignore */ }
 
     // Hydrate in-memory properties with stable numeric IDs
     properties = hydrate(propRows, budgetsByProp, actualsByProp, noiByProp);
@@ -4460,29 +4414,52 @@ async function dbSaveProp(prop) {
   if (!dbOnline) return;
   const uuid = getUuid(prop);
   syncBadge('saving', '↑ Saving…');
-  try {
+  // Build payload. buildium_property_id is added only if either (a) prop has a
+  // value or (b) the column is known to exist. We try-with-column first;
+  // if Supabase returns a "column does not exist" error, we retry without it
+  // (one-time graceful fallback until the migration is run).
+  const baseBody = {
+    name: prop.name, address: prop.address || '—',
+    units: prop.units || 0, pm: prop.pm || 'AppFolio',
+    market: prop.market || '', type: prop.type || 'existing',
+  };
+  const withBuildium = Object.assign({}, baseBody, {
+    buildium_property_id: prop.buildiumPropertyId || null,
+  });
+
+  async function attempt(body) {
     if (uuid) {
       await sbReq('properties?id=eq.' + uuid, {
         method: 'PATCH',
-        body: JSON.stringify({
-          name: prop.name, address: prop.address,
-          units: prop.units, pm: prop.pm,
-          market: prop.market, type: prop.type,
-        }),
+        body: JSON.stringify(body),
       });
+      return null;
     } else {
       const [saved] = await sbReq('properties', {
         method: 'POST',
-        body: JSON.stringify({
-          name: prop.name, address: prop.address || '—',
-          units: prop.units || 0, pm: prop.pm || 'AppFolio',
-          market: prop.market || '', type: prop.type || 'existing',
-        }),
+        body: JSON.stringify(body),
       });
-      if (saved?.id) {
-        prop.supabaseId = saved.id;
-        _idToUuid[prop.id] = saved.id;
+      return saved;
+    }
+  }
+
+  try {
+    let saved;
+    try {
+      saved = await attempt(withBuildium);
+    } catch (e1) {
+      // If the column hasn't been migrated yet, retry without it so legacy
+      // saves keep working. Any other error surfaces normally.
+      if (/buildium_property_id/i.test(e1.message || '') && /column|schema cache|does not exist/i.test(e1.message || '')) {
+        console.warn('[BPOS] buildium_property_id column missing — run the migration SQL. Falling back.');
+        saved = await attempt(baseBody);
+      } else {
+        throw e1;
       }
+    }
+    if (saved?.id) {
+      prop.supabaseId = saved.id;
+      _idToUuid[prop.id] = saved.id;
     }
     syncBadge('saved', '● Saved');
   } catch (e) {
@@ -4583,6 +4560,8 @@ async function dbSaveThresholds() {
         capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
         unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
         unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+        collections_min:      THRESHOLDS.collectionsMin.value,
+        collections_enabled:  THRESHOLDS.collectionsMin.enabled,
         cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
       }),
     });
@@ -4675,7 +4654,10 @@ confirmSaveBudget = async function() {
   for (const s of toUpdate) {
     const mid  = uploadState.matchMap[s.sheetName];
     const prop = properties.find(p => p.id === mid || p.id === +mid);
-    if (prop && prop.budget) await dbSaveBudget(prop, uploadState.budgetYear || s.year || prop.budgetYear, prop.budget);
+    if (!prop) continue;
+    // PATCH the property row so any newly-linked buildium_property_id persists
+    await dbSaveProp(prop);
+    if (prop.budget) await dbSaveBudget(prop, uploadState.budgetYear || s.year || prop.budgetYear, prop.budget);
   }
 };
 

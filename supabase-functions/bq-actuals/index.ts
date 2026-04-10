@@ -179,35 +179,38 @@ function sqlPortfolioSummary(year: number, month: number): string {
     ),
     agg AS (
       SELECT
-        fs.property_name,
+        fs.property_id,
+        fs.property_name                                                  AS raw_name,
         fs.snapshot_month,
         SUM(CASE WHEN LOWER(fs.t12_section) = 'income'
-                 THEN fs.total_amount ELSE 0 END)                        AS total_income,
+                 THEN fs.total_amount ELSE 0 END)                         AS total_income,
         SUM(CASE WHEN LOWER(fs.t12_section) IN ('expense', 'operating_expense')
-                 THEN fs.total_amount ELSE 0 END)                        AS total_expenses,
+                 THEN fs.total_amount ELSE 0 END)                         AS total_expenses,
         SUM(CASE WHEN LOWER(fs.t12_section) LIKE '%non_operating%'
-                 THEN fs.total_amount ELSE 0 END)                        AS non_operating,
+                 THEN fs.total_amount ELSE 0 END)                         AS non_operating,
         SUM(CASE WHEN LOWER(fs.t12_section) LIKE '%non_operating%'
                    AND (LOWER(fs.account_name) LIKE '%capital%'
                         OR LOWER(fs.account_name) LIKE '%capex%'
                         OR LOWER(fs.account_name) LIKE '%improvement%')
-                 THEN fs.total_amount ELSE 0 END)                        AS capex
+                 THEN fs.total_amount ELSE 0 END)                         AS capex
       FROM ${T}.financial_snapshots\` fs
       CROSS JOIN latest l
       WHERE fs.snapshot_month = l.m
-      GROUP BY fs.property_name, fs.snapshot_month
+      GROUP BY fs.property_id, fs.property_name, fs.snapshot_month
     )
     SELECT
-      property_name                            AS PropertyName,
-      CAST(snapshot_month AS STRING)           AS Date,
-      total_income                             AS TotalIncome,
-      total_expenses                           AS TotalExpense,
-      (total_income - total_expenses)          AS NetIncome,
-      total_income                             AS RentIncome,
-      capex                                    AS CAPEX,
-      non_operating                            AS TotalNonOperating
-    FROM agg
-    ORDER BY property_name
+      COALESCE(p.t12_name, a.raw_name)         AS PropertyName,
+      CAST(a.snapshot_month AS STRING)         AS Date,
+      a.total_income                           AS TotalIncome,
+      a.total_expenses                         AS TotalExpense,
+      (a.total_income - a.total_expenses)      AS NetIncome,
+      a.total_income                           AS RentIncome,
+      a.capex                                  AS CAPEX,
+      a.non_operating                          AS TotalNonOperating
+    FROM agg a
+    LEFT JOIN ${T}.properties\` p
+      ON p.property_id = a.property_id
+    ORDER BY PropertyName
   `;
 }
 

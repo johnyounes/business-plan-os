@@ -139,18 +139,35 @@ const QUERIES: Record<string, string> = {
   stale_leases: `SELECT * FROM ${T}.v_stale_leases\` ORDER BY days_since_expired DESC`,
 
   // Bedroom mix with average rents
+  // CRITICAL: Never use rental_units.is_occupied (Rule #1) — derive from Active non-stale lease joins
   bedroom_mix: `
     SELECT
       ru.bedrooms,
       COUNT(*) as total_units,
-      COUNTIF(ru.is_occupied) as occupied_units,
+      COUNTIF(l.lease_id IS NOT NULL AND l.is_stale = FALSE) as occupied_units,
       ROUND(AVG(ru.market_rent), 0) as avg_market_rent,
       ROUND(AVG(CASE WHEN l.rent_amount > 0 THEN l.rent_amount END), 0) as avg_actual_rent
     FROM ${T}.rental_units\` ru
     LEFT JOIN ${T}.leases\` l
-      ON ru.unit_id = l.unit_id AND l.lease_status = 'Active'
+      ON ru.unit_id = l.unit_id AND l.lease_status = 'Active' AND l.is_stale = FALSE
     GROUP BY ru.bedrooms
     ORDER BY total_units DESC
+  `,
+
+  // Monthly occupancy trends (15 months of snapshots)
+  occupancy_snapshot_summary: `
+    SELECT
+      snapshot_month,
+      property_id,
+      property_name,
+      total_units,
+      occupied_units,
+      vacant_units,
+      preleased_units,
+      physical_occupancy_pct,
+      preleased_occupancy_pct
+    FROM ${T}.v_occupancy_snapshot_summary\`
+    ORDER BY property_name, snapshot_month
   `,
 
   // NOI summary: income, expenses, NOI, non-operating per property per month
@@ -182,6 +199,27 @@ const QUERIES: Record<string, string> = {
       transaction_count
     FROM ${T}.v_income_statement\`
     ORDER BY property_name, month DESC, section, account_name
+  `,
+
+  // Income statement snapshot: pre-aggregated NOI, CAPEX, mortgage, net income per property per month
+  // NOTE: intentionally only selects columns the dashboard uses so the query doesn't fail
+  // if optional per-unit columns are missing from v_income_statement_snapshot.
+  // snapshot_month is returned under BOTH names so dashboard code works regardless of which alias it expects.
+  income_statement_snapshot: `
+    SELECT
+      snapshot_month,
+      snapshot_month AS month,
+      property_id,
+      property_name,
+      total_income,
+      total_expenses,
+      noi,
+      capital_improvements,
+      mortgage_payment,
+      net_income,
+      units
+    FROM ${T}.v_income_statement_snapshot\`
+    ORDER BY property_name, snapshot_month
   `,
 
   // Properties list with unit counts
@@ -225,6 +263,60 @@ const QUERIES: Record<string, string> = {
       ON pm.buildium_property_id = bp.property_id
     ORDER BY property_name, unit_number
   `,
+
+  // Economic occupancy per property per month (from v_economic_occupancy view)
+  economic_occupancy: `
+    SELECT
+      property_id,
+      property_name,
+      snapshot_month,
+      total_income,
+      non_recurring_income,
+      recurring_income,
+      estimated_rent_potential,
+      economic_occupancy_pct
+    FROM ${T}.v_economic_occupancy\`
+    ORDER BY property_name, snapshot_month
+  `,
+
+  // Property groups — maps group_name to property_id/property_name
+  property_groups: `
+    SELECT
+      group_id,
+      group_name,
+      property_id,
+      property_name
+    FROM ${T}.property_groups\`
+    ORDER BY group_name, property_name
+  `,
+
+  // Utility summary — utility income vs utility expense per property per month
+  // Utility expense accounts: names containing 'Utility', 'Utilities', 'Electric', 'Gas', 'Water', 'Sewer', 'Trash'
+  // Utility income accounts: names containing 'Utility Reimbursement', 'RUBS', 'Utility Income'
+  utility_summary: `
+    SELECT
+      property_id,
+      property_name,
+      snapshot_month,
+      SUM(CASE
+        WHEN LOWER(t12_section) = 'income'
+          AND (LOWER(account_name) LIKE '%utility%' OR LOWER(account_name) LIKE '%rubs%')
+        THEN total_amount ELSE 0 END) AS utility_income,
+      SUM(CASE
+        WHEN LOWER(t12_section) IN ('expense', 'operating_expense')
+          AND (LOWER(account_name) LIKE '%utilit%' OR LOWER(account_name) LIKE '%electric%'
+               OR LOWER(account_name) LIKE '%gas %' OR LOWER(account_name) LIKE '%water%'
+               OR LOWER(account_name) LIKE '%sewer%' OR LOWER(account_name) LIKE '%trash%')
+        THEN total_amount ELSE 0 END) AS utility_expense
+    FROM ${T}.financial_snapshots\`
+    GROUP BY property_id, property_name, snapshot_month
+    HAVING utility_income > 0 OR utility_expense > 0
+    ORDER BY property_name, snapshot_month
+  `,
+
+  // Snapshot metadata — for detecting current month / live data
+  // Uses SELECT * so the query doesn't break if columns are added/removed
+  snapshot_metadata: `SELECT * FROM ${T}.snapshot_metadata\` ORDER BY last_updated DESC`,
 
   // Connection test
   test: `SELECT 1 as ok, CURRENT_TIMESTAMP() as server_time`,

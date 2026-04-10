@@ -200,6 +200,7 @@ function sqlPortfolioSummary(year: number, month: number): string {
     )
     SELECT
       COALESCE(p.api_name, a.raw_name)         AS PropertyName,
+      CAST(a.property_id AS STRING)            AS BuildiumPropertyId,
       CAST(a.snapshot_month AS STRING)         AS Date,
       a.total_income                           AS TotalIncome,
       a.total_expenses                         AS TotalExpense,
@@ -211,6 +212,26 @@ function sqlPortfolioSummary(year: number, month: number): string {
     LEFT JOIN ${T}.properties\` p
       ON p.property_id = a.property_id
     ORDER BY PropertyName
+  `;
+}
+
+// 4. buildium_properties — full list of active Buildium properties.
+//    Used by the tracker's budget upload flow to let the user confirm which
+//    Buildium property each uploaded budget sheet maps to (replaces the
+//    broken fuzzy name matching). Returns id (property_id as STRING), name
+//    (api_name — clean version without LLC suffixes), legal_name (t12_name),
+//    units, is_active.
+function sqlBuildiumProperties(): string {
+  return `
+    SELECT
+      CAST(property_id AS STRING) AS id,
+      api_name                    AS name,
+      t12_name                    AS legal_name,
+      units,
+      is_active
+    FROM ${T}.properties\`
+    WHERE is_active = TRUE
+    ORDER BY api_name
   `;
 }
 
@@ -366,10 +387,12 @@ serve(async (req) => {
       const property = String(body.property || "").trim();
       if (!property) throw new Error("Missing 'property' param");
       sql = sqlPropertyUnits(property);
+    } else if (type === "buildium_properties") {
+      sql = sqlBuildiumProperties();
     } else {
       throw new Error(
         `Unknown query type: '${type}'. ` +
-        `Valid types: portfolio_summary, portfolio_occupancy, property_units`,
+        `Valid types: portfolio_summary, portfolio_occupancy, property_units, buildium_properties`,
       );
     }
 

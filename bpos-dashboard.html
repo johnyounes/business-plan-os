@@ -1056,8 +1056,12 @@ function renderOverview() {
     const occRows = DATA.occupancy.filter(r => matchesSelectedProps(r));
     totalOccUnits = occRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
     totalAllUnits = occRows.reduce((s, r) => s + (r.total_units || 0), 0);
-    physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
   }
+  // Fallback: if v_occupancy_summary didn't carry total_units, derive from the properties list
+  if (totalAllUnits === 0) {
+    totalAllUnits = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
+  }
+  physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
   // ECONOMIC OCCUPANCY: from v_economic_occupancy
   let econOcc = 0;
@@ -2285,14 +2289,26 @@ async function loadDashboardData() {
     });
 
     // ── OPERATIONAL KPI DIAGNOSTICS ──
-    console.log('[ops KPIs] incomeStatement rows:', DATA.incomeStatement.length,
-      'sample:', DATA.incomeStatement[0]);
-    console.log('[ops KPIs] utilitySummary rows:', DATA.utilitySummary.length,
-      'sample:', DATA.utilitySummary[0]);
-    console.log('[ops KPIs] economicOccupancy rows:', DATA.economicOccupancy.length,
-      'sample:', DATA.economicOccupancy[0]);
-    console.log('[ops KPIs] snapshotMeta rows:', DATA.snapshotMeta.length,
-      'sample:', DATA.snapshotMeta[0]);
+    console.log('[ops KPIs] incomeStatement rows:', (DATA.incomeStatement || []).length,
+      'sample:', (DATA.incomeStatement || [])[0]);
+    console.log('[ops KPIs] utilitySummary rows:', (DATA.utilitySummary || []).length,
+      'sample:', (DATA.utilitySummary || [])[0]);
+    console.log('[ops KPIs] economicOccupancy rows:', (DATA.economicOccupancy || []).length,
+      'sample:', (DATA.economicOccupancy || [])[0]);
+    console.log('[ops KPIs] snapshotMeta rows:', (DATA.snapshotMeta || []).length,
+      'sample:', (DATA.snapshotMeta || [])[0]);
+    console.log('[ops KPIs] propertyGroups rows:', (DATA.propertyGroups || []).length,
+      'sample:', (DATA.propertyGroups || [])[0]);
+
+    // ── UNIT TRACKER DIAGNOSTICS ──
+    console.log('[unit tracker] rentRoll rows:', (DATA.rentRoll || []).length,
+      'sample:', (DATA.rentRoll || [])[0]);
+    console.log('[unit tracker] vacancy rows:', (DATA.vacancy || []).length,
+      'sample:', (DATA.vacancy || [])[0]);
+    console.log('[unit tracker] turns rows:', (DATA.turns || []).length,
+      'sample:', (DATA.turns || [])[0]);
+    console.log('[unit tracker] occupancy rows:', (DATA.occupancy || []).length,
+      'sample:', (DATA.occupancy || [])[0]);
 
     // Render property dropdown
     renderPropDropdown();

@@ -153,42 +153,61 @@ async function runQuery(token: string, sql: string): Promise<any[]> {
 //      TotalNonOperating (= capital_improvements + mortgage_payment — Buildium's
 //      two primary non-op buckets that are reliably exposed by this view).
 function sqlPortfolioSummary(year: number, month: number): string {
-  // Strategy: ALWAYS return the latest available month from the snapshot view.
+  // Strategy: mirror the dashboard T-12 exactly.
   //
-  // Why not filter by the requested year/month?
-  //   - snapshot_month is stored as a STRING, so EXTRACT is illegal.
-  //   - Buildium's API pull lags the calendar — when the tracker asks for
-  //     "April 2026" on April 10, BigQuery may still only have March data.
-  //   - The frontend's one-month fallback (month → month-1) isn't enough if
-  //     the view is more than 1 month behind, so rows come back empty and
-  //     the UI silently shows zeros.
+  // The dashboard queries `financial_snapshots` (one row per property × month ×
+  // account), filters to the latest snapshot_month, and groups by property to
+  // compute income / expense / NOI the same way the P&L tab does. This is the
+  // ground-truth source John has already validated for April 2026 actuals.
   //
-  // Instead we find the MAX(snapshot_month) first and return rows for that
-  // month only. If the requested year-month IS present it will naturally
-  // be the max; if it isn't, we return the most recent month available,
-  // which is exactly what "live current financials" means for John.
+  //   total_income   = SUM(total_amount) where t12_section = 'income'
+  //   total_expenses = SUM(total_amount) where t12_section IN ('expense','operating_expense')
+  //   non_operating  = SUM(total_amount) where t12_section LIKE '%non_operating%'
+  //   NOI            = total_income − total_expenses  (both stored positive)
   //
-  // year/month are accepted but currently unused — kept in the signature
-  // so the frontend contract doesn't need to change. Linter-suppressed.
+  // By filtering on `snapshot_month = (SELECT MAX(snapshot_month) FROM …)`
+  // we always return whatever the most recent month in BigQuery is —
+  // currently March 2026, flipping to April 2026 automatically as soon as
+  // Buildium's daily 6 AM pull lands the new data. No redeploy required.
+  //
+  // year/month are accepted but unused — the frontend contract stays the same.
   void year; void month;
   return `
     WITH latest AS (
-      SELECT MAX(CAST(snapshot_month AS STRING)) AS m
-      FROM ${T}.v_income_statement_snapshot\`
+      SELECT MAX(snapshot_month) AS m
+      FROM ${T}.financial_snapshots\`
+    ),
+    agg AS (
+      SELECT
+        fs.property_name,
+        fs.snapshot_month,
+        SUM(CASE WHEN LOWER(fs.t12_section) = 'income'
+                 THEN fs.total_amount ELSE 0 END)                        AS total_income,
+        SUM(CASE WHEN LOWER(fs.t12_section) IN ('expense', 'operating_expense')
+                 THEN fs.total_amount ELSE 0 END)                        AS total_expenses,
+        SUM(CASE WHEN LOWER(fs.t12_section) LIKE '%non_operating%'
+                 THEN fs.total_amount ELSE 0 END)                        AS non_operating,
+        SUM(CASE WHEN LOWER(fs.t12_section) LIKE '%non_operating%'
+                   AND (LOWER(fs.account_name) LIKE '%capital%'
+                        OR LOWER(fs.account_name) LIKE '%capex%'
+                        OR LOWER(fs.account_name) LIKE '%improvement%')
+                 THEN fs.total_amount ELSE 0 END)                        AS capex
+      FROM ${T}.financial_snapshots\` fs
+      CROSS JOIN latest l
+      WHERE fs.snapshot_month = l.m
+      GROUP BY fs.property_name, fs.snapshot_month
     )
     SELECT
-      s.property_name                                                          AS PropertyName,
-      CAST(s.snapshot_month AS STRING)                                         AS Date,
-      s.total_income                                                           AS TotalIncome,
-      s.total_expenses                                                         AS TotalExpense,
-      s.net_income                                                             AS NetIncome,
-      s.total_income                                                           AS RentIncome,
-      s.capital_improvements                                                   AS CAPEX,
-      (COALESCE(s.capital_improvements, 0) + COALESCE(s.mortgage_payment, 0))  AS TotalNonOperating
-    FROM ${T}.v_income_statement_snapshot\` s
-    CROSS JOIN latest l
-    WHERE CAST(s.snapshot_month AS STRING) = l.m
-    ORDER BY s.property_name
+      property_name                            AS PropertyName,
+      CAST(snapshot_month AS STRING)           AS Date,
+      total_income                             AS TotalIncome,
+      total_expenses                           AS TotalExpense,
+      (total_income - total_expenses)          AS NetIncome,
+      total_income                             AS RentIncome,
+      capex                                    AS CAPEX,
+      non_operating                            AS TotalNonOperating
+    FROM agg
+    ORDER BY property_name
   `;
 }
 

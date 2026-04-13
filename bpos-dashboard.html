@@ -1132,70 +1132,42 @@ function renderOverview() {
   }
   physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
-  // ECONOMIC OCCUPANCY
-  // Source: v_economic_occupancy.economic_occupancy_pct (already ×100). One row per
-  // property × snapshot_month. Rolled up across selected properties as a unit-weighted
-  // average, using total_units from v_economic_occupancy itself (same grain as the pct).
-  //
-  // Cap logic (important): the per-property invariant econ ≤ phys is guaranteed by
-  // v_economic_occupancy. At the portfolio level, though, the econ rollup and the
-  // physical-occ KPI use DIFFERENT views (v_economic_occupancy vs v_occupancy_snapshot_summary)
-  // which can cover slightly different property sets — v_economic_occupancy inner-joins
-  // financial_snapshots, so properties without financials that month drop out. Comparing
-  // those two portfolio numbers directly and capping produces a false positive (and pins
-  // econ = phys) for any historical month where coverage diverges, which is exactly what
-  // was happening. Instead, compute a "matching physical" rollup from the SAME rows and
-  // weights the econ rollup used, and only cap against that.
+  // ECONOMIC OCCUPANCY — dollar-weighted portfolio rollup.
+  // Source: v_economic_occupancy (one row per property × snapshot_month).
+  // Authoritative formula (matches the BigQuery portfolio rollup exactly — do NOT average
+  // the per-property percentages):
+  //   econOcc = SUM(total_income − non_recurring_income) / SUM(estimated_charge_potential) × 100
+  // Expected range historically: 81.6%–88.5%, typically within ±3 pts of physical.
   let econOcc = 0;
-  let matchingPhysOcc = 0;  // phys rollup on the same property set as econ, for honest cap comparison
+  let econIncomeSum = 0, econPotentialSum = 0;
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
     const econRows = DATA.economicOccupancy.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    // Per-property weight lookup from the occupancy snapshot (same month)
-    const weightsByMonth = {};
-    snapRowsForMonth.forEach(o => {
-      if (o.property_id) weightsByMonth[`id:${o.property_id}`] = o.total_units || 0;
-      if (o.property_name) weightsByMonth[`nm:${o.property_name}`] = o.total_units || 0;
-    });
-    let econWeightedSum = 0, physWeightedSum = 0, weightTotal = 0;
     econRows.forEach(r => {
-      const econPct = parseFloat(r.economic_occupancy_pct) || 0;
-      if (econPct <= 0) return;
-      const physPct = parseFloat(r.physical_occupancy_pct) || 0;
-      // Prefer total_units carried on v_economic_occupancy; fall back to the month-matched
-      // snapshot, then the live occupancy view.
-      let w = parseInt(r.total_units) || 0;
-      if (!w && r.property_id) w = weightsByMonth[`id:${r.property_id}`] || 0;
-      if (!w && r.property_name) w = weightsByMonth[`nm:${r.property_name}`] || 0;
-      if (!w && DATA.occupancy) {
-        const occRow = DATA.occupancy.find(o =>
-          (r.property_id && o.property_id === r.property_id) ||
-          (r.property_name && o.property_name === r.property_name));
-        w = occRow ? (occRow.total_units || 0) : 0;
-      }
-      if (w > 0) {
-        econWeightedSum += econPct * w;
-        physWeightedSum += physPct * w;
-        weightTotal += w;
+      const numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+      const denom = parseFloat(r.estimated_charge_potential) || 0;
+      if (denom > 0) {
+        econIncomeSum += numer;
+        econPotentialSum += denom;
       }
     });
-    if (weightTotal > 0) {
-      econOcc = econWeightedSum / weightTotal;
-      matchingPhysOcc = physWeightedSum / weightTotal;
-    } else if (econRows.length) {
-      // Simple-mean fallback if no weights landed anywhere
+    if (econPotentialSum > 0) {
+      econOcc = (econIncomeSum / econPotentialSum) * 100;
+    } else {
+      // Fallback: if the numerator/denominator columns are missing for some reason,
+      // simple-mean the percentage column rather than report 0.
       const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
       if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
     }
   }
-  // Invariant guard: economic occupancy must be ≤ the displayed physical occupancy.
-  // Per-property the invariant is enforced by v_economic_occupancy; at portfolio level the
-  // two KPIs can diverge because the views cover different property sets (v_economic_occupancy
-  // inner-joins financial_snapshots). We cap against the displayed Physical KPI so the two
-  // always read coherently — the user expects econ ≤ phys for every month, same as current.
+  // No hard cap here — the dollar-weighted formula is the authoritative one and matches
+  // the BigQuery portfolio rollup. If it comes in marginally higher than the Physical KPI
+  // for a particular month, that reflects real property-coverage differences between
+  // v_occupancy_snapshot_summary and v_economic_occupancy (the latter drops properties
+  // without financial snapshots). Log the divergence so we can investigate if it looks
+  // off, but don't clamp.
   if (econOcc > 0 && physOcc > 0 && econOcc > physOcc + 0.05) {
-    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%) for ${month}; capping.`);
-    econOcc = physOcc;
+    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${month} — likely due to property coverage difference (v_economic_occupancy inner-joins financials).`);
   }
 
   document.getElementById('operationalKpis').innerHTML = `
@@ -2438,16 +2410,24 @@ async function loadDashboardData() {
     });
 
     // ── COERCE ECONOMIC OCCUPANCY DATA ──
+    // Numerator/denominator columns (total_income, non_recurring_income,
+    // estimated_charge_potential) drive the dollar-weighted portfolio rollup —
+    // the only correct way to aggregate economic occupancy across properties.
     if (DATA.economicOccupancy) DATA.economicOccupancy.forEach(r => {
       r.property_id = parseInt(r.property_id) || 0;
+      r.total_units = parseInt(r.total_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
       r.total_income = parseFloat(r.total_income) || 0;
       r.non_recurring_income = parseFloat(r.non_recurring_income) || 0;
+      r.estimated_charge_potential = parseFloat(r.estimated_charge_potential) || 0;
+      // Keep legacy names readable for any fallbacks
       r.recurring_income = parseFloat(r.recurring_income) || 0;
       r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
       r.economic_occupancy_pct = parseFloat(r.economic_occupancy_pct) || 0;
       r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
       r.snapshot_month = normMonth(r.snapshot_month || r.month);
       r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
 
     // ── COERCE UTILITY DATA ──

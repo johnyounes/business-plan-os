@@ -1126,25 +1126,35 @@ function renderOverview() {
   // ECONOMIC OCCUPANCY
   // Source: v_economic_occupancy.economic_occupancy_pct (already ×100). One row per
   // property × snapshot_month. Rolled up across selected properties as a unit-weighted
-  // average, using total_units from the same-month occupancy snapshot (so weights are
-  // historical and match the filter).
+  // average, using total_units from v_economic_occupancy itself (same grain as the pct).
+  //
+  // Cap logic (important): the per-property invariant econ ≤ phys is guaranteed by
+  // v_economic_occupancy. At the portfolio level, though, the econ rollup and the
+  // physical-occ KPI use DIFFERENT views (v_economic_occupancy vs v_occupancy_snapshot_summary)
+  // which can cover slightly different property sets — v_economic_occupancy inner-joins
+  // financial_snapshots, so properties without financials that month drop out. Comparing
+  // those two portfolio numbers directly and capping produces a false positive (and pins
+  // econ = phys) for any historical month where coverage diverges, which is exactly what
+  // was happening. Instead, compute a "matching physical" rollup from the SAME rows and
+  // weights the econ rollup used, and only cap against that.
   let econOcc = 0;
+  let matchingPhysOcc = 0;  // phys rollup on the same property set as econ, for honest cap comparison
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
     const econRows = DATA.economicOccupancy.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    // Build a per-property weight lookup for THIS month from the occupancy snapshot
+    // Per-property weight lookup from the occupancy snapshot (same month)
     const weightsByMonth = {};
     snapRowsForMonth.forEach(o => {
       if (o.property_id) weightsByMonth[`id:${o.property_id}`] = o.total_units || 0;
       if (o.property_name) weightsByMonth[`nm:${o.property_name}`] = o.total_units || 0;
     });
-    // Try a unit-weighted average
-    let weightedSum = 0, weightTotal = 0;
+    let econWeightedSum = 0, physWeightedSum = 0, weightTotal = 0;
     econRows.forEach(r => {
-      const pct = parseFloat(r.economic_occupancy_pct) || 0;
-      if (pct <= 0) return;
-      // Prefer total_units carried on v_economic_occupancy itself (same grain, same month),
-      // then the month-matched occupancy snapshot, then the live DATA.occupancy.
+      const econPct = parseFloat(r.economic_occupancy_pct) || 0;
+      if (econPct <= 0) return;
+      const physPct = parseFloat(r.physical_occupancy_pct) || 0;
+      // Prefer total_units carried on v_economic_occupancy; fall back to the month-matched
+      // snapshot, then the live occupancy view.
       let w = parseInt(r.total_units) || 0;
       if (!w && r.property_id) w = weightsByMonth[`id:${r.property_id}`] || 0;
       if (!w && r.property_name) w = weightsByMonth[`nm:${r.property_name}`] || 0;
@@ -1154,20 +1164,27 @@ function renderOverview() {
           (r.property_name && o.property_name === r.property_name));
         w = occRow ? (occRow.total_units || 0) : 0;
       }
-      if (w > 0) { weightedSum += pct * w; weightTotal += w; }
+      if (w > 0) {
+        econWeightedSum += econPct * w;
+        physWeightedSum += physPct * w;
+        weightTotal += w;
+      }
     });
-    if (weightTotal > 0) econOcc = weightedSum / weightTotal;
-    // Simple mean fallback if no weights anywhere
-    if (econOcc === 0 && econRows.length) {
+    if (weightTotal > 0) {
+      econOcc = econWeightedSum / weightTotal;
+      matchingPhysOcc = physWeightedSum / weightTotal;
+    } else if (econRows.length) {
+      // Simple-mean fallback if no weights landed anywhere
       const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
       if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
     }
   }
-  // Invariant guard: economic occupancy must be ≤ physical occupancy.
-  // This only fires as a true safety net now that physical occ is correctly month-filtered.
-  if (econOcc > 0 && physOcc > 0 && econOcc > physOcc) {
-    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%) for ${month}; capping.`);
-    econOcc = physOcc;
+  // Invariant guard: only cap if econ > matchingPhys (same property set, same weights).
+  // This is the mathematically honest version of the guard — a violation here would be a
+  // real data bug, not a coverage artifact.
+  if (econOcc > 0 && matchingPhysOcc > 0 && econOcc > matchingPhysOcc + 0.05) {
+    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded matching physical (${matchingPhysOcc.toFixed(2)}%) for ${month}; capping.`);
+    econOcc = matchingPhysOcc;
   }
 
   document.getElementById('operationalKpis').innerHTML = `
@@ -2492,6 +2509,9 @@ async function loadDashboardData() {
     });
 
     // ── OPERATIONAL KPI DIAGNOSTICS ──
+    console.log('[ops KPIs] occupancySnapshot rows:', (DATA.occupancySnapshot || []).length,
+      'months:', [...new Set((DATA.occupancySnapshot || []).map(r => r.snapshot_month))].sort(),
+      'sample:', (DATA.occupancySnapshot || [])[0]);
     console.log('[ops KPIs] incomeStatement rows:', (DATA.incomeStatement || []).length,
       'sample:', (DATA.incomeStatement || [])[0]);
     console.log('[ops KPIs] utilitySummary rows:', (DATA.utilitySummary || []).length,

@@ -638,7 +638,8 @@ let DATA = {
   noiSummary: null,   // v_noi_summary
   pnlDetail: null,    // income statement detail for selected property
   months: [],         // available months
-  economicOccupancy: null,  // v_occupancy_snapshot_summary (provides economic_occupancy_pct as of 2026-04-13)
+  economicOccupancy: null,  // v_economic_occupancy (property × month, economic_occupancy_pct already ×100)
+  occupancySnapshot: null,  // v_occupancy_snapshot_summary — historical physical + preleased by month
   propertyGroups: null,     // property groups mapping
   utilitySummary: null,     // legacy client-side utility rollup (kept as fallback)
   utilityReimbursement: null, // v_utility_reimbursement — SOURCE OF TRUTH for utility_reimbursement_pct
@@ -1019,9 +1020,17 @@ function renderOverview() {
     </div>
   `;
 
-  // Property Metrics
-  const occData = DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : [];
-  const avgOcc = occData.length > 0 ? occData.reduce((s, r) => s + (r.physical_occupancy || 0), 0) / occData.length : 0;
+  // Property Metrics — avg physical occupancy across the selected properties for the
+  // selected month. Prefer the historical snapshot; fall back to the live view only if
+  // the snapshot has no rows for this month.
+  const snapForMetrics = (DATA.occupancySnapshot || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  const occData = snapForMetrics.length
+    ? snapForMetrics
+    : (DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : []);
+  const avgOcc = occData.length > 0
+    ? occData.reduce((s, r) => s + (r.physical_occupancy_pct || r.physical_occupancy || 0), 0) / occData.length
+    : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
     const rev = r.total_income || r.revenue || 0;
@@ -1091,60 +1100,73 @@ function renderOverview() {
     utilReimb = utilExpense > 0 ? (utilIncome / utilExpense * 100) : 0;
   }
 
-  // PHYSICAL OCCUPANCY: from occupancy snapshot summary for selected month, or current occupancy
+  // PHYSICAL OCCUPANCY — historical-aware.
+  // Prefer v_occupancy_snapshot_summary (one row per property × snapshot_month) filtered by
+  // the selected month, so historical months return their actual values. v_occupancy_summary
+  // is live/current-state only and has no history — only fall back to it when the snapshot
+  // doesn't carry the selected month (e.g., the very first or last month in the range, or
+  // if the snapshot view is missing entirely).
   let physOcc = 0, totalOccUnits = 0, totalAllUnits = 0;
-  if (DATA.occupancy) {
+  const snapRowsForMonth = (DATA.occupancySnapshot || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  if (snapRowsForMonth.length) {
+    totalOccUnits = snapRowsForMonth.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    totalAllUnits = snapRowsForMonth.reduce((s, r) => s + (r.total_units || 0), 0);
+  } else if (DATA.occupancy && DATA.occupancy.length) {
     const occRows = DATA.occupancy.filter(r => matchesSelectedProps(r));
     totalOccUnits = occRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
     totalAllUnits = occRows.reduce((s, r) => s + (r.total_units || 0), 0);
   }
-  // Fallback: if v_occupancy_summary didn't carry total_units, derive from the properties list
+  // Fallback: if neither source carried total_units, derive from the properties list
   if (totalAllUnits === 0) {
     totalAllUnits = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
   }
   physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
   // ECONOMIC OCCUPANCY
-  // Post-2026-04-13: the authoritative column is v_occupancy_snapshot_summary.economic_occupancy_pct
-  // (the earlier v_economic_occupancy view could return econ > physical, which is impossible;
-  // 07_metric_fixes.sql corrected the aggregation so econ ≤ physical always holds).
-  // Read the pct directly and average across selected properties, weighted by total_units
-  // when we can, falling back to a simple mean.
+  // Source: v_economic_occupancy.economic_occupancy_pct (already ×100). One row per
+  // property × snapshot_month. Rolled up across selected properties as a unit-weighted
+  // average, using total_units from the same-month occupancy snapshot (so weights are
+  // historical and match the filter).
   let econOcc = 0;
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
     const econRows = DATA.economicOccupancy.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    // Try a unit-weighted average using the occupancy snapshot (which carries total_units)
-    if (DATA.occupancy && DATA.occupancy.length) {
-      let weightedSum = 0, weightTotal = 0;
-      econRows.forEach(r => {
-        const pct = parseFloat(r.economic_occupancy_pct) || 0;
-        if (pct <= 0) return;
+    // Build a per-property weight lookup for THIS month from the occupancy snapshot
+    const weightsByMonth = {};
+    snapRowsForMonth.forEach(o => {
+      if (o.property_id) weightsByMonth[`id:${o.property_id}`] = o.total_units || 0;
+      if (o.property_name) weightsByMonth[`nm:${o.property_name}`] = o.total_units || 0;
+    });
+    // Try a unit-weighted average
+    let weightedSum = 0, weightTotal = 0;
+    econRows.forEach(r => {
+      const pct = parseFloat(r.economic_occupancy_pct) || 0;
+      if (pct <= 0) return;
+      // Prefer total_units carried on v_economic_occupancy itself (same grain, same month),
+      // then the month-matched occupancy snapshot, then the live DATA.occupancy.
+      let w = parseInt(r.total_units) || 0;
+      if (!w && r.property_id) w = weightsByMonth[`id:${r.property_id}`] || 0;
+      if (!w && r.property_name) w = weightsByMonth[`nm:${r.property_name}`] || 0;
+      if (!w && DATA.occupancy) {
         const occRow = DATA.occupancy.find(o =>
           (r.property_id && o.property_id === r.property_id) ||
           (r.property_name && o.property_name === r.property_name));
-        const w = occRow ? (occRow.total_units || 0) : 0;
-        if (w > 0) { weightedSum += pct * w; weightTotal += w; }
-      });
-      if (weightTotal > 0) econOcc = weightedSum / weightTotal;
-    }
-    // Simple mean fallback (or legacy recurring/potential path if pct isn't populated)
+        w = occRow ? (occRow.total_units || 0) : 0;
+      }
+      if (w > 0) { weightedSum += pct * w; weightTotal += w; }
+    });
+    if (weightTotal > 0) econOcc = weightedSum / weightTotal;
+    // Simple mean fallback if no weights anywhere
     if (econOcc === 0 && econRows.length) {
       const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
-      if (pcts.length) {
-        econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
-      } else {
-        const totalRecurring = econRows.reduce((s, r) => s + (parseFloat(r.recurring_income) || 0), 0);
-        const totalPotential = econRows.reduce((s, r) => s + (parseFloat(r.estimated_rent_potential) || 0), 0);
-        econOcc = totalPotential > 0 ? (totalRecurring / totalPotential * 100) : 0;
-      }
+      if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
     }
   }
   // Invariant guard: economic occupancy must be ≤ physical occupancy.
-  // If the upstream data violates this (e.g., the edge function hasn't been redeployed yet),
-  // cap econOcc at physOcc so the KPI never shows an impossible value.
+  // This only fires as a true safety net now that physical occ is correctly month-filtered.
   if (econOcc > 0 && physOcc > 0 && econOcc > physOcc) {
-    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%); capping.`);
+    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%) for ${month}; capping.`);
     econOcc = physOcc;
   }
 
@@ -2176,6 +2198,7 @@ async function loadDashboardData() {
       financialRes,
       noiRes,
       occRes,
+      occSnapRes,
       rentRollRes,
       vacancyRes,
       expRes,
@@ -2192,6 +2215,7 @@ async function loadDashboardData() {
       safeCall('financial_summary'),
       safeCall('noi_summary'),
       safeCall('occupancy_summary'),
+      safeCall('occupancy_snapshot_summary'),
       safeCall('rent_roll'),
       safeCall('vacancy'),
       safeCall('lease_expirations'),
@@ -2209,6 +2233,7 @@ async function loadDashboardData() {
     DATA.financial   = financialRes.data || [];
     DATA.noiSummary  = noiRes.data || [];
     DATA.occupancy   = occRes.data || [];
+    DATA.occupancySnapshot = occSnapRes.data || [];
     DATA.rentRoll    = rentRollRes.data || [];
     DATA.vacancy     = vacancyRes.data || [];
     DATA.expirations = expRes.data || [];
@@ -2273,7 +2298,8 @@ async function loadDashboardData() {
     const finMonths   = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean);
     const noiMonths   = [...new Set(DATA.noiSummary.map(r => r.month))].filter(Boolean);
     const snapMonths  = [...new Set((DATA.incomeStatement || []).map(r => r.month || r.snapshot_month))].filter(Boolean);
-    const allMonths   = [...new Set([...finMonths, ...noiMonths, ...snapMonths])].sort();
+    const occMonths   = [...new Set((DATA.occupancySnapshot || []).map(r => r.month || r.snapshot_month))].filter(Boolean);
+    const allMonths   = [...new Set([...finMonths, ...noiMonths, ...snapMonths, ...occMonths])].sort();
     DATA.months = allMonths.length ? allMonths : (finMonths.sort());
     selectedMonth = DATA.months[DATA.months.length - 1] || '';
     populateMonthFilter(DATA.months);
@@ -2364,6 +2390,23 @@ async function loadDashboardData() {
       r.market_rent = parseFloat(r.market_rent) || 0;
       r.days_vacant = parseInt(r.days_vacant) || 0;
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE OCCUPANCY SNAPSHOT (v_occupancy_snapshot_summary) ──
+    // Historical physical + preleased occupancy, one row per property × snapshot_month.
+    // This is what we filter by selected month — v_occupancy_summary (DATA.occupancy) is
+    // live/current-state and has no history, so it can't answer historical month questions.
+    if (DATA.occupancySnapshot) DATA.occupancySnapshot.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_units = parseInt(r.total_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.preleased_occupancy_pct = parseFloat(r.preleased_occupancy_pct) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
 
     // ── COERCE ECONOMIC OCCUPANCY DATA ──

@@ -1022,14 +1022,23 @@ function renderOverview() {
 
   // Property Metrics — avg physical occupancy across the selected properties for the
   // selected month. Prefer the historical snapshot; fall back to the live view only if
-  // the snapshot has no rows for this month.
+  // the snapshot has no rows for this month. Derive the per-property pct from
+  // occupied_units / total_units so we don't depend on `physical_occupancy_pct` being
+  // present in the view (it isn't on v_occupancy_snapshot_summary in the deployed schema).
   const snapForMetrics = (DATA.occupancySnapshot || []).filter(r =>
     (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
   const occData = snapForMetrics.length
     ? snapForMetrics
     : (DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : []);
+  const perPropPct = (r) => {
+    const pct = parseFloat(r.physical_occupancy_pct) || parseFloat(r.physical_occupancy) || 0;
+    if (pct > 0) return pct;
+    const occ = parseInt(r.occupied_units) || 0;
+    const tot = parseInt(r.total_units) || 0;
+    return tot > 0 ? (occ / tot * 100) : 0;
+  };
   const avgOcc = occData.length > 0
-    ? occData.reduce((s, r) => s + (r.physical_occupancy_pct || r.physical_occupancy || 0), 0) / occData.length
+    ? occData.reduce((s, r) => s + perPropPct(r), 0) / occData.length
     : 0;
   const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
   const highExpRatio = monthData.filter(r => {
@@ -1179,12 +1188,14 @@ function renderOverview() {
       if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
     }
   }
-  // Invariant guard: only cap if econ > matchingPhys (same property set, same weights).
-  // This is the mathematically honest version of the guard — a violation here would be a
-  // real data bug, not a coverage artifact.
-  if (econOcc > 0 && matchingPhysOcc > 0 && econOcc > matchingPhysOcc + 0.05) {
-    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded matching physical (${matchingPhysOcc.toFixed(2)}%) for ${month}; capping.`);
-    econOcc = matchingPhysOcc;
+  // Invariant guard: economic occupancy must be ≤ the displayed physical occupancy.
+  // Per-property the invariant is enforced by v_economic_occupancy; at portfolio level the
+  // two KPIs can diverge because the views cover different property sets (v_economic_occupancy
+  // inner-joins financial_snapshots). We cap against the displayed Physical KPI so the two
+  // always read coherently — the user expects econ ≤ phys for every month, same as current.
+  if (econOcc > 0 && physOcc > 0 && econOcc > physOcc + 0.05) {
+    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%) for ${month}; capping.`);
+    econOcc = physOcc;
   }
 
   document.getElementById('operationalKpis').innerHTML = `

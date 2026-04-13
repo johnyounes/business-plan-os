@@ -638,11 +638,13 @@ let DATA = {
   noiSummary: null,   // v_noi_summary
   pnlDetail: null,    // income statement detail for selected property
   months: [],         // available months
-  economicOccupancy: null,  // v_economic_occupancy
+  economicOccupancy: null,  // v_occupancy_snapshot_summary (provides economic_occupancy_pct as of 2026-04-13)
   propertyGroups: null,     // property groups mapping
-  utilitySummary: null,     // utility summary
+  utilitySummary: null,     // legacy client-side utility rollup (kept as fallback)
+  utilityReimbursement: null, // v_utility_reimbursement — SOURCE OF TRUTH for utility_reimbursement_pct
   snapshotMeta: null,       // snapshot metadata
-  incomeStatement: null,    // income statement snapshot
+  incomeStatement: null,    // v_income_statement_snapshot — operating-only income/expenses/NOI
+  groupSummary: null,       // v_group_summary — pre-aggregated KPIs by property group × month
 };
 
 // ── SUPABASE HELPER ──
@@ -941,8 +943,23 @@ function renderOverview() {
   }
   const month = selectedMonth;
 
-  // Current month NOI data — match by property_id or property_name
-  const monthData = DATA.noiSummary.filter(r => r.month === month && matchesSelectedProps(r));
+  // ── FINANCIAL KPI SOURCE: v_income_statement_snapshot (operating-only) ──
+  // Spec (2026-04-13): the dashboard must pull total_income / total_expenses / NOI
+  // from v_income_statement_snapshot, where the three fields are operating-only.
+  // Non-operating items (mortgage, capex, AMF, parent-co) are kept in separate columns.
+  // Fall back to the financial_snapshots roll-up (DATA.noiSummary) only if the snapshot
+  // view returned nothing for the selected month — prevents blank KPIs during a deploy lag.
+  const snapRows = (DATA.incomeStatement || []).filter(r =>
+    (r.month === month || r.snapshot_month === month) && matchesSelectedProps(r));
+  let monthData, usingSnapshot;
+  if (snapRows.length) {
+    monthData = snapRows;
+    usingSnapshot = true;
+  } else {
+    monthData = (DATA.noiSummary || []).filter(r => r.month === month && matchesSelectedProps(r));
+    usingSnapshot = false;
+  }
+
   const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
   const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
   const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
@@ -950,10 +967,17 @@ function renderOverview() {
   const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
   const noiPerUnit    = totalUnits > 0 ? totalNOI / totalUnits : 0;
 
-  // Previous month comparison
+  // Previous month comparison — mirror the snapshot-first preference above
   const prevMonth = getPrevMonth(month);
-  const prevData  = DATA.noiSummary.filter(r => r.month === prevMonth && matchesSelectedProps(r));
-  const prevNOI   = prevData.reduce((s, r) => s + (r.noi || 0), 0);
+  let prevRows = [];
+  if (usingSnapshot) {
+    prevRows = (DATA.incomeStatement || []).filter(r =>
+      (r.month === prevMonth || r.snapshot_month === prevMonth) && matchesSelectedProps(r));
+  }
+  if (!prevRows.length) {
+    prevRows = (DATA.noiSummary || []).filter(r => r.month === prevMonth && matchesSelectedProps(r));
+  }
+  const prevNOI   = prevRows.reduce((s, r) => s + (r.noi || 0), 0);
   const noiChange = prevNOI !== 0 ? ((totalNOI - prevNOI) / Math.abs(prevNOI) * 100) : 0;
 
   // Count negative NOI properties
@@ -1040,9 +1064,26 @@ function renderOverview() {
     capex = capexRows.reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
   }
 
-  // UTILITY REIMBURSEMENT: utility income / utility expense
+  // UTILITY REIMBURSEMENT
+  // Primary source: v_utility_reimbursement (23 utility income GLs + 11 utility expense GLs
+  // enumerated server-side; utility_reimbursement_pct pre-computed). Typical MF range: 40–80%.
+  // Fallback: the legacy client-side utility_summary roll-up via account-name LIKE matches.
   let utilIncome = 0, utilExpense = 0, utilReimb = 0;
-  if (DATA.utilitySummary && DATA.utilitySummary.length) {
+  const utilReimbRows = (DATA.utilityReimbursement || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  if (utilReimbRows.length) {
+    utilIncome = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+    utilExpense = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
+    // Prefer the server-computed pct when aggregated income/expense aren't both present.
+    if (utilExpense > 0) {
+      utilReimb = utilIncome / utilExpense * 100;
+    } else {
+      const pcts = utilReimbRows
+        .map(r => parseFloat(r.utility_reimbursement_pct) || 0)
+        .filter(p => p > 0);
+      utilReimb = pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : 0;
+    }
+  } else if (DATA.utilitySummary && DATA.utilitySummary.length) {
     const utilRows = DATA.utilitySummary.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
     utilIncome = utilRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
@@ -1063,19 +1104,48 @@ function renderOverview() {
   }
   physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
-  // ECONOMIC OCCUPANCY: from v_economic_occupancy
+  // ECONOMIC OCCUPANCY
+  // Post-2026-04-13: the authoritative column is v_occupancy_snapshot_summary.economic_occupancy_pct
+  // (the earlier v_economic_occupancy view could return econ > physical, which is impossible;
+  // 07_metric_fixes.sql corrected the aggregation so econ ≤ physical always holds).
+  // Read the pct directly and average across selected properties, weighted by total_units
+  // when we can, falling back to a simple mean.
   let econOcc = 0;
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
     const econRows = DATA.economicOccupancy.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    const totalRecurring = econRows.reduce((s, r) => s + (parseFloat(r.recurring_income) || 0), 0);
-    const totalPotential = econRows.reduce((s, r) => s + (parseFloat(r.estimated_rent_potential) || 0), 0);
-    econOcc = totalPotential > 0 ? (totalRecurring / totalPotential * 100) : 0;
-    // Fallback: use pre-computed pct if recurring/potential are zero but pct is set
+    // Try a unit-weighted average using the occupancy snapshot (which carries total_units)
+    if (DATA.occupancy && DATA.occupancy.length) {
+      let weightedSum = 0, weightTotal = 0;
+      econRows.forEach(r => {
+        const pct = parseFloat(r.economic_occupancy_pct) || 0;
+        if (pct <= 0) return;
+        const occRow = DATA.occupancy.find(o =>
+          (r.property_id && o.property_id === r.property_id) ||
+          (r.property_name && o.property_name === r.property_name));
+        const w = occRow ? (occRow.total_units || 0) : 0;
+        if (w > 0) { weightedSum += pct * w; weightTotal += w; }
+      });
+      if (weightTotal > 0) econOcc = weightedSum / weightTotal;
+    }
+    // Simple mean fallback (or legacy recurring/potential path if pct isn't populated)
     if (econOcc === 0 && econRows.length) {
       const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
-      if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+      if (pcts.length) {
+        econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+      } else {
+        const totalRecurring = econRows.reduce((s, r) => s + (parseFloat(r.recurring_income) || 0), 0);
+        const totalPotential = econRows.reduce((s, r) => s + (parseFloat(r.estimated_rent_potential) || 0), 0);
+        econOcc = totalPotential > 0 ? (totalRecurring / totalPotential * 100) : 0;
+      }
     }
+  }
+  // Invariant guard: economic occupancy must be ≤ physical occupancy.
+  // If the upstream data violates this (e.g., the edge function hasn't been redeployed yet),
+  // cap econOcc at physOcc so the KPI never shows an impossible value.
+  if (econOcc > 0 && physOcc > 0 && econOcc > physOcc) {
+    console.warn(`Economic occupancy (${econOcc.toFixed(2)}%) exceeded physical (${physOcc.toFixed(2)}%); capping.`);
+    econOcc = physOcc;
   }
 
   document.getElementById('operationalKpis').innerHTML = `
@@ -1122,11 +1192,24 @@ function renderIncExpChart() {
   ctx.clearRect(0, 0, W, H);
 
   const months = DATA.months.slice(-12);
-  if (!months.length || !DATA.noiSummary) return;
+  // Prefer v_income_statement_snapshot (operating-only) for chart values, so the
+  // Income/Expenses chart aligns with the top-line KPIs. Fall back to the financial_snapshots
+  // roll-up only if the snapshot view is empty.
+  const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
+  if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
+
+  const sourceFor = (m) => {
+    if (hasSnap) {
+      const rows = DATA.incomeStatement.filter(r =>
+        (r.month === m || r.snapshot_month === m) && matchesSelectedProps(r));
+      if (rows.length) return rows;
+    }
+    return (DATA.noiSummary || []).filter(r => r.month === m && matchesSelectedProps(r));
+  };
 
   const incomeByMonth = [], expByMonth = [];
   months.forEach(m => {
-    const rows = DATA.noiSummary.filter(r => r.month === m && matchesSelectedProps(r));
+    const rows = sourceFor(m);
     incomeByMonth.push(rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0));
     expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0));
   });
@@ -1221,11 +1304,17 @@ function renderNOIChart() {
   ctx.clearRect(0, 0, W, H);
 
   const months = DATA.months.slice(-12);
-  if (!months.length || !DATA.noiSummary) return;
+  const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
+  if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
 
   const noiByMonth = [];
   months.forEach(m => {
-    const rows = DATA.noiSummary.filter(r => r.month === m && matchesSelectedProps(r));
+    let rows = [];
+    if (hasSnap) {
+      rows = DATA.incomeStatement.filter(r =>
+        (r.month === m || r.snapshot_month === m) && matchesSelectedProps(r));
+    }
+    if (!rows.length) rows = (DATA.noiSummary || []).filter(r => r.month === m && matchesSelectedProps(r));
     noiByMonth.push(rows.reduce((s, r) => s + (r.noi || 0), 0));
   });
 
@@ -2083,8 +2172,10 @@ async function loadDashboardData() {
       econOccRes,
       groupsRes,
       utilityRes,
+      utilReimbRes,
       metaRes,
       incStmtRes,
+      groupSummaryRes,
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
@@ -2097,8 +2188,10 @@ async function loadDashboardData() {
       safeCall('economic_occupancy'),
       safeCall('property_groups'),
       safeCall('utility_summary'),
+      safeCall('utility_reimbursement'),
       safeCall('snapshot_metadata'),
       safeCall('income_statement_snapshot'),
+      safeCall('group_summary'),
     ]);
 
     DATA.financial   = financialRes.data || [];
@@ -2112,8 +2205,10 @@ async function loadDashboardData() {
     DATA.economicOccupancy = econOccRes.data || [];
     DATA.propertyGroups = groupsRes.data || [];
     DATA.utilitySummary = utilityRes.data || [];
+    DATA.utilityReimbursement = utilReimbRes.data || [];
     DATA.snapshotMeta = metaRes.data || [];
     DATA.incomeStatement = incStmtRes.data || [];
+    DATA.groupSummary = groupSummaryRes.data || [];
 
     // ── BUILD PROPERTY LIST ──
     // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views
@@ -2159,11 +2254,15 @@ async function loadDashboardData() {
       r.transaction_count = parseInt(r.transaction_count) || 0;
     });
 
-    // ── BUILD MONTHS FROM FINANCIAL DATA ──
-    // financial_summary has all months (15+), noiSummary may only have 1
-    const finMonths = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean).sort();
-    const noiMonths = [...new Set(DATA.noiSummary.map(r => r.month))].filter(Boolean).sort();
-    DATA.months = finMonths.length > noiMonths.length ? finMonths : noiMonths;
+    // ── BUILD MONTHS FROM AVAILABLE DATA ──
+    // Prefer the union of months present in any of our time-series sources so the
+    // month dropdown reflects everything we can render, regardless of which view
+    // happens to have the widest coverage.
+    const finMonths   = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean);
+    const noiMonths   = [...new Set(DATA.noiSummary.map(r => r.month))].filter(Boolean);
+    const snapMonths  = [...new Set((DATA.incomeStatement || []).map(r => r.month || r.snapshot_month))].filter(Boolean);
+    const allMonths   = [...new Set([...finMonths, ...noiMonths, ...snapMonths])].sort();
+    DATA.months = allMonths.length ? allMonths : (finMonths.sort());
     selectedMonth = DATA.months[DATA.months.length - 1] || '';
     populateMonthFilter(DATA.months);
 
@@ -2263,6 +2362,9 @@ async function loadDashboardData() {
       r.recurring_income = parseFloat(r.recurring_income) || 0;
       r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
       r.economic_occupancy_pct = parseFloat(r.economic_occupancy_pct) || 0;
+      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
     });
 
     // ── COERCE UTILITY DATA ──
@@ -2272,19 +2374,60 @@ async function loadDashboardData() {
       r.utility_expense = parseFloat(r.utility_expense) || 0;
     });
 
+    // ── COERCE UTILITY REIMBURSEMENT (v_utility_reimbursement) ──
+    // Post-2026-04-13: 23 utility income GLs + 11 utility expense GLs enumerated in the view.
+    // utility_reimbursement_pct = utility_income / utility_expense × 100 (already computed server-side).
+    if (DATA.utilityReimbursement) DATA.utilityReimbursement.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.utility_income = parseFloat(r.utility_income) || 0;
+      r.utility_expense = parseFloat(r.utility_expense) || 0;
+      r.utility_reimbursement_pct = parseFloat(r.utility_reimbursement_pct) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+
+    // ── COERCE GROUP SUMMARY (v_group_summary) ──
+    // Pre-aggregated KPI rollup by property group × month.
+    if (DATA.groupSummary) DATA.groupSummary.forEach(r => {
+      ['physical_occupancy_pct', 'economic_occupancy_pct', 'utility_reimbursement_pct',
+       'expense_ratio_pct', 'total_income', 'total_expenses', 'noi'].forEach(k => {
+        if (r[k] != null) r[k] = parseFloat(r[k]) || 0;
+      });
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+    });
+
+    // Normalize any snapshot_month value to "YYYY-MM".
+    // Some BigQuery views return a DATE ("2026-03-01"), others a STRING ("2026-03");
+    // the dashboard joins everything on the STRING form, so truncate proactively.
+    const normMonth = (v) => {
+      if (!v) return v;
+      const s = String(v);
+      return s.length >= 7 ? s.slice(0, 7) : s;
+    };
+
     // ── COERCE INCOME STATEMENT SNAPSHOT DATA ──
+    // Source: v_income_statement_snapshot (updated 2026-04-13)
+    //   total_income / total_expenses / noi  → OPERATING-ONLY
+    //   capital_improvements / mortgage_payment / asset_management_fee /
+    //   parent_company_expenses / total_non_operating_expense → broken out separately
     // Resilience: handle both `month` (new alias) and `snapshot_month` (raw view column),
     // so the dashboard works whether the edge function has been redeployed or not.
     if (DATA.incomeStatement) DATA.incomeStatement.forEach(r => {
       r.property_id = parseInt(r.property_id) || 0;
-      if (!r.month && r.snapshot_month) r.month = r.snapshot_month;
-      if (!r.snapshot_month && r.month) r.snapshot_month = r.month;
-      r.capital_improvements = parseFloat(r.capital_improvements) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
       r.total_income = parseFloat(r.total_income) || 0;
       r.total_expenses = parseFloat(r.total_expenses) || 0;
       r.noi = parseFloat(r.noi) || 0;
+      r.capital_improvements = parseFloat(r.capital_improvements) || 0;
       r.mortgage_payment = parseFloat(r.mortgage_payment) || 0;
+      r.asset_management_fee = parseFloat(r.asset_management_fee) || 0;
+      r.parent_company_expenses = parseFloat(r.parent_company_expenses) || 0;
+      r.total_non_operating_expense = parseFloat(r.total_non_operating_expense) || 0;
       r.net_income = parseFloat(r.net_income) || 0;
+      r.units = parseInt(r.units) || 0;
       if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
 

@@ -2154,6 +2154,18 @@ function setApiStatus(state, label) {
 async function loadDashboardData() {
   setApiStatus('pending', 'Loading data…');
   try {
+    // Normalize any snapshot_month value to "YYYY-MM".
+    // Some BigQuery views return a DATE ("2026-03-01"), others a STRING ("2026-03");
+    // the dashboard joins everything on the STRING form, so truncate proactively.
+    // Declared at the top of the try block because several coercion loops below call it —
+    // previously it was hoisted below those loops, causing a TDZ ReferenceError that
+    // triggered the demo-data fallback on every load.
+    const normMonth = (v) => {
+      if (!v) return v;
+      const s = String(v);
+      return s.length >= 7 ? s.slice(0, 7) : s;
+    };
+
     // Load all data in parallel — each query is independent so one failure won't block others
     const safeCall = async (type) => {
       try { return await callEdgeFn(type); }
@@ -2397,15 +2409,6 @@ async function loadDashboardData() {
       r.snapshot_month = normMonth(r.snapshot_month || r.month);
       r.month = r.snapshot_month;
     });
-
-    // Normalize any snapshot_month value to "YYYY-MM".
-    // Some BigQuery views return a DATE ("2026-03-01"), others a STRING ("2026-03");
-    // the dashboard joins everything on the STRING form, so truncate proactively.
-    const normMonth = (v) => {
-      if (!v) return v;
-      const s = String(v);
-      return s.length >= 7 ? s.slice(0, 7) : s;
-    };
 
     // ── COERCE INCOME STATEMENT SNAPSHOT DATA ──
     // Source: v_income_statement_snapshot (updated 2026-04-13)

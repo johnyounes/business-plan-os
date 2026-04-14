@@ -4494,6 +4494,13 @@ async function boot() {
     // Apply thresholds from DB
     if (threshRow && threshRow[0]) {
       const t = threshRow[0];
+      // Pace bands (yellow/red). These columns may not exist yet on
+      // older installs — only overwrite the localStorage-seeded value
+      // when the DB actually has a non-null value for the column.
+      if (t.pace_yellow_pct != null)     THRESHOLDS.paceYellowPct.value   = t.pace_yellow_pct;
+      if (t.pace_yellow_enabled != null) THRESHOLDS.paceYellowPct.enabled = t.pace_yellow_enabled;
+      if (t.pace_red_pct != null)        THRESHOLDS.paceRedPct.value      = t.pace_red_pct;
+      if (t.pace_red_enabled != null)    THRESHOLDS.paceRedPct.enabled    = t.pace_red_enabled;
       THRESHOLDS.noiMissPct.value          = t.noi_miss_pct       ?? 5;
       THRESHOLDS.noiMissPct.enabled        = t.noi_enabled        ?? true;
       THRESHOLDS.noiPace.value             = t.noi_pace_pct       ?? 5;
@@ -4796,35 +4803,90 @@ async function dbSaveActuals(prop) {
 
 async function dbSaveThresholds() {
   if (!dbOnline) return;
-  try {
+  // Full payload including pace-band fields. If the DB is missing any of
+  // these newer columns, we retry with a reduced payload so threshold
+  // changes still persist for the columns that DO exist.
+  const fullPayload = {
+    pace_yellow_pct:      THRESHOLDS.paceYellowPct.value,
+    pace_yellow_enabled:  THRESHOLDS.paceYellowPct.enabled,
+    pace_red_pct:         THRESHOLDS.paceRedPct.value,
+    pace_red_enabled:     THRESHOLDS.paceRedPct.enabled,
+    noi_miss_pct:         THRESHOLDS.noiMissPct.value,
+    noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+    noi_pace_pct:         THRESHOLDS.noiPace.value,
+    noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
+    occupancy_min:        THRESHOLDS.occupancyMin.value,
+    occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+    income_pace_pct:      THRESHOLDS.incomePace.value,
+    income_pace_enabled:  THRESHOLDS.incomePace.enabled,
+    expense_pace_pct:     THRESHOLDS.expensePacePct.value,
+    expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
+    capex_hit_pct:        THRESHOLDS.capexHit.value,
+    capex_enabled:        THRESHOLDS.capexHit.enabled,
+    capex_pace_pct:       THRESHOLDS.capexPace.value,
+    capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
+    unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
+    unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+    collections_min:      THRESHOLDS.collectionsMin.value,
+    collections_enabled:  THRESHOLDS.collectionsMin.enabled,
+    cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
+  };
+  // Fallback payload omits columns that may not yet exist in the DB
+  // (added after initial schema). If the full payload fails with a
+  // missing-column error, we retry with this reduced set.
+  const legacyPayload = {
+    noi_miss_pct:         THRESHOLDS.noiMissPct.value,
+    noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+    noi_pace_pct:         THRESHOLDS.noiPace.value,
+    noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
+    occupancy_min:        THRESHOLDS.occupancyMin.value,
+    occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+    income_pace_pct:      THRESHOLDS.incomePace.value,
+    income_pace_enabled:  THRESHOLDS.incomePace.enabled,
+    expense_pace_pct:     THRESHOLDS.expensePacePct.value,
+    expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
+    capex_hit_pct:        THRESHOLDS.capexHit.value,
+    capex_enabled:        THRESHOLDS.capexHit.enabled,
+    capex_pace_pct:       THRESHOLDS.capexPace.value,
+    capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
+    unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
+    unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+    collections_min:      THRESHOLDS.collectionsMin.value,
+    collections_enabled:  THRESHOLDS.collectionsMin.enabled,
+    cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
+  };
+  async function trySave(payload) {
     const rows = await sbReq('alert_thresholds?select=id&limit=1');
     const id   = rows?.[0]?.id;
-    if (!id) return;
-    await sbReq('alert_thresholds?id=eq.' + id, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        noi_miss_pct:         THRESHOLDS.noiMissPct.value,
-        noi_enabled:          THRESHOLDS.noiMissPct.enabled,
-        noi_pace_pct:         THRESHOLDS.noiPace.value,
-        noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
-        occupancy_min:        THRESHOLDS.occupancyMin.value,
-        occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
-        income_pace_pct:      THRESHOLDS.incomePace.value,
-        income_pace_enabled:  THRESHOLDS.incomePace.enabled,
-        expense_pace_pct:     THRESHOLDS.expensePacePct.value,
-        expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
-        capex_hit_pct:        THRESHOLDS.capexHit.value,
-        capex_enabled:        THRESHOLDS.capexHit.enabled,
-        capex_pace_pct:       THRESHOLDS.capexPace.value,
-        capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
-        unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
-        unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
-        collections_min:      THRESHOLDS.collectionsMin.value,
-        collections_enabled:  THRESHOLDS.collectionsMin.enabled,
-        cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
-      }),
-    });
-  } catch (e) { console.warn('[BPOS] dbSaveThresholds:', e.message); }
+    if (id) {
+      // UPDATE existing row
+      await sbReq('alert_thresholds?id=eq.' + id, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    } else {
+      // INSERT new row — this was the silent no-op bug. If the table
+      // is empty (fresh deploy), saves would vanish. Now we seed a row.
+      await sbReq('alert_thresholds', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    }
+  }
+  try {
+    await trySave(fullPayload);
+  } catch (e) {
+    // If the DB complains about missing columns (pace_yellow_pct etc.),
+    // retry with the legacy payload so at least the older columns save.
+    const msg = (e && e.message) || '';
+    if (/pace_yellow|pace_red|column/.test(msg)) {
+      console.warn('[BPOS] dbSaveThresholds: new pace columns missing — run: ALTER TABLE alert_thresholds ADD COLUMN pace_yellow_pct NUMERIC DEFAULT 15, ADD COLUMN pace_yellow_enabled BOOLEAN DEFAULT true, ADD COLUMN pace_red_pct NUMERIC DEFAULT 25, ADD COLUMN pace_red_enabled BOOLEAN DEFAULT true;');
+      try { await trySave(legacyPayload); }
+      catch (e2) { console.warn('[BPOS] dbSaveThresholds fallback:', e2.message); }
+    } else {
+      console.warn('[BPOS] dbSaveThresholds:', msg);
+    }
+  }
 }
 
 async function dbLogAlert(alert, prop) {

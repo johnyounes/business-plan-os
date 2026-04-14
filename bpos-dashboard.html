@@ -1982,6 +1982,19 @@ function renderUnits() {
     turnLookup[turnKey(t.property_name, t.unit_number)] = t;
   });
 
+  // ── DEBUG: log turn vs vacancy key mismatches ──
+  const turnKeys = Object.keys(turnLookup);
+  const vacKeys = vacancyAll.slice(0, 10).map(v => turnKey(v.property_name, v.unit_number));
+  const matchCount = vacancyAll.filter(v => turnLookup[turnKey(v.property_name, v.unit_number)]).length;
+  console.log('[unit tracker] turn lookup keys (first 10):', turnKeys.slice(0, 10));
+  console.log('[unit tracker] vacancy keys (first 10):', vacKeys);
+  console.log('[unit tracker] matched:', matchCount, 'of', vacancyAll.length, 'vacant units');
+  if (matchCount === 0 && turnKeys.length > 0 && vacKeys.length > 0) {
+    // Show a sample of each for comparison
+    console.log('[unit tracker] MISMATCH — sample turn:', turnsAll[0] ? { prop: turnsAll[0].property_name, unit: turnsAll[0].unit_number, board: turnsAll[0].board } : 'none');
+    console.log('[unit tracker] MISMATCH — sample vacancy:', vacancyAll[0] ? { prop: vacancyAll[0].property_name, unit: vacancyAll[0].unit_number } : 'none');
+  }
+
   // ── KPIs ──
   const occupiedRoll = rentRoll.filter(r => {
     const s = (r.status || '').toLowerCase();

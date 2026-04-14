@@ -1742,18 +1742,28 @@ function renderOccupancy() {
   const isHistoric = selectedMonth && selectedMonth !== latestMonth;
   let occ;
   if (isHistoric && DATA.occupancySnapshot) {
-    // Filter snapshot to the selected month and adapt field names to match live format
+    // Filter snapshot to the selected month and adapt field names to match live format.
+    // Snapshot view may not store vacant_units or physical_occupancy directly —
+    // derive them from total_units and occupied_units.
     occ = DATA.occupancySnapshot
       .filter(r => (r.snapshot_month || r.month) === selectedMonth && matchesSelectedProps(r))
-      .map(r => ({
-        property_id: r.property_id,
-        property_name: r.property_name,
-        total_units: r.total_units || 0,
-        occupied_units: r.occupied_units || 0,
-        vacant_units: r.vacant_units || 0,
-        preleased_units: r.preleased_units || 0,
-        physical_occupancy: r.physical_occupancy_pct || 0,
-      }));
+      .map(r => {
+        const tot = r.total_units || 0;
+        const occU = r.occupied_units || 0;
+        const vac = (r.vacant_units && r.vacant_units > 0) ? r.vacant_units : Math.max(0, tot - occU);
+        const pct = (r.physical_occupancy_pct > 0) ? r.physical_occupancy_pct
+                  : (r.physical_occupancy > 0) ? r.physical_occupancy
+                  : (tot > 0 ? (occU / tot * 100) : 0);
+        return {
+          property_id: r.property_id,
+          property_name: r.property_name,
+          total_units: tot,
+          occupied_units: occU,
+          vacant_units: vac,
+          preleased_units: r.preleased_units || 0,
+          physical_occupancy: pct,
+        };
+      });
   } else {
     occ = DATA.occupancy.filter(r => matchesSelectedProps(r));
   }
@@ -2461,7 +2471,12 @@ async function loadDashboardData() {
       if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
-    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+    // Coerce turns: map buildium_property_id → property_id so matchesSelectedProps works
+    if (DATA.turns) DATA.turns.forEach(r => {
+      if (r.buildium_property_id && !r.property_id) r.property_id = parseInt(r.buildium_property_id);
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations, DATA.turns].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
     });
 
@@ -2716,7 +2731,10 @@ async function loadDashboardData() {
     console.log('[unit tracker] vacancy rows:', (DATA.vacancy || []).length,
       'sample:', (DATA.vacancy || [])[0]);
     console.log('[unit tracker] turns rows:', (DATA.turns || []).length,
-      'sample:', (DATA.turns || [])[0]);
+      'sample:', (DATA.turns || [])[0],
+      'fields:', (DATA.turns || [])[0] ? Object.keys(DATA.turns[0]).join(', ') : 'N/A',
+      'board sample:', (DATA.turns || []).slice(0, 3).map(t => t.board || t.board_name || 'NONE'),
+      'unit sample:', (DATA.turns || []).slice(0, 3).map(t => t.unit_number || t.unit_name || 'NONE'));
     console.log('[unit tracker] occupancy rows:', (DATA.occupancy || []).length,
       'sample:', (DATA.occupancy || [])[0]);
 

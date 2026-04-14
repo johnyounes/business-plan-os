@@ -2091,11 +2091,13 @@ function renderUnits() {
       const s = (r.status || '').toLowerCase();
       return s === 'current' || s === 'active' || s === 'notice' || r.is_mtm;
     })
-    .map(r => ({
+    .map(r => {
+      const t = findTurn(r);
+      return {
       property_name: r.property_name || '',
       unit_number: r.unit_number || '',
       unit_type: `${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}`,
-      finish_level: r.finish_level || '',
+      finish_level: r.finish_level || t.finish_level || '',
       lease_end: r.lease_end || '',
       is_mtm: !!r.is_mtm,
       market_rent: parseFloat(r.market_rent) || 0,
@@ -2103,7 +2105,7 @@ function renderUnits() {
       purc_rent: null,
       agro_meter: null,
       am_delta: null,
-    }))
+    };})
     .sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') ||
                     (a.unit_number || '').localeCompare(b.unit_number || ''));
   UT_STATE.occ.rows = occRows;
@@ -2114,11 +2116,13 @@ function renderUnits() {
 
   // ── PANEL 4: All Units ──
   const allRows = rentRoll
-    .map(r => ({
+    .map(r => {
+      const t = findTurn(r);
+      return {
       property_name: r.property_name || '',
       unit_number: r.unit_number || '',
       unit_type: `${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}`,
-      finish_level: r.finish_level || '',
+      finish_level: r.finish_level || t.finish_level || '',
       lease_start: r.lease_start || '',
       lease_end: r.lease_end || '',
       market_rent: parseFloat(r.market_rent) || 0,
@@ -2129,7 +2133,7 @@ function renderUnits() {
       pf_delta: null,
       agro_meter: null,
       am_delta: null,
-    }))
+    };})
     .sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') ||
                     (a.unit_number || '').localeCompare(b.unit_number || ''));
   UT_STATE.all.rows = allRows;

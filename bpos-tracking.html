@@ -699,13 +699,19 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // ALERT THRESHOLDS (admin editable)
 // ══════════════════════════════════════
 let THRESHOLDS = {
+  // Unified pace bands — the same yellow/red difference applies to Income,
+  // Expenses, NOI, CapEx, and Non-operating expenses. Diff = actual% of
+  // monthly budget MINUS % of month elapsed. Yellow when diff exceeds
+  // paceYellowPct; red when diff exceeds paceRedPct.
+  paceYellowPct:   {enabled:true,  value:15,  label:'Spend/earn pace off by more than (yellow warning at)', unit:'pts'},
+  paceRedPct:      {enabled:true,  value:25,  label:'Spend/earn pace off by more than (red critical at)',   unit:'pts'},
   noiMissPct:      {enabled:true,  value:5,   label:'NOI misses budget by more than',  unit:'%'},
-  noiPace:         {enabled:true,  value:5,   label:'NOI below expected pace by more than', unit:'%'},
+  noiPace:         {enabled:true,  value:5,   label:'Enable NOI pace alert (uses unified band)', unit:'%'},
   occupancyMin:    {enabled:true,  value:86,  label:'Occupancy (pre-leased if available) drops below', unit:'%'},
-  incomePace:      {enabled:true,  value:5,   label:'Income below expected pace by more than', unit:'%'},
-  expensePacePct:  {enabled:true,  value:5,   label:'Expenses exceed expected pace by more than', unit:'%'},
-  capexHit:        {enabled:true,  value:100, label:'CapEx budget reached or exceeded',unit:'%'},
-  capexPace:       {enabled:true,  value:5,   label:'CapEx exceeds expected annual pace by more than', unit:'%'},
+  incomePace:      {enabled:true,  value:5,   label:'Enable Income pace alert (uses unified band)', unit:'%'},
+  expensePacePct:  {enabled:true,  value:5,   label:'Enable Expense pace alert (uses unified band)', unit:'%'},
+  capexHit:        {enabled:true,  value:100, label:'CapEx monthly budget reached or exceeded',unit:'%'},
+  capexPace:       {enabled:true,  value:5,   label:'Enable CapEx pace alert (uses unified band)', unit:'%'},
   unitRentBelowPct:{enabled:true,  value:5,   label:'Unit rented below budget rate by more than',unit:'%'},
   collectionsMin:  {enabled:true,  value:95,  label:'Collections rate drops below',    unit:'%'},
   cfNegative:      {enabled:true,  value:0,   label:'Cash flow goes negative',         unit:'$'},
@@ -900,33 +906,87 @@ function getAlerts(prop) {
   const a = prop.actuals;
   const b = prop.budget;
   const T = THRESHOLDS;
-  const checkpoint = getPaceCheckpoint(MONTH_PCT);
-  const expectedPct = checkpoint ? checkpoint.pct * 100 : MONTH_PCT * 100;
-  const cpLabel = checkpoint ? checkpoint.label : `${(MONTH_PCT*100).toFixed(0)}%`;
+  const monthPct = MONTH_PCT * 100;  // e.g. 43 when 43% through the month
 
-  // ── Budget totals ──
+  // ── Budget totals (MONTHLY baseline for all pace checks) ──
   const budIncome = b.income.reduce((s,r)=>s+r.monthly,0);
   const actIncome = a.income.reduce((s,r)=>s+r,0);
   const budgetExp = b.expenses.reduce((s,r)=>s+r.monthly,0);
   const actualExp = a.expenses.reduce((s,r)=>s+r,0);
   const budgetNOI = budIncome - budgetExp;
   const actualNOI = actIncome - actualExp;
+  // CapEx: read budget and spend as-is. b.capexBudget is the budget value
+  // the user sees on the property detail view; a.capexSpent is the spend
+  // against it. Do not transform or rescale either number.
+  const budgetCapex  = b.capexBudget || 0;
+  const actualCapex  = a.capexSpent  || 0;
+  // Non-operating expenses = nonop budget rows (monthly) vs actuals.nonop (monthly)
+  const nonopRows = (b.nonop || []).filter(r => {
+    // Exclude capex lines from nonop total — capex has its own alert
+    const cat = r.category || (typeof categorizeNonopLabel === 'function' ? categorizeNonopLabel(r.label) : '');
+    return cat !== 'capex';
+  });
+  const budgetNonop = nonopRows.reduce((s,r) => s + (r.monthly || 0), 0);
+  const actualNonop = Array.isArray(a.nonop) ? a.nonop.reduce((s,v,i) => {
+    const br = (b.nonop || [])[i];
+    const cat = br ? (br.category || (typeof categorizeNonopLabel === 'function' ? categorizeNonopLabel(br.label) : '')) : '';
+    return cat === 'capex' ? s : s + (v || 0);
+  }, 0) : 0;
 
-  // ── NOI: end-of-month miss ──
-  const noiPct = budgetNOI>0?((budgetNOI-actualNOI)/budgetNOI*100):0;
-  if (T.noiMissPct.enabled && noiPct > T.noiMissPct.value)
-    alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiPct.toFixed(1)}%`});
+  // ── Unified pace band rule ──────────────────────────────────────
+  // For "spend" items (Expenses, CapEx, Non-op): alert if actual% of budget
+  //   runs AHEAD of month% by the yellow/red thresholds.
+  // For "earn" items (Income, NOI): alert if actual% BEHIND month% by the
+  //   yellow/red thresholds (i.e. lagging).
+  // Thresholds (adjustable via THRESHOLDS.paceYellowPct / paceRedPct):
+  //   Default: 15 pts ahead/behind = yellow, 25 pts = red.
+  const YB = (T.paceYellowPct && T.paceYellowPct.value) || 15;
+  const RB = (T.paceRedPct    && T.paceRedPct.value)    || 25;
 
-  // ── NOI: pace-based (at checkpoint) ──
-  if (T.noiPace.enabled && checkpoint && budgetNOI > 0) {
-    const expectedNOI = budgetNOI * checkpoint.pct;
-    const noiPaceDeficit = expectedNOI > 0 ? ((expectedNOI - actualNOI) / expectedNOI * 100) : 0;
-    if (actualNOI < expectedNOI && noiPaceDeficit > T.noiPace.value) {
-      const actualPct = (actualNOI / budgetNOI * 100).toFixed(0);
-      alerts.push({sev: noiPaceDeficit > T.noiPace.value * 2 ? 'red' : 'amber', icon:'⚑',
-        text:`NOI at <strong>${actualPct}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, behind by ${noiPaceDeficit.toFixed(1)}%`});
-    }
+  function overPaceAlert(label, actualDollar, budgetDollar, icon) {
+    if (!(budgetDollar > 0)) return;
+    const actualPct = (actualDollar / budgetDollar) * 100;
+    if (!isFinite(actualPct) || actualPct <= 0) return;
+    const diff = actualPct - monthPct;
+    if (diff <= YB) return;
+    const sev = diff > RB ? 'red' : 'amber';
+    alerts.push({
+      sev, icon,
+      text: `${label} over pace — we are at <strong>${monthPct.toFixed(0)}% of the month</strong> but ${label.toLowerCase()} is at <strong>${actualPct.toFixed(0)}% of monthly budget</strong> (${fd(actualDollar)} MTD vs. ${fd(budgetDollar)}/mo — ${diff.toFixed(0)} pts ${sev === 'red' ? 'over' : 'ahead of'} pace)`,
+    });
   }
+  function underPaceAlert(label, actualDollar, budgetDollar, icon) {
+    if (!(budgetDollar > 0)) return;
+    const actualPct = (actualDollar / budgetDollar) * 100;
+    if (!isFinite(actualPct)) return;
+    const diff = monthPct - actualPct;
+    if (diff <= YB) return;
+    const sev = diff > RB ? 'red' : 'amber';
+    alerts.push({
+      sev, icon,
+      text: `${label} lagging — we are at <strong>${monthPct.toFixed(0)}% of the month</strong> but ${label.toLowerCase()} is only at <strong>${actualPct.toFixed(0)}% of monthly budget</strong> (${fd(actualDollar)} MTD vs. ${fd(budgetDollar)}/mo — ${diff.toFixed(0)} pts behind pace)`,
+    });
+  }
+
+  // Apply to the five totals the user asked for (monthly baseline):
+  if (T.incomePace && T.incomePace.enabled)
+    underPaceAlert('Income',   actIncome,   budIncome,          '▲');
+
+  if (T.expensePacePct && T.expensePacePct.enabled)
+    overPaceAlert ('Expenses', actualExp,   budgetExp,          '◈');
+
+  if (T.noiPace && T.noiPace.enabled)
+    underPaceAlert('NOI',      actualNOI,   budgetNOI,          '⚑');
+
+  if (T.capexPace && T.capexPace.enabled)
+    overPaceAlert ('CapEx',    actualCapex, budgetCapex,        '▣');
+
+  overPaceAlert  ('Non-operating expenses', actualNonop, budgetNonop, '◇');
+
+  // ── NOI: end-of-month miss (kept as-is — separate from pace rule) ──
+  const noiMissPct = budgetNOI>0?((budgetNOI-actualNOI)/budgetNOI*100):0;
+  if (T.noiMissPct.enabled && noiMissPct > T.noiMissPct.value)
+    alerts.push({sev:'red', icon:'⚑', text:`NOI tracking <strong>${fd(actualNOI)}/mo</strong> vs. budget ${fd(budgetNOI)} — miss of ${noiMissPct.toFixed(1)}%`});
 
   // ── Occupancy (pre-leased aware) ──
   const effOcc = getEffectiveOccupancy(prop);
@@ -935,47 +995,10 @@ function getAlerts(prop) {
     alerts.push({sev:'red', icon:'◎', text:`Occupancy${sourceTag} at <strong>${effOcc.value.toFixed(1)}%</strong> — below ${T.occupancyMin.value}% threshold`});
   }
 
-  // ── Income: pace-based (at checkpoint) ──
-  if (T.incomePace.enabled && checkpoint && budIncome > 0) {
-    const expectedInc = budIncome * checkpoint.pct;
-    const incPaceDeficit = expectedInc > 0 ? ((expectedInc - actIncome) / expectedInc * 100) : 0;
-    if (actIncome < expectedInc && incPaceDeficit > T.incomePace.value) {
-      const actualPct = (actIncome / budIncome * 100).toFixed(0);
-      alerts.push({sev: incPaceDeficit > T.incomePace.value * 2 ? 'red' : 'amber', icon:'▲',
-        text:`Income at <strong>${actualPct}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, behind by ${incPaceDeficit.toFixed(1)}%`});
-    }
-  }
-
-  // ── Expenses: pace-based (at checkpoint) ──
-  const expPace = budgetExp>0?(actualExp/budgetExp*100):0;
-  if (T.expensePacePct.enabled && checkpoint && budgetExp > 0) {
-    const excessPct = expPace - expectedPct;
-    if (excessPct > T.expensePacePct.value) {
-      alerts.push({sev: excessPct > T.expensePacePct.value * 2 ? 'red' : 'amber', icon:'◈',
-        text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> at ${cpLabel} checkpoint — expected ${expectedPct.toFixed(0)}%, over by ${excessPct.toFixed(1)}%`});
-    }
-  } else if (T.expensePacePct.enabled && !checkpoint && budgetExp > 0) {
-    // Before first checkpoint, still flag if wildly over pace
-    const excessPct = expPace - (MONTH_PCT * 100);
-    if (excessPct > T.expensePacePct.value * 2)
-      alerts.push({sev:'amber', icon:'◈', text:`Expenses at <strong>${expPace.toFixed(0)}% of monthly budget</strong> with ${(100-MONTH_PCT*100).toFixed(0)}% of month remaining`});
-  }
-
-  // ── CapEx: budget hit ──
-  if (T.capexHit.enabled && b.capexBudget > 0 && a.capexSpent >= b.capexBudget)
-    alerts.push({sev:'red', icon:'▣', text:`CapEx budget hit — <strong>${fd(a.capexSpent)} spent</strong> vs. ${fd(b.capexBudget)} budget`});
-
-  // ── CapEx: pace-based (annual budget, prorated to current month) ──
-  if (T.capexPace.enabled && b.capexBudget > 0 && a.capexSpent < b.capexBudget) {
-    const monthsElapsed = now.getMonth() + MONTH_PCT; // fractional month
-    const expectedCapex = (b.capexBudget / 12) * monthsElapsed;
-    if (expectedCapex > 0) {
-      const capexExcess = ((a.capexSpent - expectedCapex) / expectedCapex * 100);
-      if (capexExcess > T.capexPace.value)
-        alerts.push({sev: capexExcess > T.capexPace.value * 2 ? 'red' : 'amber', icon:'▣',
-          text:`CapEx at <strong>${((a.capexSpent/b.capexBudget)*100).toFixed(0)}% of annual budget</strong> — ${capexExcess.toFixed(1)}% ahead of expected pace`});
-    }
-  }
+  // ── CapEx: budget hit (fires when spend >= budget, using values as-is) ──
+  if (T.capexHit.enabled && budgetCapex > 0 && actualCapex >= budgetCapex)
+    alerts.push({sev:'red', icon:'▣',
+      text:`CapEx budget hit — <strong>${fd(actualCapex)} spent</strong> vs. ${fd(budgetCapex)} budget (${((actualCapex/budgetCapex)*100).toFixed(0)}% of budget at ${monthPct.toFixed(0)}% of month)`});
 
   // ── Unit rents below budget ──
   if (T.unitRentBelowPct.enabled) {
@@ -2954,9 +2977,12 @@ function checkAndLogAlerts() {
   properties.forEach(prop => {
     const alerts = getAlerts(prop);
     alerts.forEach(al => {
-      // Deduplicate: don't re-log same alert in same session if already active
+      // Deduplicate: don't re-log same alert in same session if already ACTIVE.
+      // A resolved entry (dismissed=false, resolved=true) must NOT block a new
+      // alert from being logged — otherwise when a CapEx/expense condition
+      // clears momentarily and returns, the new alert gets silently swallowed.
       const key = prop.id + '|' + al.text.substring(0, 40);
-      const exists = ALERT_LOG.find(l => !l.dismissed && l.key === key);
+      const exists = ALERT_LOG.find(l => !l.dismissed && !l.resolved && l.key === key);
       if (!exists) {
         ALERT_LOG.unshift({
           id: Date.now() + Math.random(),

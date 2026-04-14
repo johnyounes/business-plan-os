@@ -2325,7 +2325,7 @@ function renderUploadStep() {
         <div id="bq-loading-banner" style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px dashed var(--border);padding:9px 12px;border-radius:8px;margin-bottom:10px;">
           Loading Buildium property list…
         </div>` : ''}
-      <div style="max-height:500px;overflow-y:auto;">
+      <div id="upload-match-scroll" style="max-height:500px;overflow-y:auto;">
         ${toImport.map(s=>renderMatchConfirmCard(s)).join('')}
       </div>`;
     footer.innerHTML = `
@@ -2683,15 +2683,15 @@ function autoSuggestMatches() {
 
 function toggleSheet(sheetName, checked) {
   uploadState.selectedSheets[sheetName] = checked;
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 function selectAllSheets(val) {
   uploadState.allSheets.forEach(s=>{ uploadState.selectedSheets[s.sheetName]=val; });
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 function setMatchMap(sheetName, choice) {
   uploadState.matchMap[sheetName] = choice;
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 
 // ── SAVE ──
@@ -2940,7 +2940,7 @@ function renderMatchConfirmCard(s) {
               ✓ Yes — add to ${topMatch.name}
             </button>
             <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
-              onclick="uploadState.matchMap['${s.sheetName}']='__picking__';renderUploadStep()">
+              onclick="uploadState.matchMap['${s.sheetName}']='__picking__';rerenderUploadStepPreservingScroll()">
               Pick different property
             </button>
             <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
@@ -3077,18 +3077,18 @@ function renderBuildiumPicker(s) {
         </div>
         <input type="text" value="${search.replace(/"/g,'&quot;')}" placeholder="Search Buildium properties…"
           style="width:100%;font-size:12px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:8px;"
-          oninput="uploadState.buildiumSearch['${s.sheetName.replace(/'/g,"\\'")}']=this.value;renderUploadStep();setTimeout(function(){var e=document.querySelector('[data-focus-sheet=&quot;${s.sheetName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}&quot;]');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},0);"
+          oninput="uploadState.buildiumSearch['${s.sheetName.replace(/'/g,"\\'")}']=this.value;rerenderUploadStepPreservingScroll();setTimeout(function(){var e=document.querySelector('[data-focus-sheet=&quot;${s.sheetName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}&quot;]');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},0);"
           data-focus-sheet="${s.sheetName.replace(/"/g,'&quot;')}" />
         <div style="display:flex;flex-direction:column;gap:3px;">
           ${show.map(rowHtml).join('')}
           ${hiddenCount > 0 ? `
             <button class="btn-ghost" style="font-size:11px;padding:5px 10px;margin-top:4px;"
-              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=true;renderUploadStep()">
+              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=true;rerenderUploadStepPreservingScroll()">
               Show all ${filtered.length} Buildium properties →
             </button>` : ''}
           ${expanded && search === '' ? `
             <button class="btn-ghost" style="font-size:11px;padding:5px 10px;margin-top:4px;"
-              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=false;renderUploadStep()">
+              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=false;rerenderUploadStepPreservingScroll()">
               Collapse to suggestions
             </button>` : ''}
           ${filtered.length === 0 ? `
@@ -3100,11 +3100,44 @@ function renderBuildiumPicker(s) {
     </div>`;
 }
 
+// Preserve the upload modal's scroll position across a re-render so
+// ticking a checkbox deep in the list doesn't fling the user back to
+// the top. In step 3 the actual scroll container is the inner div
+// `#upload-match-scroll` (max-height:500px, overflow-y:auto) that wraps
+// the sheet cards — NOT `.modal-body`. We also preserve modal-body's
+// scrollTop as a safety net for other steps. Uses rAF to wait for
+// layout after the re-render.
+function rerenderUploadStepPreservingScroll() {
+  const body  = document.getElementById('upload-modal-body');
+  const inner = document.getElementById('upload-match-scroll');
+  const savedBody  = body  ? body.scrollTop  : 0;
+  const savedInner = inner ? inner.scrollTop : 0;
+  renderUploadStep();
+  requestAnimationFrame(function(){
+    const newBody  = document.getElementById('upload-modal-body');
+    const newInner = document.getElementById('upload-match-scroll');
+    if (newBody)  newBody.scrollTop  = savedBody;
+    if (newInner) newInner.scrollTop = savedInner;
+  });
+}
+
 function toggleBuildiumPick(event, sheetName, buildiumId) {
-  // Prevent double-fire: onclick bubbles from <input> to <label>
-  if (event && event.target && event.target.tagName === 'INPUT') {
-    // Only process the label click, not the input's own click
-    event.preventDefault();
+  // Prevent double-fire. When a <label> is clicked, the browser ALSO
+  // synthesizes a click on the contained <input> checkbox, which bubbles
+  // back up to the label and re-fires this handler. If we don't bail out
+  // the array toggles twice (net zero change → checkbox looks unchecked)
+  // AND the second rerenderUploadStepPreservingScroll captures scrollTop=0
+  // from the just-rewritten DOM, pinning the user to the top of the list.
+  if (event) {
+    if (event.target && event.target.tagName === 'INPUT') {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    // Belt-and-suspenders: stop propagation on the label click itself so
+    // the synthetic input-click that follows can't also reach this handler.
+    if (event.stopPropagation) event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
   }
   uploadState.buildiumMap[sheetName] = uploadState.buildiumMap[sheetName] || [];
   const arr = uploadState.buildiumMap[sheetName];
@@ -3113,13 +3146,13 @@ function toggleBuildiumPick(event, sheetName, buildiumId) {
   else arr.push(buildiumId);
   // Ticking a Buildium property clears the "no match" flag implicitly
   if (arr.length > 0) uploadState.buildiumNoMatch[sheetName] = false;
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 
 function toggleBuildiumNoMatch(sheetName, checked) {
   uploadState.buildiumNoMatch[sheetName] = !!checked;
   if (checked) uploadState.buildiumMap[sheetName] = [];
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 
 function switchBudgetYear(propId, year) {

@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — BPOS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaed;--text2:#8c939e;--text3:#555c66;
+  --accent:#3d7fff;--accent2:#1a5ce8;
+  --green:#22c97a;--amber:#f5a623;--red:#e8504a;--purple:#9b7aff;--teal:#2ec4b6;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--display:'Playfair Display',serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── TOP NAV ── */
+.topnav{height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.nav-brand .logo{font-family:var(--display);font-size:14px;color:var(--accent);}
+.nav-brand .sep{color:var(--text3);}
+.nav-brand .current{color:var(--text);font-weight:500;}
+.topnav-spacer{flex:1;}
+.module-badge{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:rgba(46,196,182,.1);border:1px solid rgba(46,196,182,.2);border-radius:20px;padding:3px 10px;}
+.api-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.api-dot.off{background:var(--text3);box-shadow:none;}
+.api-dot.pending{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.back-link{color:var(--text3);text-decoration:none;font-size:12px;display:flex;align-items:center;gap:5px;transition:color .15s;}
+.back-link:hover{color:var(--accent);}
+.refresh-btn{display:flex;align-items:center;gap:6px;background:rgba(61,127,255,.08);border:1px solid rgba(61,127,255,.2);border-radius:8px;padding:6px 14px;font-size:12px;font-family:var(--font);font-weight:500;color:var(--accent);cursor:pointer;transition:all .15s;}
+.refresh-btn:hover{background:rgba(61,127,255,.15);border-color:rgba(61,127,255,.35);}
+.refresh-btn:disabled{opacity:.5;cursor:not-allowed;}
+.refresh-btn .refresh-icon{transition:transform .3s;}
+.refresh-btn.spinning .refresh-icon{animation:spin 1s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ── LAYOUT ── */
+.app-wrap{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.sb-section{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:16px 20px 6px;margin-top:4px;}
+.sb-section:first-child{margin-top:0;padding-top:8px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:3px solid transparent;}
+.sb-item:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.sb-item.active{color:var(--text);background:rgba(61,127,255,.06);border-left-color:var(--accent);}
+.sb-item .icon{font-size:16px;width:20px;text-align:center;opacity:.6;}
+.sb-item.active .icon{opacity:1;}
+.main{flex:1;overflow-y:auto;padding:24px 28px 48px;}
+
+/* ── GLOBAL FILTERS BAR ── */
+.filters-bar{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.filters-bar h1{font-family:var(--display);font-size:22px;font-weight:600;margin-right:auto;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.filter-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.filter-select{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 32px 7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;cursor:pointer;}
+.filter-select:focus{border-color:var(--accent);}
+
+/* ── PROPERTY MULTI-SELECT ── */
+.prop-multi{position:relative;}
+.prop-multi-trigger{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;min-width:280px;cursor:pointer;transition:border-color .15s;min-height:36px;flex-wrap:wrap;}
+.prop-multi-trigger:focus-within{border-color:var(--accent);}
+.prop-chip{display:flex;align-items:center;gap:4px;background:rgba(61,127,255,.12);color:var(--accent);font-size:11px;font-weight:500;padding:2px 8px;border-radius:5px;white-space:nowrap;}
+.prop-chip .remove{cursor:pointer;opacity:.6;font-size:13px;line-height:1;}
+.prop-chip .remove:hover{opacity:1;}
+.prop-search-input{border:none;background:none;color:var(--text);font-size:13px;font-family:var(--font);outline:none;flex:1;min-width:100px;padding:2px 0;}
+.prop-search-input::placeholder{color:var(--text3);}
+.prop-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;max-height:320px;overflow-y:auto;z-index:50;display:none;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.prop-dropdown.open{display:block;}
+.prop-dd-actions{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;}
+.prop-dd-actions a{color:var(--accent);cursor:pointer;text-decoration:none;}
+.prop-dd-actions a:hover{text-decoration:underline;}
+.prop-dd-actions span{color:var(--text3);}
+.prop-dd-item{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:13px;color:var(--text2);cursor:pointer;transition:background .1s;}
+.prop-dd-item:hover{background:rgba(255,255,255,.03);}
+.prop-dd-item.selected{background:rgba(61,127,255,.06);color:var(--text);}
+.prop-dd-item .check{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0;transition:all .15s;}
+.prop-dd-item.selected .check{background:var(--accent);border-color:var(--accent);color:#fff;}
+.prop-dd-item .units{font-size:11px;color:var(--text3);margin-left:auto;}
+.prop-dd-empty{padding:20px;text-align:center;font-size:13px;color:var(--text3);}
+
+/* ── GROUP FILTER ── */
+.group-filter{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 32px 7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;min-width:180px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;cursor:pointer;}
+.group-filter:focus{border-color:var(--accent);}
+
+/* ── KPI CARDS ── */
+.kpi-grid{display:grid;gap:12px;margin-bottom:24px;}
+.kpi-grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.kpi-grid.cols-5{grid-template-columns:repeat(5,1fr);}
+.kpi-grid.cols-6{grid-template-columns:repeat(6,1fr);}
+.kpi-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;}
+.kpi-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;}
+.kpi-value{font-size:22px;font-weight:500;font-family:var(--mono);color:var(--text);margin-bottom:3px;}
+.kpi-value.good{color:var(--green);}
+.kpi-value.bad{color:var(--red);}
+.kpi-value.warn{color:var(--amber);}
+.kpi-sub{font-size:11px;color:var(--text3);}
+.kpi-sparkline{position:absolute;bottom:12px;right:14px;width:60px;height:28px;}
+.kpi-change{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;}
+.kpi-change.up{color:var(--green);background:rgba(34,201,122,.1);}
+.kpi-change.down{color:var(--red);background:rgba(232,80,74,.1);}
+
+/* ── CHART CARDS ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;overflow:hidden;}
+.chart-card.full{grid-column:1/-1;}
+.cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cc-title{font-size:14px;font-weight:600;color:var(--text);}
+.cc-subtitle{font-size:11px;color:var(--text3);}
+.chart-canvas{width:100%;height:220px;position:relative;}
+
+/* ── FINANCIALS TABLE ── */
+.fin-table-wrap{overflow-x:auto;background:var(--bg2);border:1px solid var(--border);border-radius:12px;}
+.fin-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+.fin-table th{position:sticky;top:0;z-index:2;background:var(--bg3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:10px 14px;text-align:right;border-bottom:1px solid var(--border2);}
+.fin-table th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--bg3);min-width:200px;}
+.fin-table td{padding:8px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-size:12px;color:var(--text2);}
+.fin-table td:first-child{text-align:left;font-family:var(--font);color:var(--text2);position:sticky;left:0;background:var(--bg2);z-index:1;}
+.fin-table tr:hover td{background:rgba(255,255,255,.015);}
+.fin-table tr:hover td:first-child{background:rgba(255,255,255,.03);}
+.fin-table .row-header{font-weight:600;color:var(--text);font-size:11px;background:var(--bg3);border-bottom:1px solid var(--border2);}
+.fin-table .row-header td{background:var(--bg3);font-family:var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-size:10px;font-weight:600;padding:14px 14px 8px;}
+.fin-table .row-total td{font-weight:600;color:var(--text);border-top:1px solid var(--border2);font-family:var(--mono);}
+.fin-table .row-total td:first-child{font-family:var(--font);}
+.fin-table .row-noi td{font-weight:700;color:var(--green);border-top:2px solid var(--border2);}
+.fin-table .good{color:var(--green);}
+.fin-table .bad{color:var(--red);}
+.fin-table .warn{color:var(--amber);}
+.fin-table .pct-row td{color:var(--text3);font-size:11px;}
+
+/* ── OCCUPANCY DONUT ── */
+.occ-donuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+.occ-donut-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;}
+.donut-wrap{width:120px;height:120px;margin:0 auto 12px;position:relative;}
+.donut-wrap canvas{width:100%;height:100%;}
+.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;font-family:var(--mono);}
+.odc-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.odc-sub{font-size:11px;color:var(--text3);}
+
+/* ── DATA TABLE (generic) ── */
+.data-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;}
+.dt-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.dt-title{font-size:14px;font-weight:600;color:var(--text);}
+.dt-count{font-size:12px;color:var(--text3);}
+.dt-search{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:6px 12px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:200px;transition:border-color .15s;}
+.dt-search:focus{border-color:var(--accent);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--bg3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;white-space:nowrap;}
+.data-table th:hover{color:var(--text2);}
+.data-table th.r{text-align:right;}
+.data-table td{padding:8px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
+.data-table td.r{text-align:right;font-family:var(--mono);}
+.data-table td.good{color:var(--green);}
+.data-table td.bad{color:var(--red);}
+.data-table td.warn{color:var(--amber);}
+.data-table tr:hover td{background:rgba(255,255,255,.015);}
+.data-table .status-badge{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;}
+.sb-current{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
+.sb-mtm{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.sb-vacant{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.2);}
+.sb-notice{background:rgba(155,122,255,.1);color:var(--purple);border:1px solid rgba(155,122,255,.2);}
+.sb-future{background:rgba(46,196,182,.1);color:var(--teal);border:1px solid rgba(46,196,182,.2);}
+
+/* ── LEASE EXP BUCKETS ── */
+.exp-buckets{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.exp-bucket{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;text-align:center;}
+.eb-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
+.eb-label{font-size:11px;color:var(--text3);font-weight:500;}
+
+/* ── TURN PIPELINE ── */
+.turn-pipeline{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.turn-stage{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.ts-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
+.ts-label{font-size:11px;color:var(--text3);font-weight:500;}
+
+/* ── UNIT TRACKER (4-panel layout) ── */
+.ut-layout{display:grid;grid-template-columns:minmax(420px,1fr) 1.4fr;gap:16px;margin-bottom:16px;}
+.ut-left{margin-bottom:0;}
+.ut-right{margin-bottom:0;}
+.ut-full{margin-bottom:24px;}
+.ut-prop-table th, .ut-prop-table td{padding:6px 10px;font-size:11px;}
+.ut-prop-table td.r{font-size:11px;}
+.ut-prop-table tr.ut-grand td{font-weight:700;background:rgba(61,127,255,.06);border-top:2px solid var(--border2);color:var(--text);}
+.lease-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.lease-dot.red{background:var(--red);}
+.lease-dot.amber{background:var(--amber);}
+.lease-dot.green{background:var(--green);}
+.lease-dot.purple{background:var(--purple);}
+.days-badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;}
+.days-badge.low{background:rgba(34,201,122,.1);color:var(--green);}
+.days-badge.med{background:rgba(245,166,35,.1);color:var(--amber);}
+.days-badge.high{background:rgba(232,80,74,.1);color:var(--red);}
+.board-badge{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px;}
+.board-badge.mr{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.board-badge.av{background:rgba(61,127,255,.1);color:var(--accent);border:1px solid rgba(61,127,255,.2);}
+.board-badge.none{background:rgba(255,255,255,.04);color:var(--text3);border:1px solid var(--border);}
+.ut-legend{display:inline-flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);margin-left:auto;}
+.ut-legend .lease-dot{margin-right:3px;}
+.table-pagination{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);gap:10px;}
+.table-pagination button{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;}
+.table-pagination button:hover:not(:disabled){background:var(--bg4);color:var(--text);}
+.table-pagination button:disabled{opacity:.3;cursor:not-allowed;}
+@media(max-width:1200px){
+  .ut-layout{grid-template-columns:1fr;}
+}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-state .icon{font-size:48px;opacity:.3;margin-bottom:14px;}
+.empty-state p{font-size:14px;margin-bottom:6px;}
+.empty-state small{font-size:12px;}
+
+/* ── LOADING ── */
+.loading-spinner{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--text3);font-size:13px;}
+.spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.08);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── SECTION DIVIDERS ── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:8px;}
+.section-head h2{font-size:15px;font-weight:600;color:var(--text);}
+.section-head .badge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:10px;background:rgba(61,127,255,.1);color:var(--accent);border:1px solid rgba(61,127,255,.15);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{display:flex;}
+.toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .kpi-grid.cols-6{grid-template-columns:repeat(3,1fr);}
+  .chart-row{grid-template-columns:1fr;}
+}
+@media(max-width:900px){
+  .sidebar{width:56px;padding:16px 0;}
+  .sb-section{display:none;}
+  .sb-item{padding:10px 0;justify-content:center;gap:0;border-left:none;border-bottom:3px solid transparent;}
+  .sb-item.active{border-bottom-color:var(--accent);border-left-color:transparent;}
+  .sb-item span:not(.icon){display:none;}
+  .kpi-grid.cols-5,.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr);}
+  .exp-buckets{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .filters-bar{flex-direction:column;align-items:stretch;gap:10px;}
+  .filters-bar h1{margin-right:0;}
+  .prop-multi-trigger{min-width:unset;}
+}
+
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="nav-brand">
+    <span class="logo">BPOS</span>
+    <span class="sep">/</span>
+    <span class="current">Dashboard</span>
+  </div>
+  <div class="topnav-spacer"></div>
+  <span class="module-badge">Live Data</span>
+  <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()" title="Refresh data from BigQuery">
+    <svg class="refresh-icon" id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+    <span id="refreshLabel">Refresh</span>
+  </button>
+  <div class="api-status" id="apiStatus">
+    <div class="api-dot pending" id="apiDot"></div>
+    <span id="apiLabel">Connecting…</span>
+  </div>
+  <a href="bpos-tracking.html" class="back-link">← Budget Tracker</a>
+</div>
+
+<!-- APP -->
+<div class="app-wrap">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-section">Financial</div>
+  <div class="sb-item active" data-view="overview"><span class="icon">📊</span><span>Overview</span></div>
+  <div class="sb-item" data-view="pnl"><span class="icon">📋</span><span>P&L Detail</span></div>
+  <div class="sb-section">Occupancy</div>
+  <div class="sb-item" data-view="occupancy"><span class="icon">🏠</span><span>Occupancy</span></div>
+  <div class="sb-item" data-view="units"><span class="icon">🔑</span><span>Unit Tracker</span></div>
+  <div class="sb-section">Operations</div>
+  <div class="sb-item" data-view="turns"><span class="icon">🔧</span><span>Unit Turns</span></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+
+  <!-- FILTERS BAR -->
+  <div class="filters-bar">
+    <h1 id="viewTitle">Financial Overview</h1>
+    <div class="filter-group">
+      <span class="filter-label">Month</span>
+      <select class="filter-select" id="monthFilter"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Group</span>
+      <select class="filter-select group-filter" id="groupFilter" style="min-width:180px;">
+        <option value="">All Groups</option>
+      </select>
+    </div>
+    <div class="filter-group prop-multi" id="propMulti">
+      <span class="filter-label">Properties</span>
+      <div class="prop-multi-trigger" id="propTrigger" tabindex="0">
+        <span class="prop-chip" id="propAllChip">All Properties <span class="remove" id="propAllRemove" style="display:none;">×</span></span>
+        <input type="text" class="prop-search-input" id="propSearch" placeholder="Search…"/>
+      </div>
+      <div class="prop-dropdown" id="propDropdown">
+        <div class="prop-dd-actions">
+          <a id="selectAllProps">Select All</a>
+          <span>·</span>
+          <a id="clearAllProps">Clear All</a>
+          <span style="margin-left:auto;" id="propSelectedCount">0 selected</span>
+        </div>
+        <div id="propDropdownList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: FINANCIAL OVERVIEW -->
+  <div class="view-panel" id="view-overview">
+    <div class="kpi-grid cols-6" id="finKpis"></div>
+    <div class="kpi-grid cols-4" id="operationalKpis"></div>
+    <div class="chart-row" id="finCharts">
+      <div class="chart-card">
+        <div class="cc-head"><span class="cc-title">Income vs Expenses</span><span class="cc-subtitle" id="chartPeriodLabel"></span></div>
+        <canvas id="incExpChart" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="cc-head"><span class="cc-title">NOI Trend</span></div>
+        <canvas id="noiChart" class="chart-canvas"></canvas>
+      </div>
+    </div>
+    <div class="section-head"><h2>Property Metrics</h2></div>
+    <div class="kpi-grid cols-4" id="propMetrics"></div>
+    <div class="section-head"><h2>Property Performance</h2></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">All Properties</span>
+        <input class="dt-search" id="propPerfSearch" placeholder="Filter properties…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="propPerfTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th class="r">Units</th>
+              <th class="r">Income</th>
+              <th class="r">Expenses</th>
+              <th class="r">NOI</th>
+              <th class="r">Expense Ratio</th>
+              <th class="r">Occupancy</th>
+              <th class="r">NOI / Unit</th>
+            </tr>
+          </thead>
+          <tbody id="propPerfBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: P&L DETAIL -->
+  <div class="view-panel" id="view-pnl" style="display:none;">
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div class="filter-group">
+        <span class="filter-label">Property</span>
+        <select class="filter-select" id="pnlPropertySelect" style="min-width:260px;"></select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Period</span>
+        <select class="filter-select" id="pnlPeriodSelect">
+          <option value="trailing12">Trailing 12 Months</option>
+          <option value="ytd">Year to Date</option>
+          <option value="custom">All Available</option>
+        </select>
+      </div>
+    </div>
+    <div id="pnlTableContainer">
+      <div class="loading-spinner"><div class="spinner"></div> Loading P&L…</div>
+    </div>
+  </div>
+
+  <!-- VIEW: OCCUPANCY -->
+  <div class="view-panel" id="view-occupancy" style="display:none;">
+    <div class="kpi-grid cols-5" id="occKpis"></div>
+    <div class="section-head"><h2>Occupancy by Property</h2></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Property Occupancy</span>
+        <input class="dt-search" id="occSearch" placeholder="Filter…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="occTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th class="r">Total Units</th>
+              <th class="r">Occupied</th>
+              <th class="r">Vacant</th>
+              <th class="r">Physical Occ.</th>
+              <th class="r">Preleased</th>
+              <th class="r">Net Exposure</th>
+            </tr>
+          </thead>
+          <tbody id="occBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:28px;"><h2>Lease Expirations</h2><span class="badge" id="expTotal">0 expiring</span></div>
+    <div class="exp-buckets" id="expBuckets"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Expiring Leases</span>
+        <input class="dt-search" id="expSearch" placeholder="Filter…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="expTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>Tenant</th>
+              <th class="r">Rent</th>
+              <th>Lease End</th>
+              <th>Bucket</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="expBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: UNIT TRACKER -->
+  <div class="view-panel" id="view-units" style="display:none;">
+    <div class="kpi-grid cols-6" id="unitKpis"></div>
+
+    <!-- 4-panel Unit Tracker layout -->
+    <div class="ut-layout">
+      <!-- LEFT: All Properties overview -->
+      <div class="ut-left data-table-wrap">
+        <div class="dt-header">
+          <span class="dt-title">All Properties</span>
+          <span class="dt-count" id="utPropCount"></span>
+        </div>
+        <div style="overflow:auto;max-height:620px;">
+          <table class="data-table ut-prop-table" id="utPropTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th class="r">Units</th>
+                <th class="r">Vac</th>
+                <th class="r">AV</th>
+                <th class="r">MR</th>
+                <th class="r">Occ</th>
+                <th class="r">Occ%</th>
+                <th class="r">PL</th>
+                <th class="r">PL%</th>
+              </tr>
+            </thead>
+            <tbody id="utPropBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT top: Vacant Units board -->
+      <div class="ut-right data-table-wrap">
+        <div class="dt-header">
+          <span class="dt-title">Vacant Units</span>
+          <span class="dt-count" id="utVacCount"></span>
+          <input class="dt-search" id="utVacSearch" placeholder="Search vacant…"/>
+        </div>
+        <div style="overflow:auto;max-height:280px;">
+          <table class="data-table" id="utVacTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Unit</th>
+                <th>Type</th>
+                <th>Finish</th>
+                <th>Status</th>
+                <th>Move Out</th>
+                <th>Initial Walk</th>
+                <th>Final Walk</th>
+                <th>Available</th>
+                <th class="r">Mkt Rent</th>
+                <th class="r">Days Vacant</th>
+              </tr>
+            </thead>
+            <tbody id="utVacBody"></tbody>
+          </table>
+        </div>
+        <div class="table-pagination" id="utVacPager"></div>
+      </div>
+
+      <!-- RIGHT bottom: Occupied Units -->
+      <div class="ut-right data-table-wrap" style="margin-top:16px;">
+        <div class="dt-header">
+          <span class="dt-title">Occupied Units</span>
+          <span class="dt-count" id="utOccCount"></span>
+          <input class="dt-search" id="utOccSearch" placeholder="Search occupied…"/>
+          <span class="ut-legend">
+            <span class="lease-dot red"></span>30d
+            <span class="lease-dot amber"></span>60d
+            <span class="lease-dot green"></span>90d
+            <span class="lease-dot purple"></span>MTM
+          </span>
+        </div>
+        <div style="overflow:auto;max-height:320px;">
+          <table class="data-table" id="utOccTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Unit</th>
+                <th>Type</th>
+                <th>Finish</th>
+                <th>Lease Exp</th>
+                <th>MTM</th>
+                <th>Lease Ending</th>
+                <th class="r">Mkt Rent</th>
+                <th class="r">Purc Rent</th>
+                <th class="r">Rent</th>
+                <th class="r">Agro Meter</th>
+                <th class="r">AM +/-</th>
+              </tr>
+            </thead>
+            <tbody id="utOccBody"></tbody>
+          </table>
+        </div>
+        <div class="table-pagination" id="utOccPager"></div>
+      </div>
+    </div>
+
+    <!-- FULL WIDTH bottom: All Units -->
+    <div class="ut-full data-table-wrap" style="margin-top:16px;">
+      <div class="dt-header">
+        <span class="dt-title">All Units</span>
+        <span class="dt-count" id="utAllCount"></span>
+        <input class="dt-search" id="utAllSearch" placeholder="Search all units…"/>
+      </div>
+      <div style="overflow:auto;max-height:440px;">
+        <table class="data-table" id="utAllTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>Type</th>
+              <th>Finish</th>
+              <th>Lease Starting</th>
+              <th>Lease Ending</th>
+              <th class="r">Mkt Rent</th>
+              <th class="r">Rent</th>
+              <th class="r">Purc Rent</th>
+              <th class="r">Prev Rent</th>
+              <th class="r">Pro Forma</th>
+              <th class="r">PF +/-</th>
+              <th class="r">Agro Meter</th>
+              <th class="r">AM +/-</th>
+            </tr>
+          </thead>
+          <tbody id="utAllBody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="utAllPager"></div>
+    </div>
+  </div>
+
+  <!-- VIEW: UNIT TURNS -->
+  <div class="view-panel" id="view-turns" style="display:none;">
+    <div class="kpi-grid cols-4" id="turnKpis"></div>
+    <div class="section-head"><h2>Turn Pipeline</h2></div>
+    <div class="turn-pipeline" id="turnPipeline"></div>
+    <div class="data-table-wrap">
+      <div class="dt-header">
+        <span class="dt-title">Active Turns</span>
+        <span class="dt-count" id="turnCount"></span>
+        <input class="dt-search" id="turnSearch" placeholder="Search…"/>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="turnTable">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Unit</th>
+              <th>Status</th>
+              <th>Board</th>
+              <th>Finish Level</th>
+              <th class="r">Est. Cost</th>
+              <th>Start Date</th>
+              <th class="r">Days in Turn</th>
+              <th>Current Step</th>
+            </tr>
+          </thead>
+          <tbody id="turnBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app-wrap -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="dot"></div><span></span></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   BPOS DASHBOARD — Buildium BigQuery Data
+   ════════════════════════════════════════════════════════════════ */
+
+// ── CONFIG ──
+const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNjg5MjAsImV4cCI6MjA1Mzg0NDkyMH0.vAMm-c4URNsLgbnQ6jzASt_7c6C71EV35wA0Mu2i0S8';
+const FN_NAME   = 'bq-dashboard';
+
+// ── STATE ──
+let allProperties = [];
+let selectedProps  = []; // empty = "all"
+let selectedMonth  = '';
+let selectedGroup  = '';
+let currentView    = 'overview';
+
+// Cached data from BigQuery
+let DATA = {
+  financial: null,    // financial_snapshots aggregated
+  occupancy: null,    // v_occupancy_summary
+  rentRoll: null,     // v_rent_roll
+  vacancy: null,      // v_vacancy
+  expirations: null,  // v_lease_expirations
+  turns: null,        // propup turnovers + steps
+  properties: null,   // property list with units
+  noiSummary: null,   // v_noi_summary
+  pnlDetail: null,    // income statement detail for selected property
+  months: [],         // available months
+  economicOccupancy: null,  // v_economic_occupancy (property × month, economic_occupancy_pct already ×100)
+  occupancySnapshot: null,  // v_occupancy_snapshot_summary — historical physical + preleased by month
+  propertyGroups: null,     // property groups mapping
+  utilitySummary: null,     // legacy client-side utility rollup (kept as fallback)
+  utilityReimbursement: null, // v_utility_reimbursement — SOURCE OF TRUTH for utility_reimbursement_pct
+  snapshotMeta: null,       // snapshot metadata
+  incomeStatement: null,    // v_income_statement_snapshot — operating-only income/expenses/NOI
+  groupSummary: null,       // v_group_summary — pre-aggregated KPIs by property group × month
+};
+
+// ── SUPABASE HELPER ──
+// Matches existing bq-dashboard edge function: sends { type }, receives { rows }
+async function callEdgeFn(type, params = {}) {
+  const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'apikey': SUPA_KEY,
+    },
+    body: JSON.stringify({ type, ...params }),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Edge fn error ${res.status}: ${txt}`);
+  }
+  const json = await res.json();
+  // Normalize: existing function returns { rows }, wrap for internal use
+  return { data: json.rows || json.data || [] };
+}
+
+// ── FORMAT HELPERS ──
+const fmt$ = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v < 0 ? '-' : '') + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return (v < 0 ? '-' : '') + '$' + (abs / 1e3).toFixed(0) + 'K';
+  return (v < 0 ? '-' : '') + '$' + abs.toFixed(0);
+};
+const fmtFull$ = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const fmtPct = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return Math.round(v) + '%';
+};
+const fmtPct1 = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  return v.toFixed(1) + '%';
+};
+const fmtDate = (d) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+const fmtMonth = (m) => {
+  if (!m) return '';
+  const [y, mo] = m.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(mo)-1] + ' ' + y;
+};
+// Convert Buildium bed/bath enums like "TwoBed"/"OneBath" to readable format
+const fmtBedBath = (v) => {
+  if (!v) return '—';
+  const map = { studio: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6' };
+  const lower = v.toLowerCase().replace(/bed|bath/g, '').trim();
+  return map[lower] || v;
+};
+
+// ── NAVIGATION ──
+document.querySelectorAll('.sb-item').forEach(el => {
+  el.addEventListener('click', () => {
+    let view = el.dataset.view;
+    // Unit Turns now redirects to Unit Tracker — turns data is merged into
+    // the vacancy board (see unit-tracker-redesign memory).
+    if (view === 'turns') view = 'units';
+    if (view === currentView) return;
+    document.querySelector('.sb-item.active')?.classList.remove('active');
+    const target = document.querySelector(`.sb-item[data-view="${view}"]`) || el;
+    target.classList.add('active');
+    currentView = view;
+    document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+    document.getElementById('view-' + view).style.display = '';
+    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker' };
+    document.getElementById('viewTitle').textContent = titles[view] || '';
+    renderCurrentView();
+  });
+});
+
+// ── PROPERTY MULTI-SELECT ──
+const propTrigger  = document.getElementById('propTrigger');
+const propDropdown = document.getElementById('propDropdown');
+const propSearch   = document.getElementById('propSearch');
+const propAllChip  = document.getElementById('propAllChip');
+
+propTrigger.addEventListener('click', (e) => {
+  if (e.target.classList.contains('remove')) return;
+  propDropdown.classList.toggle('open');
+  if (propDropdown.classList.contains('open')) propSearch.focus();
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('propMulti').contains(e.target)) propDropdown.classList.remove('open');
+});
+propSearch.addEventListener('input', () => renderPropDropdown());
+document.getElementById('selectAllProps').addEventListener('click', (e) => {
+  e.preventDefault();
+  selectedProps = [];
+  renderPropChips();
+  renderPropDropdown();
+  onFiltersChanged();
+});
+document.getElementById('clearAllProps').addEventListener('click', (e) => {
+  e.preventDefault();
+  selectedProps = [];
+  renderPropChips();
+  renderPropDropdown();
+  onFiltersChanged();
+});
+
+function renderPropDropdown() {
+  const q = propSearch.value.toLowerCase().trim();
+  const list = document.getElementById('propDropdownList');
+  // Scope by group first
+  const groupIds = getGroupPropertyIds();
+  const displayProps = groupIds ? allProperties.filter(p => groupIds.includes(p.id)) : allProperties;
+  const filtered = displayProps.filter(p => !q || p.name.toLowerCase().includes(q));
+  if (!filtered.length) {
+    list.innerHTML = '<div class="prop-dd-empty">No matching properties</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(p => {
+    const sel = selectedProps.length === 0 || selectedProps.includes(p.id);
+    return `<div class="prop-dd-item${sel && selectedProps.length > 0 ? ' selected' : ''}" data-id="${p.id}">
+      <div class="check">${sel && selectedProps.length > 0 ? '✓' : ''}</div>
+      <span>${p.name}</span>
+      <span class="units">${p.units || ''} units</span>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.prop-dd-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.id);
+      if (selectedProps.includes(id)) {
+        selectedProps = selectedProps.filter(x => x !== id);
+      } else {
+        selectedProps.push(id);
+      }
+      // If all selected or none, treat as "all"
+      if (selectedProps.length === allProperties.length) selectedProps = [];
+      renderPropChips();
+      renderPropDropdown();
+      onFiltersChanged();
+    });
+  });
+  document.getElementById('propSelectedCount').textContent =
+    selectedProps.length === 0 ? `All ${allProperties.length}` : `${selectedProps.length} selected`;
+}
+
+function renderPropChips() {
+  // Remove existing chips (except allChip and search)
+  propTrigger.querySelectorAll('.prop-chip:not(#propAllChip)').forEach(c => c.remove());
+  if (selectedProps.length === 0) {
+    propAllChip.style.display = '';
+    propAllChip.innerHTML = 'All Properties';
+  } else if (selectedProps.length <= 3) {
+    propAllChip.style.display = 'none';
+    selectedProps.forEach(id => {
+      const p = allProperties.find(x => x.id === id);
+      if (!p) return;
+      const chip = document.createElement('span');
+      chip.className = 'prop-chip';
+      chip.innerHTML = `${p.name} <span class="remove" data-id="${id}">×</span>`;
+      chip.querySelector('.remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedProps = selectedProps.filter(x => x !== id);
+        renderPropChips();
+        renderPropDropdown();
+        onFiltersChanged();
+      });
+      propTrigger.insertBefore(chip, propSearch);
+    });
+  } else {
+    propAllChip.style.display = '';
+    propAllChip.innerHTML = `${selectedProps.length} Properties <span class="remove" id="clearChips">×</span>`;
+    document.getElementById('clearChips').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedProps = [];
+      renderPropChips();
+      renderPropDropdown();
+      onFiltersChanged();
+    });
+  }
+}
+
+// ── MONTH FILTER ──
+const monthFilter = document.getElementById('monthFilter');
+monthFilter.addEventListener('change', () => {
+  selectedMonth = monthFilter.value;
+  onFiltersChanged();
+});
+
+function populateMonthFilter(months) {
+  // Detect current month from snapshot_metadata (unlocked = live)
+  const liveMonths = new Set();
+  if (DATA.snapshotMeta) {
+    DATA.snapshotMeta.forEach(sm => {
+      if (sm.is_locked === 'false' || sm.is_locked === false) liveMonths.add(sm.snapshot_month);
+    });
+  }
+  monthFilter.innerHTML = months.map(m => {
+    const isLive = liveMonths.has(m);
+    const label = fmtMonth(m) + (isLive ? ' (Live)' : '');
+    return `<option value="${m}"${m === selectedMonth ? ' selected' : ''}>${label}</option>`;
+  }).join('');
+}
+
+// ── GROUP FILTER ──
+const groupFilter = document.getElementById('groupFilter');
+groupFilter.addEventListener('change', () => {
+  selectedGroup = groupFilter.value;
+  // Re-scope property dropdown when group changes
+  renderPropDropdown();
+  renderPropChips();
+  // Clear property selection when group changes
+  selectedProps = [];
+  onFiltersChanged();
+});
+
+function populateGroupFilter(groups) {
+  const uniqueGroups = [...new Set(groups.map(g => g.group_name))].sort();
+  groupFilter.innerHTML = '<option value="">All Groups</option>' +
+    uniqueGroups.map(g => `<option value="${g}"${g === selectedGroup ? ' selected' : ''}>${g}</option>`).join('');
+}
+
+function getGroupPropertyIds() {
+  if (!selectedGroup || !DATA.propertyGroups) return null;
+  return DATA.propertyGroups
+    .filter(g => g.group_name === selectedGroup)
+    .map(g => parseInt(g.property_id))
+    .filter(Boolean);
+}
+
+// ── FILTER CHANGE HANDLER ──
+function onFiltersChanged() {
+  renderCurrentView();
+}
+
+function getFilteredProps() {
+  let props = allProperties;
+  // Scope by group first
+  const groupIds = getGroupPropertyIds();
+  if (groupIds) props = props.filter(p => groupIds.includes(p.id));
+  // Then by individual property selection
+  if (selectedProps.length > 0) props = props.filter(p => selectedProps.includes(p.id));
+  return props;
+}
+
+// Universal row filter — matches by property_id OR property_name (api_name or t12_name)
+function matchesSelectedProps(r) {
+  const groupIds = getGroupPropertyIds();
+  const hasGroupFilter = groupIds !== null;
+  const hasPropFilter = selectedProps.length > 0;
+
+  if (!hasGroupFilter && !hasPropFilter) return true;
+
+  // Build effective property set
+  let allowedIds;
+  if (hasGroupFilter && hasPropFilter) {
+    allowedIds = new Set(selectedProps.filter(id => groupIds.includes(id)));
+  } else if (hasGroupFilter) {
+    allowedIds = new Set(groupIds);
+  } else {
+    allowedIds = new Set(selectedProps);
+  }
+
+  if (r.property_id && allowedIds.has(parseInt(r.property_id))) return true;
+  if (r.property_name) {
+    const fp = getFilteredProps();
+    for (const p of fp) {
+      if (p.name === r.property_name || p.apiName === r.property_name || p.t12Name === r.property_name) return true;
+    }
+  }
+  return false;
+}
+
+// ── RENDER DISPATCH ──
+function renderCurrentView() {
+  switch (currentView) {
+    case 'overview': renderOverview(); break;
+    case 'pnl': renderPnL(); break;
+    case 'occupancy': renderOccupancy(); break;
+    case 'units': renderUnits(); break;
+    case 'turns': renderTurns(); break;
+  }
+}
+
+// ════════════════════════════════════════
+//  VIEW: FINANCIAL OVERVIEW
+// ════════════════════════════════════════
+function renderOverview() {
+  if (!DATA.noiSummary) {
+    document.getElementById('finKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const month = selectedMonth;
+
+  // ── FINANCIAL KPI SOURCE: v_income_statement_snapshot (operating-only) ──
+  // Spec (2026-04-13): the dashboard must pull total_income / total_expenses / NOI
+  // from v_income_statement_snapshot, where the three fields are operating-only.
+  // Non-operating items (mortgage, capex, AMF, parent-co) are kept in separate columns.
+  // Fall back to the financial_snapshots roll-up (DATA.noiSummary) only if the snapshot
+  // view returned nothing for the selected month — prevents blank KPIs during a deploy lag.
+  const snapRows = (DATA.incomeStatement || []).filter(r =>
+    (r.month === month || r.snapshot_month === month) && matchesSelectedProps(r));
+  let monthData, usingSnapshot;
+  if (snapRows.length) {
+    monthData = snapRows;
+    usingSnapshot = true;
+  } else {
+    monthData = (DATA.noiSummary || []).filter(r => r.month === month && matchesSelectedProps(r));
+    usingSnapshot = false;
+  }
+
+  const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
+  const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
+  const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
+  const expenseRatio  = totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0;
+  const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
+  const noiPerUnit    = totalUnits > 0 ? totalNOI / totalUnits : 0;
+
+  // Previous month comparison — mirror the snapshot-first preference above
+  const prevMonth = getPrevMonth(month);
+  let prevRows = [];
+  if (usingSnapshot) {
+    prevRows = (DATA.incomeStatement || []).filter(r =>
+      (r.month === prevMonth || r.snapshot_month === prevMonth) && matchesSelectedProps(r));
+  }
+  if (!prevRows.length) {
+    prevRows = (DATA.noiSummary || []).filter(r => r.month === prevMonth && matchesSelectedProps(r));
+  }
+  const prevNOI   = prevRows.reduce((s, r) => s + (r.noi || 0), 0);
+  const noiChange = prevNOI !== 0 ? ((totalNOI - prevNOI) / Math.abs(prevNOI) * 100) : 0;
+
+  // Count negative NOI properties
+  const negNOI = monthData.filter(r => (r.noi || 0) < 0).length;
+  const propCount = monthData.length;
+
+  document.getElementById('finKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Operating Income</div>
+      <div class="kpi-value">${fmt$(totalIncome)}</div>
+      <div class="kpi-sub">${fmtMonth(month)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Operating Expenses</div>
+      <div class="kpi-value">${fmt$(totalExpense)}</div>
+      <div class="kpi-sub">${fmtMonth(month)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Operating Income</div>
+      <div class="kpi-value ${totalNOI >= 0 ? 'good' : 'bad'}">${fmt$(totalNOI)}</div>
+      <div class="kpi-sub">
+        ${noiChange !== 0 ? `<span class="kpi-change ${noiChange >= 0 ? 'up' : 'down'}">${noiChange >= 0 ? '▲' : '▼'} ${Math.abs(noiChange).toFixed(1)}%</span> vs prev month` : ''}
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Expense Ratio</div>
+      <div class="kpi-value ${expenseRatio > 50 ? 'warn' : ''}">${fmtPct1(expenseRatio)}</div>
+      <div class="kpi-sub">Expenses ÷ Income</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">NOI per Unit</div>
+      <div class="kpi-value">${fmt$(noiPerUnit)}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Negative NOI</div>
+      <div class="kpi-value ${negNOI > 0 ? 'bad' : 'good'}">${negNOI}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(negNOI / propCount * 100) : 0}% of properties</div>
+    </div>
+  `;
+
+  // Property Metrics — avg physical occupancy across the selected properties for the
+  // selected month. Prefer the historical snapshot; fall back to the live view only if
+  // the snapshot has no rows for this month. Derive the per-property pct from
+  // occupied_units / total_units so we don't depend on `physical_occupancy_pct` being
+  // present in the view (it isn't on v_occupancy_snapshot_summary in the deployed schema).
+  const snapForMetrics = (DATA.occupancySnapshot || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  const occData = snapForMetrics.length
+    ? snapForMetrics
+    : (DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : []);
+  const perPropPct = (r) => {
+    const pct = parseFloat(r.physical_occupancy_pct) || parseFloat(r.physical_occupancy) || 0;
+    if (pct > 0) return pct;
+    const occ = parseInt(r.occupied_units) || 0;
+    const tot = parseInt(r.total_units) || 0;
+    return tot > 0 ? (occ / tot * 100) : 0;
+  };
+  const avgOcc = occData.length > 0
+    ? occData.reduce((s, r) => s + perPropPct(r), 0) / occData.length
+    : 0;
+  const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
+  const highExpRatio = monthData.filter(r => {
+    const rev = r.total_income || r.revenue || 0;
+    const exp = Math.abs(r.total_expenses || r.expenses || 0);
+    return rev > 0 && (exp / rev) > 0.5;
+  }).length;
+
+  document.getElementById('propMetrics').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Avg Physical Occupancy</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-sub">${occData.length} properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Negative Cash Flow</div>
+      <div class="kpi-value ${negCF > 0 ? 'bad' : 'good'}">${negCF}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(negCF / propCount * 100) : 0}% of properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Expense Ratio > 50%</div>
+      <div class="kpi-value ${highExpRatio > 0 ? 'warn' : 'good'}">${highExpRatio}</div>
+      <div class="kpi-sub">${propCount > 0 ? Math.round(highExpRatio / propCount * 100) : 0}% of properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total Properties</div>
+      <div class="kpi-value">${propCount}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} units</div>
+    </div>
+  `;
+
+  // ── OPERATIONAL KPIs (second row) ──
+
+  // CAPEX: from income_statement_snapshot
+  // Accepts either `r.month` (new alias) or `r.snapshot_month` (raw) so we don't break
+  // if the edge function hasn't been redeployed yet.
+  let capex = 0;
+  if (DATA.incomeStatement && DATA.incomeStatement.length) {
+    const capexRows = DATA.incomeStatement.filter(r =>
+      (r.month === month || r.snapshot_month === month) && matchesSelectedProps(r));
+    capex = capexRows.reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
+  }
+
+  // UTILITY REIMBURSEMENT
+  // Primary source: v_utility_reimbursement (23 utility income GLs + 11 utility expense GLs
+  // enumerated server-side; utility_reimbursement_pct pre-computed). Typical MF range: 40–80%.
+  // Fallback: the legacy client-side utility_summary roll-up via account-name LIKE matches.
+  let utilIncome = 0, utilExpense = 0, utilReimb = 0;
+  const utilReimbRows = (DATA.utilityReimbursement || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  if (utilReimbRows.length) {
+    utilIncome = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+    utilExpense = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
+    // Prefer the server-computed pct when aggregated income/expense aren't both present.
+    if (utilExpense > 0) {
+      utilReimb = utilIncome / utilExpense * 100;
+    } else {
+      const pcts = utilReimbRows
+        .map(r => parseFloat(r.utility_reimbursement_pct) || 0)
+        .filter(p => p > 0);
+      utilReimb = pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : 0;
+    }
+  } else if (DATA.utilitySummary && DATA.utilitySummary.length) {
+    const utilRows = DATA.utilitySummary.filter(r =>
+      (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+    utilIncome = utilRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+    utilExpense = utilRows.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
+    utilReimb = utilExpense > 0 ? (utilIncome / utilExpense * 100) : 0;
+  }
+
+  // PHYSICAL OCCUPANCY — historical-aware.
+  // Prefer v_occupancy_snapshot_summary (one row per property × snapshot_month) filtered by
+  // the selected month, so historical months return their actual values. v_occupancy_summary
+  // is live/current-state only and has no history — only fall back to it when the snapshot
+  // doesn't carry the selected month (e.g., the very first or last month in the range, or
+  // if the snapshot view is missing entirely).
+  let physOcc = 0, totalOccUnits = 0, totalAllUnits = 0;
+  const snapRowsForMonth = (DATA.occupancySnapshot || []).filter(r =>
+    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  if (snapRowsForMonth.length) {
+    totalOccUnits = snapRowsForMonth.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    totalAllUnits = snapRowsForMonth.reduce((s, r) => s + (r.total_units || 0), 0);
+  } else if (DATA.occupancy && DATA.occupancy.length) {
+    const occRows = DATA.occupancy.filter(r => matchesSelectedProps(r));
+    totalOccUnits = occRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    totalAllUnits = occRows.reduce((s, r) => s + (r.total_units || 0), 0);
+  }
+  // Fallback: if neither source carried total_units, derive from the properties list
+  if (totalAllUnits === 0) {
+    totalAllUnits = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
+  }
+  physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
+
+  // ECONOMIC OCCUPANCY — dollar-weighted portfolio rollup (cash-basis as of 2026-04-13).
+  // Source: v_economic_occupancy (one row per property × snapshot_month). The view was
+  // rebuilt on actual cash collected per unit per month (from lease_historical_payments),
+  // not accrual GL income. Column renames: total_income → total_collected,
+  // recurring_income → recurring_collected, non_recurring_income → non_recurring_collected.
+  // Authoritative formula (matches the BigQuery portfolio rollup exactly — do NOT average
+  // the per-property percentages):
+  //   econOcc = SUM(recurring_collected) / SUM(estimated_charge_potential) × 100
+  // recurring_collected is rent-like cash only — excludes pass-through utilities,
+  // concessions (Credits), and raw prepayments still parked in GL 18. Expected range:
+  // physical − 1 to 5 pts healthy, 8–13 pts variance in growth/onboarding months.
+  let econOcc = 0;
+  let econIncomeSum = 0, econPotentialSum = 0;
+  if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
+    const econRows = DATA.economicOccupancy.filter(r =>
+      (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+    econRows.forEach(r => {
+      // Prefer new cash-basis column; fall back to legacy accrual columns for resilience
+      // if the edge function hasn't been redeployed yet.
+      let numer = parseFloat(r.recurring_collected);
+      if (!Number.isFinite(numer)) {
+        numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+      }
+      const denom = parseFloat(r.estimated_charge_potential) || 0;
+      if (denom > 0) {
+        econIncomeSum += numer;
+        econPotentialSum += denom;
+      }
+    });
+    if (econPotentialSum > 0) {
+      econOcc = (econIncomeSum / econPotentialSum) * 100;
+    } else {
+      // Fallback: if the numerator/denominator columns are missing for some reason,
+      // simple-mean the percentage column rather than report 0.
+      const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
+      if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+    }
+  }
+  // No hard cap here — the dollar-weighted formula is the authoritative one and matches
+  // the BigQuery portfolio rollup. If it comes in marginally higher than the Physical KPI
+  // for a particular month, that reflects real property-coverage differences between
+  // v_occupancy_snapshot_summary and v_economic_occupancy (the latter filters to "managed
+  // property-months" — properties with any lease charge/payment activity that month —
+  // so recently-onboarded or backfilled units drop out). Log the divergence so we can
+  // investigate if it looks off, but don't clamp.
+  if (econOcc > 0 && physOcc > 0 && econOcc > physOcc + 0.05) {
+    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${month} — likely due to managed-property-month filter on v_economic_occupancy.`);
+  }
+
+  document.getElementById('operationalKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Total Capex</div>
+      <div class="kpi-value">${fmt$(capex)}</div>
+      <div class="kpi-sub">${fmtMonth(month)} · Capital Improvements</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Utility Reimbursement</div>
+      <div class="kpi-value ${utilReimb >= 80 ? 'good' : utilReimb >= 50 ? 'warn' : 'bad'}">${fmtPct1(utilReimb)}</div>
+      <div class="kpi-sub">${fmt$(utilIncome)} income ÷ ${fmt$(utilExpense)} expense</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-value ${physOcc >= 90 ? 'good' : physOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(physOcc)}</div>
+      <div class="kpi-sub">${totalOccUnits.toLocaleString()} ÷ ${totalAllUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Economic Occupancy</div>
+      <div class="kpi-value ${econOcc >= 90 ? 'good' : econOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(econOcc)}</div>
+      <div class="kpi-sub">Recurring Income ÷ Rent Potential</div>
+    </div>
+  `;
+
+  // Charts
+  renderIncExpChart();
+  renderNOIChart();
+
+  // Property performance table
+  renderPropPerfTable(monthData);
+}
+
+function renderIncExpChart() {
+  const canvas = document.getElementById('incExpChart');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 220 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '220px';
+  ctx.scale(2, 2);
+  const W = rect.width, H = 220;
+  ctx.clearRect(0, 0, W, H);
+
+  const months = DATA.months.slice(-12);
+  // Prefer v_income_statement_snapshot (operating-only) for chart values, so the
+  // Income/Expenses chart aligns with the top-line KPIs. Fall back to the financial_snapshots
+  // roll-up only if the snapshot view is empty.
+  const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
+  if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
+
+  const sourceFor = (m) => {
+    if (hasSnap) {
+      const rows = DATA.incomeStatement.filter(r =>
+        (r.month === m || r.snapshot_month === m) && matchesSelectedProps(r));
+      if (rows.length) return rows;
+    }
+    return (DATA.noiSummary || []).filter(r => r.month === m && matchesSelectedProps(r));
+  };
+
+  const incomeByMonth = [], expByMonth = [];
+  months.forEach(m => {
+    const rows = sourceFor(m);
+    incomeByMonth.push(rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0));
+    expByMonth.push(rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0));
+  });
+
+  const allVals = [...incomeByMonth, ...expByMonth];
+  const maxVal = Math.max(...allVals, 1);
+  const minVal = 0;
+  const padL = 60, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#555c66';
+    ctx.font = '10px DM Mono';
+    ctx.textAlign = 'right';
+    const val = maxVal - (maxVal / 4) * i;
+    ctx.fillText(fmt$(val), padL - 8, y + 4);
+  }
+
+  // X labels
+  ctx.fillStyle = '#555c66';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'center';
+  months.forEach((m, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
+  });
+
+  // Lines
+  function drawLine(data, color, fillColor) {
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      const y = padT + chartH - (v / maxVal) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Fill
+    ctx.lineTo(padL + chartW, padT + chartH);
+    ctx.lineTo(padL, padT + chartH);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Dots
+    data.forEach((v, i) => {
+      const x = padL + (chartW / (months.length - 1)) * i;
+      const y = padT + chartH - (v / maxVal) * chartH;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(incomeByMonth, '#22c97a', 'rgba(34,201,122,0.08)');
+  drawLine(expByMonth, '#e8504a', 'rgba(232,80,74,0.08)');
+
+  // Legend
+  ctx.fillStyle = '#22c97a';
+  ctx.fillRect(padL, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'left';
+  ctx.fillText('Income', padL + 12, H - 2);
+  ctx.fillStyle = '#e8504a';
+  ctx.fillRect(padL + 70, H - 6, 8, 3);
+  ctx.fillStyle = '#8c939e';
+  ctx.fillText('Expenses', padL + 82, H - 2);
+
+  document.getElementById('chartPeriodLabel').textContent = `${fmtMonth(months[0])} – ${fmtMonth(months[months.length-1])}`;
+}
+
+function renderNOIChart() {
+  const canvas = document.getElementById('noiChart');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 220 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '220px';
+  ctx.scale(2, 2);
+  const W = rect.width, H = 220;
+  ctx.clearRect(0, 0, W, H);
+
+  const months = DATA.months.slice(-12);
+  const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
+  if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
+
+  const noiByMonth = [];
+  months.forEach(m => {
+    let rows = [];
+    if (hasSnap) {
+      rows = DATA.incomeStatement.filter(r =>
+        (r.month === m || r.snapshot_month === m) && matchesSelectedProps(r));
+    }
+    if (!rows.length) rows = (DATA.noiSummary || []).filter(r => r.month === m && matchesSelectedProps(r));
+    noiByMonth.push(rows.reduce((s, r) => s + (r.noi || 0), 0));
+  });
+
+  const maxVal = Math.max(...noiByMonth.map(Math.abs), 1) * 1.1;
+  const padL = 60, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const zeroY = padT + chartH / 2;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#555c66';
+    ctx.font = '10px DM Mono';
+    ctx.textAlign = 'right';
+    const val = maxVal - (maxVal * 2 / 4) * i;
+    ctx.fillText(fmt$(val), padL - 8, y + 4);
+  }
+
+  // Zero line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
+
+  // X labels
+  ctx.fillStyle = '#555c66';
+  ctx.font = '10px DM Sans';
+  ctx.textAlign = 'center';
+  months.forEach((m, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
+  });
+
+  // NOI line
+  ctx.beginPath();
+  noiByMonth.forEach((v, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    const y = zeroY - (v / maxVal) * (chartH / 2);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#3d7fff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Dots
+  noiByMonth.forEach((v, i) => {
+    const x = padL + (chartW / (months.length - 1)) * i;
+    const y = zeroY - (v / maxVal) * (chartH / 2);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = v >= 0 ? '#22c97a' : '#e8504a';
+    ctx.fill();
+    ctx.strokeStyle = '#0d0f12';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+}
+
+function renderPropPerfTable(monthData) {
+  const tbody = document.getElementById('propPerfBody');
+  if (!monthData.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px;">No data for selected filters</td></tr>';
+    return;
+  }
+  const rows = monthData.map(r => {
+    // Look up property by id OR name (api_name)
+    const p = allProperties.find(x => x.id === r.property_id || x.name === r.property_name || x.apiName === r.property_name);
+    const rev = r.total_income || r.revenue || 0;
+    const exp = Math.abs(r.total_expenses || r.expenses || 0);
+    const noi = r.noi || 0;
+    const ratio = rev > 0 ? (exp / rev * 100) : 0;
+    const units = p ? (p.units || 0) : (r.units || 0);
+    const noiUnit = units > 0 ? noi / units : 0;
+    // Look up occupancy by property_name (api_name matches across views)
+    const occ = DATA.occupancy ? DATA.occupancy.find(o => o.property_name === r.property_name || (o.property_id && o.property_id === r.property_id)) : null;
+    const occPct = occ ? Math.round(occ.physical_occupancy) : null;
+    return { name: r.property_name || (p ? p.name : '?'), units, rev, exp, noi, ratio, noiUnit, occPct };
+  }).sort((a, b) => b.noi - a.noi);
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td class="r">${r.units || '—'}</td>
+      <td class="r">${fmtFull$(r.rev)}</td>
+      <td class="r">${fmtFull$(r.exp)}</td>
+      <td class="r ${r.noi >= 0 ? 'good' : 'bad'}">${fmtFull$(r.noi)}</td>
+      <td class="r ${r.ratio > 50 ? 'warn' : ''}">${fmtPct1(r.ratio)}</td>
+      <td class="r ${r.occPct !== null ? (r.occPct >= 90 ? 'good' : r.occPct >= 80 ? 'warn' : 'bad') : ''}">${r.occPct !== null ? fmtPct(r.occPct) : '—'}</td>
+      <td class="r">${fmtFull$(r.noiUnit)}</td>
+    </tr>
+  `).join('');
+
+  // Search filter
+  document.getElementById('propPerfSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = tr.children[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: P&L DETAIL
+// ════════════════════════════════════════
+function renderPnL() {
+  // Populate property dropdown — only show properties that have financial data
+  const sel = document.getElementById('pnlPropertySelect');
+  if (sel.children.length <= 1) {
+    // Get property names that exist in financial data
+    const finPropNames = new Set(DATA.financial.map(r => r.property_name));
+    const propsWithData = allProperties.filter(p => finPropNames.has(p.name) || finPropNames.has(p.apiName));
+    sel.innerHTML = '<option value="">— Select Property —</option>' +
+      propsWithData
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(p => `<option value="${p.id}" data-name="${p.name}">${p.name}</option>`)
+        .join('');
+  }
+
+  const propId = parseInt(sel.value);
+  const selOption = sel.options[sel.selectedIndex];
+  const propName = selOption ? selOption.getAttribute('data-name') : '';
+  const period = document.getElementById('pnlPeriodSelect').value;
+  if (!propId || !DATA.financial) {
+    document.getElementById('pnlTableContainer').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Select a property to view P&L</p></div>';
+    return;
+  }
+
+  // Filter financial data — match by property_id OR property_name
+  let rows = DATA.financial.filter(r => r.property_id === propId || r.property_name === propName);
+  let months = [...new Set(rows.map(r => r.snapshot_month))].sort();
+
+  if (period === 'trailing12') {
+    months = months.slice(-12);
+  } else if (period === 'ytd') {
+    const thisYear = selectedMonth.split('-')[0];
+    months = months.filter(m => m.startsWith(thisYear));
+  }
+
+  rows = rows.filter(r => months.includes(r.snapshot_month));
+
+  // Group by account and t12_section
+  const sections = { income: {}, expense: {}, non_operating_expense: {}, non_operating_income: {} };
+  rows.forEach(r => {
+    const sec = r.t12_section || 'expense';
+    if (!sections[sec]) sections[sec] = {};
+    if (!sections[sec][r.account_name]) sections[sec][r.account_name] = {};
+    sections[sec][r.account_name][r.snapshot_month] = (sections[sec][r.account_name][r.snapshot_month] || 0) + (r.total_amount || 0);
+  });
+
+  // Build table
+  let html = '<div class="fin-table-wrap"><table class="fin-table"><thead><tr><th>Account</th>';
+  months.forEach(m => html += `<th>${fmtMonth(m)}</th>`);
+  html += '<th>Total</th></tr></thead><tbody>';
+
+  function renderSection(label, accounts, sign) {
+    html += `<tr class="row-header"><td colspan="${months.length + 2}">${label}</td></tr>`;
+    let sectionTotals = {};
+    months.forEach(m => sectionTotals[m] = 0);
+    Object.keys(accounts).sort().forEach(acct => {
+      html += `<tr><td>${acct}</td>`;
+      let rowTotal = 0;
+      months.forEach(m => {
+        const v = accounts[acct][m] || 0;
+        sectionTotals[m] += v;
+        rowTotal += v;
+        html += `<td>${fmtFull$(v)}</td>`;
+      });
+      html += `<td>${fmtFull$(rowTotal)}</td></tr>`;
+    });
+    // Section total
+    html += `<tr class="row-total"><td>Total ${label}</td>`;
+    let grandTotal = 0;
+    months.forEach(m => {
+      grandTotal += sectionTotals[m];
+      html += `<td>${fmtFull$(sectionTotals[m])}</td>`;
+    });
+    html += `<td>${fmtFull$(grandTotal)}</td></tr>`;
+    return sectionTotals;
+  }
+
+  const incTotals = renderSection('Income', sections.income || {}, 1);
+  const expTotals = renderSection('Operating Expenses', sections.expense || {}, -1);
+
+  // NOI row
+  html += `<tr class="row-noi"><td>Net Operating Income</td>`;
+  let noiGrand = 0;
+  months.forEach(m => {
+    const noi = (incTotals[m] || 0) - (expTotals[m] || 0);
+    noiGrand += noi;
+    html += `<td>${fmtFull$(noi)}</td>`;
+  });
+  html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
+
+  // Occupancy row if available — match by name or id
+  if (DATA.occupancy) {
+    const occ = DATA.occupancy.find(o => o.property_id === propId || o.property_name === propName);
+    if (occ) {
+      html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
+      months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
+      html += `<td></td></tr>`;
+    }
+  }
+
+  // Expense Ratio row
+  html += `<tr class="pct-row"><td>Expense Ratio</td>`;
+  months.forEach(m => {
+    const inc = incTotals[m] || 0;
+    const exp = Math.abs(expTotals[m] || 0);
+    const ratio = inc > 0 ? (exp / inc * 100) : 0;
+    html += `<td class="${ratio > 50 ? 'warn' : ''}">${fmtPct1(ratio)}</td>`;
+  });
+  html += `<td></td></tr>`;
+
+  // Non-operating sections if present
+  if (Object.keys(sections.non_operating_expense || {}).length) {
+    renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
+  }
+  if (Object.keys(sections.non_operating_income || {}).length) {
+    renderSection('Non-Operating Income', sections.non_operating_income, 1);
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('pnlTableContainer').innerHTML = html;
+}
+
+// Wire up P&L dropdowns
+document.getElementById('pnlPropertySelect').addEventListener('change', renderPnL);
+document.getElementById('pnlPeriodSelect').addEventListener('change', renderPnL);
+
+
+// ════════════════════════════════════════
+//  VIEW: OCCUPANCY
+// ════════════════════════════════════════
+function renderOccupancy() {
+  if (!DATA.occupancy) {
+    document.getElementById('occKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const occ = DATA.occupancy.filter(r => matchesSelectedProps(r));
+
+  const totalUnits    = occ.reduce((s, r) => s + (r.total_units || 0), 0);
+  const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
+  const totalVacant   = occ.reduce((s, r) => s + (r.vacant_units || 0), 0);
+  const totalPreleased = occ.reduce((s, r) => s + (r.preleased_units || 0), 0);
+  const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
+
+  document.getElementById('occKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
+      <div class="kpi-sub">${totalOccupied.toLocaleString()} of ${totalUnits.toLocaleString()} units</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Vacant Units</div>
+      <div class="kpi-value ${totalVacant > 0 ? 'bad' : 'good'}">${totalVacant}</div>
+      <div class="kpi-sub">${totalUnits > 0 ? fmtPct(totalVacant / totalUnits * 100) : '0%'} vacancy rate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preleased</div>
+      <div class="kpi-value" style="color:var(--teal);">${totalPreleased}</div>
+      <div class="kpi-sub">Future leases signed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Net Vacancy Exposure</div>
+      <div class="kpi-value ${(totalVacant - totalPreleased) > 0 ? 'warn' : 'good'}">${totalVacant - totalPreleased}</div>
+      <div class="kpi-sub">Vacant minus preleased</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Properties</div>
+      <div class="kpi-value">${occ.length}</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+    </div>
+  `;
+
+  // Occupancy table
+  const tbody = document.getElementById('occBody');
+  const sorted = [...occ].sort((a, b) => (a.physical_occupancy || 0) - (b.physical_occupancy || 0));
+  tbody.innerHTML = sorted.map(r => {
+    const occPct = Math.round(r.physical_occupancy || 0);
+    const netExp = (r.vacant_units || 0) - (r.preleased_units || 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td class="r">${r.total_units || 0}</td>
+      <td class="r">${r.occupied_units || 0}</td>
+      <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
+      <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
+      <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
+      <td class="r ${netExp > 0 ? 'warn' : 'good'}">${netExp}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('occSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = tr.children[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+
+  // Lease expirations
+  renderExpirations();
+}
+
+function renderExpirations() {
+  if (!DATA.expirations) return;
+  const exps = DATA.expirations.filter(r => matchesSelectedProps(r));
+
+  // Buckets
+  const buckets = { EXPIRING_30: 0, EXPIRING_60: 0, EXPIRING_90: 0, EXPIRED: 0 };
+  exps.forEach(r => { if (buckets.hasOwnProperty(r.bucket)) buckets[r.bucket]++; });
+
+  document.getElementById('expTotal').textContent = `${exps.length} expiring`;
+  document.getElementById('expBuckets').innerHTML = `
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--red);">${buckets.EXPIRED}</div>
+      <div class="eb-label">Already Expired</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--amber);">${buckets.EXPIRING_30}</div>
+      <div class="eb-label">Next 30 Days</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count" style="color:var(--text);">${buckets.EXPIRING_60}</div>
+      <div class="eb-label">31–60 Days</div>
+    </div>
+    <div class="exp-bucket">
+      <div class="eb-count">${buckets.EXPIRING_90}</div>
+      <div class="eb-label">61–90 Days</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('expBody');
+  const sorted = [...exps].sort((a, b) => (a.lease_end || '').localeCompare(b.lease_end || ''));
+  tbody.innerHTML = sorted.map(r => {
+    const badgeClass = r.bucket === 'EXPIRED' ? 'sb-vacant' : r.bucket === 'EXPIRING_30' ? 'sb-mtm' : 'sb-current';
+    const bucketLabel = r.bucket === 'EXPIRED' ? 'Expired' : r.bucket === 'EXPIRING_30' ? '30 Days' : r.bucket === 'EXPIRING_60' ? '60 Days' : '90 Days';
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td>${r.tenant_name || '—'}</td>
+      <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+      <td>${fmtDate(r.lease_end)}</td>
+      <td><span class="status-badge ${badgeClass}">${bucketLabel}</span></td>
+      <td>${r.renewal_status || r.status || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('expSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      const match = [...cells].some(c => c.textContent.toLowerCase().includes(q));
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: UNIT TRACKER (4-panel redesign, Apr 2026)
+//  - All Properties overview (left)
+//  - Vacant Units board merged with turns (top right)
+//  - Occupied Units (bottom right)
+//  - All Units full rent roll (full width bottom)
+// ════════════════════════════════════════
+
+// Shared pagination state for unit tracker tables
+const UT_STATE = {
+  vac: { page: 1, perPage: 50, rows: [], search: '' },
+  occ: { page: 1, perPage: 50, rows: [], search: '' },
+  all: { page: 1, perPage: 50, rows: [], search: '' },
+};
+
+function utChangePage(key, delta) {
+  const s = UT_STATE[key];
+  const total = Math.max(1, Math.ceil(s.rows.length / s.perPage));
+  s.page = Math.min(total, Math.max(1, s.page + delta));
+  renderUtTable(key);
+}
+
+function renderPagination(key) {
+  const s = UT_STATE[key];
+  const total = Math.max(1, Math.ceil(s.rows.length / s.perPage));
+  const pager = document.getElementById({ vac: 'utVacPager', occ: 'utOccPager', all: 'utAllPager' }[key]);
+  if (!pager) return;
+  pager.innerHTML = `
+    <span>${s.rows.length.toLocaleString()} rows</span>
+    <span style="display:flex;align-items:center;gap:8px;">
+      <button onclick="utChangePage('${key}',-1)" ${s.page <= 1 ? 'disabled' : ''}>‹ Prev</button>
+      <span>Page ${s.page} / ${total}</span>
+      <button onclick="utChangePage('${key}',1)" ${s.page >= total ? 'disabled' : ''}>Next ›</button>
+    </span>
+  `;
+}
+
+function setupTableSearch(inputId, key) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  inp.oninput = function() {
+    UT_STATE[key].search = this.value.toLowerCase();
+    UT_STATE[key].page = 1;
+    renderUtTable(key);
+  };
+}
+
+// Lease expiry coloring
+function leaseDotFor(r) {
+  if (r.is_mtm) return '<span class="lease-dot purple" title="Month-to-Month"></span>';
+  if (!r.lease_end) return '';
+  const days = Math.floor((new Date(r.lease_end) - Date.now()) / 86400000);
+  if (days <= 30) return '<span class="lease-dot red" title="Expiring ≤30d"></span>';
+  if (days <= 60) return '<span class="lease-dot amber" title="Expiring ≤60d"></span>';
+  if (days <= 90) return '<span class="lease-dot green" title="Expiring ≤90d"></span>';
+  return '';
+}
+
+function daysBadge(d) {
+  const n = parseInt(d) || 0;
+  if (n <= 0) return '—';
+  const cls = n > 60 ? 'high' : n > 30 ? 'med' : 'low';
+  return `<span class="days-badge ${cls}">${n}d</span>`;
+}
+
+function boardBadge(board) {
+  if (!board) return '<span class="board-badge none">—</span>';
+  const b = String(board).toLowerCase();
+  if (b.includes('make ready')) return '<span class="board-badge mr">Make Ready</span>';
+  if (b.includes('lease up') || b.includes('available')) return '<span class="board-badge av">Available</span>';
+  return `<span class="board-badge none">${board}</span>`;
+}
+
+// Build a lookup key for merging turns with vacancy
+const turnKey = (p, u) => `${(p || '').trim().toLowerCase()}|${(u || '').trim().toLowerCase()}`;
+
+function renderUnits() {
+  if (!DATA.rentRoll) {
+    document.getElementById('unitKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+
+  const rentRoll = (DATA.rentRoll || []).filter(r => matchesSelectedProps(r));
+  const vacancyAll = (DATA.vacancy || []).filter(r => matchesSelectedProps(r));
+  const turnsAll = (DATA.turns || []).filter(r => matchesSelectedProps(r));
+  const occSummary = (DATA.occupancy || []).filter(r => matchesSelectedProps(r));
+
+  // ── Build turn lookup (by property_name + unit_number) ──
+  const turnLookup = {};
+  turnsAll.forEach(t => {
+    turnLookup[turnKey(t.property_name, t.unit_number)] = t;
+  });
+
+  // ── KPIs ──
+  const occupiedRoll = rentRoll.filter(r => {
+    const s = (r.status || '').toLowerCase();
+    return s === 'current' || s === 'active' || s === 'notice' || r.is_mtm;
+  });
+  const totalUnits = occSummary.reduce((s, r) => s + (r.total_units || 0), 0) ||
+                     (occupiedRoll.length + vacancyAll.length);
+  const occupiedCt = occSummary.reduce((s, r) => s + (r.occupied_units || 0), 0) || occupiedRoll.length;
+  const vacantCt   = occSummary.reduce((s, r) => s + (r.vacant_units || 0), 0) || vacancyAll.length;
+  const preleasedCt = occSummary.reduce((s, r) => s + (r.preleased_units || 0), 0);
+  const mtmCt = rentRoll.filter(r => r.is_mtm).length;
+  const totalMkt = rentRoll.reduce((s, r) => s + (r.market_rent || 0), 0);
+  const totalRent = rentRoll.reduce((s, r) => s + (r.rent || 0), 0);
+  const lossToLease = totalMkt - totalRent;
+
+  document.getElementById('unitKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Total Units</div>
+      <div class="kpi-value">${totalUnits.toLocaleString()}</div>
+      <div class="kpi-sub">${occSummary.length} properties</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Occupied</div>
+      <div class="kpi-value good">${occupiedCt.toLocaleString()}</div>
+      <div class="kpi-sub">${totalUnits > 0 ? fmtPct1(occupiedCt / totalUnits * 100) : '0%'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Vacant</div>
+      <div class="kpi-value ${vacantCt > 0 ? 'warn' : 'good'}">${vacantCt.toLocaleString()}</div>
+      <div class="kpi-sub">${totalUnits > 0 ? fmtPct1(vacantCt / totalUnits * 100) : '0%'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preleased</div>
+      <div class="kpi-value">${preleasedCt.toLocaleString()}</div>
+      <div class="kpi-sub">${vacantCt > 0 ? fmtPct1(preleasedCt / vacantCt * 100) + ' of vacant' : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">MTM</div>
+      <div class="kpi-value ${mtmCt > 0 ? 'warn' : ''}">${mtmCt.toLocaleString()}</div>
+      <div class="kpi-sub">${occupiedCt > 0 ? fmtPct1(mtmCt / occupiedCt * 100) + ' of occupied' : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Loss to Lease</div>
+      <div class="kpi-value ${lossToLease > 0 ? 'bad' : 'good'}">${fmt$(lossToLease)}</div>
+      <div class="kpi-sub">${totalMkt > 0 ? fmtPct1(lossToLease / totalMkt * 100) : '0%'} of market</div>
+    </div>
+  `;
+
+  // ── PANEL 1: All Properties overview ──
+  renderUtPropertiesTable(occSummary, turnsAll);
+
+  // ── PANEL 2: Vacant Units (merged with turns) ──
+  const vacantRows = vacancyAll.map(v => {
+    const t = turnLookup[turnKey(v.property_name, v.unit_number)] || {};
+    return {
+      property_name: v.property_name || '',
+      unit_number: v.unit_number || '',
+      unit_type: v.unit_type || `${fmtBedBath(v.bedrooms)}/${fmtBedBath(v.bathrooms)}`,
+      finish_level: t.finish_level || v.finish_level || '',
+      board: t.board || '',
+      move_out: v.last_move_out || v.move_out_date || t.start_date || '',
+      initial_walk: t.initial_walk_date || '',
+      final_walk: t.final_walk_date || '',
+      available: v.available_date || t.end_date || '',
+      market_rent: parseFloat(v.market_rent) || 0,
+      days_vacant: parseInt(v.days_vacant) || 0,
+    };
+  }).sort((a, b) => b.days_vacant - a.days_vacant);
+  UT_STATE.vac.rows = vacantRows;
+  UT_STATE.vac.page = 1;
+  document.getElementById('utVacCount').textContent = `${vacantRows.length} vacant`;
+  renderUtTable('vac');
+  setupTableSearch('utVacSearch', 'vac');
+
+  // ── PANEL 3: Occupied Units ──
+  const occRows = rentRoll
+    .filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s === 'current' || s === 'active' || s === 'notice' || r.is_mtm;
+    })
+    .map(r => ({
+      property_name: r.property_name || '',
+      unit_number: r.unit_number || '',
+      unit_type: `${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}`,
+      finish_level: r.finish_level || '',
+      lease_end: r.lease_end || '',
+      is_mtm: !!r.is_mtm,
+      market_rent: parseFloat(r.market_rent) || 0,
+      rent: parseFloat(r.rent) || 0,
+      purc_rent: null,
+      agro_meter: null,
+      am_delta: null,
+    }))
+    .sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') ||
+                    (a.unit_number || '').localeCompare(b.unit_number || ''));
+  UT_STATE.occ.rows = occRows;
+  UT_STATE.occ.page = 1;
+  document.getElementById('utOccCount').textContent = `${occRows.length} occupied`;
+  renderUtTable('occ');
+  setupTableSearch('utOccSearch', 'occ');
+
+  // ── PANEL 4: All Units ──
+  const allRows = rentRoll
+    .map(r => ({
+      property_name: r.property_name || '',
+      unit_number: r.unit_number || '',
+      unit_type: `${fmtBedBath(r.bedrooms)}/${fmtBedBath(r.bathrooms)}`,
+      finish_level: r.finish_level || '',
+      lease_start: r.lease_start || '',
+      lease_end: r.lease_end || '',
+      market_rent: parseFloat(r.market_rent) || 0,
+      rent: parseFloat(r.rent) || 0,
+      purc_rent: null,
+      prev_rent: null,
+      pro_forma: null,
+      pf_delta: null,
+      agro_meter: null,
+      am_delta: null,
+    }))
+    .sort((a, b) => (a.property_name || '').localeCompare(b.property_name || '') ||
+                    (a.unit_number || '').localeCompare(b.unit_number || ''));
+  UT_STATE.all.rows = allRows;
+  UT_STATE.all.page = 1;
+  document.getElementById('utAllCount').textContent = `${allRows.length} units`;
+  renderUtTable('all');
+  setupTableSearch('utAllSearch', 'all');
+}
+
+function renderUtPropertiesTable(occSummary, turns) {
+  const propTurns = {};
+  turns.forEach(t => {
+    const name = t.property_name || '';
+    if (!propTurns[name]) propTurns[name] = { av: 0, mr: 0 };
+    const b = String(t.board || '').toLowerCase();
+    if (b.includes('lease up') || b.includes('available')) propTurns[name].av++;
+    else if (b.includes('make ready')) propTurns[name].mr++;
+  });
+
+  const rows = [...occSummary].sort((a, b) => {
+    const aUnits = a.total_units || ((a.occupied_units || 0) + (a.vacant_units || 0));
+    const bUnits = b.total_units || ((b.occupied_units || 0) + (b.vacant_units || 0));
+    return bUnits - aUnits;
+  });
+  const grand = { units: 0, vac: 0, av: 0, mr: 0, occ: 0, pl: 0 };
+  const tbody = document.getElementById('utPropBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = rows.map(p => {
+    const pt = propTurns[p.property_name] || { av: 0, mr: 0 };
+    const vac = p.vacant_units || 0;
+    const occ = p.occupied_units || 0;
+    // v_occupancy_summary often returns total_units=0 but has occ/vac — derive it
+    const units = p.total_units || (occ + vac);
+    const pl = p.preleased_units || 0;
+    const occPct = units > 0 ? (occ / units * 100) : 0;
+    const plPct = vac > 0 ? (pl / vac * 100) : 0;
+    grand.units += units; grand.vac += vac; grand.occ += occ; grand.pl += pl;
+    grand.av += pt.av; grand.mr += pt.mr;
+    const occCls = occPct >= 95 ? 'good' : occPct >= 90 ? 'warn' : 'bad';
+    return `<tr>
+      <td>${p.property_name || '—'}</td>
+      <td class="r">${units}</td>
+      <td class="r ${vac > 0 ? 'warn' : ''}">${vac}</td>
+      <td class="r">${pt.av || '—'}</td>
+      <td class="r">${pt.mr || '—'}</td>
+      <td class="r">${occ}</td>
+      <td class="r ${occCls}">${fmtPct1(occPct)}</td>
+      <td class="r">${pl || '—'}</td>
+      <td class="r">${vac > 0 ? fmtPct1(plPct) : '—'}</td>
+    </tr>`;
+  }).join('') + `
+    <tr class="ut-grand">
+      <td>TOTAL</td>
+      <td class="r">${grand.units}</td>
+      <td class="r">${grand.vac}</td>
+      <td class="r">${grand.av}</td>
+      <td class="r">${grand.mr}</td>
+      <td class="r">${grand.occ}</td>
+      <td class="r">${grand.units > 0 ? fmtPct1(grand.occ / grand.units * 100) : '—'}</td>
+      <td class="r">${grand.pl}</td>
+      <td class="r">${grand.vac > 0 ? fmtPct1(grand.pl / grand.vac * 100) : '—'}</td>
+    </tr>
+  `;
+  document.getElementById('utPropCount').textContent = `${rows.length} properties`;
+}
+
+function renderUtTable(key) {
+  const s = UT_STATE[key];
+  const q = s.search;
+  const filtered = q
+    ? s.rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)))
+    : s.rows;
+  const total = Math.max(1, Math.ceil(filtered.length / s.perPage));
+  if (s.page > total) s.page = total;
+  const start = (s.page - 1) * s.perPage;
+  const slice = filtered.slice(start, start + s.perPage);
+
+  const dash = (v) => (v == null || v === '' || v === 0) ? '—' : v;
+
+  if (key === 'vac') {
+    const tbody = document.getElementById('utVacBody');
+    tbody.innerHTML = slice.map(r => `
+      <tr>
+        <td>${r.property_name || '—'}</td>
+        <td>${r.unit_number || '—'}</td>
+        <td>${r.unit_type || '—'}</td>
+        <td>${r.finish_level || '—'}</td>
+        <td>${boardBadge(r.board)}</td>
+        <td>${fmtDate(r.move_out)}</td>
+        <td>${fmtDate(r.initial_walk)}</td>
+        <td>${fmtDate(r.final_walk)}</td>
+        <td>${fmtDate(r.available)}</td>
+        <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
+        <td class="r">${daysBadge(r.days_vacant)}</td>
+      </tr>
+    `).join('');
+  } else if (key === 'occ') {
+    const tbody = document.getElementById('utOccBody');
+    tbody.innerHTML = slice.map(r => `
+      <tr>
+        <td>${r.property_name || '—'}</td>
+        <td>${r.unit_number || '—'}</td>
+        <td>${r.unit_type || '—'}</td>
+        <td>${r.finish_level || '—'}</td>
+        <td>${leaseDotFor(r)}${fmtDate(r.lease_end)}</td>
+        <td>${r.is_mtm ? '<span class="status-badge sb-mtm">MTM</span>' : '—'}</td>
+        <td>${fmtDate(r.lease_end)}</td>
+        <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
+        <td class="r">—</td>
+        <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+      </tr>
+    `).join('');
+  } else if (key === 'all') {
+    const tbody = document.getElementById('utAllBody');
+    tbody.innerHTML = slice.map(r => `
+      <tr>
+        <td>${r.property_name || '—'}</td>
+        <td>${r.unit_number || '—'}</td>
+        <td>${r.unit_type || '—'}</td>
+        <td>${r.finish_level || '—'}</td>
+        <td>${fmtDate(r.lease_start)}</td>
+        <td>${fmtDate(r.lease_end)}</td>
+        <td class="r">${r.market_rent ? fmtFull$(r.market_rent) : '—'}</td>
+        <td class="r">${r.rent ? fmtFull$(r.rent) : '—'}</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+      </tr>
+    `).join('');
+  }
+
+  renderPagination(key);
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: UNIT TURNS
+// ════════════════════════════════════════
+function renderTurns() {
+  if (!DATA.turns) {
+    document.getElementById('turnKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+  const turns = DATA.turns.filter(r => {
+    if (selectedProps.length === 0) return true;
+    const propNames = new Set(getFilteredProps().map(p => p.name));
+    return (r.buildium_property_id && new Set(selectedProps).has(parseInt(r.buildium_property_id)))
+        || (r.property_name && propNames.has(r.property_name));
+  });
+
+  const active   = turns.filter(r => r.status !== 'Complete' && r.status !== 'Archived');
+  const complete = turns.filter(r => r.status === 'Complete');
+  const makeReady = turns.filter(r => r.board === 'Make Ready');
+  const leaseUp   = turns.filter(r => r.board === 'Lease Up');
+
+  // Average turn time (completed)
+  const turnDays = complete.filter(r => r.days_in_turn > 0).map(r => r.days_in_turn);
+  const avgTurnTime = turnDays.length > 0 ? turnDays.reduce((a, b) => a + b, 0) / turnDays.length : 0;
+
+  // Average cost
+  const costs = turns.filter(r => r.estimated_cost > 0).map(r => r.estimated_cost);
+  const avgCost = costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 0;
+
+  document.getElementById('turnKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Active Turns</div>
+      <div class="kpi-value ${active.length > 0 ? 'warn' : 'good'}">${active.length}</div>
+      <div class="kpi-sub">${turns.length} total tracked</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Turn Time</div>
+      <div class="kpi-value">${avgTurnTime > 0 ? Math.round(avgTurnTime) + ' days' : '—'}</div>
+      <div class="kpi-sub">Completed turns</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Est. Cost</div>
+      <div class="kpi-value">${avgCost > 0 ? fmt$(avgCost) : '—'}</div>
+      <div class="kpi-sub">Per turn</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Completed</div>
+      <div class="kpi-value good">${complete.length}</div>
+      <div class="kpi-sub">${turns.length > 0 ? fmtPct(complete.length / turns.length * 100) : '0%'} completion</div>
+    </div>
+  `;
+
+  // Pipeline stages
+  const stages = {};
+  turns.forEach(r => {
+    const key = r.status || 'Unknown';
+    stages[key] = (stages[key] || 0) + 1;
+  });
+  document.getElementById('turnPipeline').innerHTML = Object.entries(stages)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, count]) => `
+      <div class="turn-stage">
+        <div class="ts-count">${count}</div>
+        <div class="ts-label">${label}</div>
+      </div>
+    `).join('');
+
+  document.getElementById('turnCount').textContent = `${turns.length} turns`;
+  const tbody = document.getElementById('turnBody');
+  tbody.innerHTML = turns.map(r => {
+    const daysInTurn = r.days_in_turn || (r.start_date ? Math.round((Date.now() - new Date(r.start_date)) / 86400000) : 0);
+    return `<tr>
+      <td>${r.property_name || '—'}</td>
+      <td>${r.unit_number || '—'}</td>
+      <td><span class="status-badge ${r.status === 'Complete' ? 'sb-current' : 'sb-mtm'}">${r.status || '—'}</span></td>
+      <td>${r.board || '—'}</td>
+      <td>${r.finish_level || '—'}</td>
+      <td class="r">${r.estimated_cost ? fmtFull$(r.estimated_cost) : '—'}</td>
+      <td>${fmtDate(r.start_date)}</td>
+      <td class="r ${daysInTurn > 21 ? 'bad' : daysInTurn > 14 ? 'warn' : ''}">${daysInTurn > 0 ? daysInTurn : '—'}</td>
+      <td>${r.current_step || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('turnSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const match = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q));
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+}
+
+
+// ════════════════════════════════════════
+//  UTILITY
+// ════════════════════════════════════════
+function getPrevMonth(m) {
+  if (!m) return '';
+  const [y, mo] = m.split('-').map(Number);
+  const d = new Date(y, mo - 2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function showToast(msg, color = 'var(--green)') {
+  const t = document.getElementById('toast');
+  t.querySelector('.dot').style.background = color;
+  t.querySelector('span').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function setApiStatus(state, label) {
+  const dot = document.getElementById('apiDot');
+  const lbl = document.getElementById('apiLabel');
+  dot.className = 'api-dot ' + (state === 'ok' ? '' : state === 'error' ? 'off' : 'pending');
+  lbl.textContent = label;
+}
+
+
+// ════════════════════════════════════════
+//  DATA LOADING
+// ════════════════════════════════════════
+async function loadDashboardData() {
+  setApiStatus('pending', 'Loading data…');
+  try {
+    // Normalize any snapshot_month value to "YYYY-MM".
+    // Some BigQuery views return a DATE ("2026-03-01"), others a STRING ("2026-03");
+    // the dashboard joins everything on the STRING form, so truncate proactively.
+    // Declared at the top of the try block because several coercion loops below call it —
+    // previously it was hoisted below those loops, causing a TDZ ReferenceError that
+    // triggered the demo-data fallback on every load.
+    const normMonth = (v) => {
+      if (!v) return v;
+      const s = String(v);
+      return s.length >= 7 ? s.slice(0, 7) : s;
+    };
+
+    // Load all data in parallel — each query is independent so one failure won't block others
+    const safeCall = async (type) => {
+      try { return await callEdgeFn(type); }
+      catch (e) { console.warn(`Query "${type}" failed:`, e.message); return { data: [] }; }
+    };
+
+    const [
+      financialRes,
+      noiRes,
+      occRes,
+      occSnapRes,
+      rentRollRes,
+      vacancyRes,
+      expRes,
+      turnsRes,
+      propsRes,
+      econOccRes,
+      groupsRes,
+      utilityRes,
+      utilReimbRes,
+      metaRes,
+      incStmtRes,
+      groupSummaryRes,
+    ] = await Promise.all([
+      safeCall('financial_summary'),
+      safeCall('noi_summary'),
+      safeCall('occupancy_summary'),
+      safeCall('occupancy_snapshot_summary'),
+      safeCall('rent_roll'),
+      safeCall('vacancy'),
+      safeCall('lease_expirations'),
+      safeCall('turns'),
+      safeCall('properties'),
+      safeCall('economic_occupancy'),
+      safeCall('property_groups'),
+      safeCall('utility_summary'),
+      safeCall('utility_reimbursement'),
+      safeCall('snapshot_metadata'),
+      safeCall('income_statement_snapshot'),
+      safeCall('group_summary'),
+    ]);
+
+    DATA.financial   = financialRes.data || [];
+    DATA.noiSummary  = noiRes.data || [];
+    DATA.occupancy   = occRes.data || [];
+    DATA.occupancySnapshot = occSnapRes.data || [];
+    DATA.rentRoll    = rentRollRes.data || [];
+    DATA.vacancy     = vacancyRes.data || [];
+    DATA.expirations = expRes.data || [];
+    DATA.turns       = turnsRes.data || [];
+    DATA.properties  = propsRes.data || [];
+    DATA.economicOccupancy = econOccRes.data || [];
+    DATA.propertyGroups = groupsRes.data || [];
+    DATA.utilitySummary = utilityRes.data || [];
+    DATA.utilityReimbursement = utilReimbRes.data || [];
+    DATA.snapshotMeta = metaRes.data || [];
+    DATA.incomeStatement = incStmtRes.data || [];
+    DATA.groupSummary = groupSummaryRes.data || [];
+
+    // ── BUILD PROPERTY LIST ──
+    // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views
+    // t12_name is the long form with LLC suffixes that doesn't match
+    allProperties = DATA.properties.map(p => ({
+      id: parseInt(p.property_id) || 0,
+      name: p.api_name || p.t12_name || `Property ${p.property_id}`,
+      t12Name: p.t12_name || '',
+      apiName: p.api_name || '',
+      units: parseInt(p.units) || 0,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    // ── BUILD NAME → ID MAPS ──
+    // Map both api_name and t12_name to property_id for robust matching
+    const nameToId = {};
+    allProperties.forEach(p => {
+      if (p.apiName) nameToId[p.apiName] = p.id;
+      if (p.t12Name) nameToId[p.t12Name] = p.id;
+      nameToId[p.name] = p.id;
+    });
+    // Also build a name→property lookup for units/occupancy
+    const nameToProp = {};
+    allProperties.forEach(p => {
+      if (p.apiName) nameToProp[p.apiName] = p;
+      if (p.t12Name) nameToProp[p.t12Name] = p;
+      nameToProp[p.name] = p;
+    });
+
+    // ── NORMALIZE PROPERTY IDS ──
+    // Add property_id to any rows that only have property_name
+    const addPropId = (rows) => rows.forEach(r => {
+      if (r.property_id) { r.property_id = parseInt(r.property_id); return; }
+      if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations].forEach(arr => {
+      if (arr && arr.length) addPropId(arr);
+    });
+
+    // ── COERCE FINANCIAL DATA ──
+    DATA.financial.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_amount = parseFloat(r.total_amount) || 0;
+      r.transaction_count = parseInt(r.transaction_count) || 0;
+    });
+
+    // ── BUILD MONTHS FROM AVAILABLE DATA ──
+    // Prefer the union of months present in any of our time-series sources so the
+    // month dropdown reflects everything we can render, regardless of which view
+    // happens to have the widest coverage.
+    const finMonths   = [...new Set(DATA.financial.map(r => r.snapshot_month))].filter(Boolean);
+    const noiMonths   = [...new Set(DATA.noiSummary.map(r => r.month))].filter(Boolean);
+    const snapMonths  = [...new Set((DATA.incomeStatement || []).map(r => r.month || r.snapshot_month))].filter(Boolean);
+    const occMonths   = [...new Set((DATA.occupancySnapshot || []).map(r => r.month || r.snapshot_month))].filter(Boolean);
+    const allMonths   = [...new Set([...finMonths, ...noiMonths, ...snapMonths, ...occMonths])].sort();
+    DATA.months = allMonths.length ? allMonths : (finMonths.sort());
+    selectedMonth = DATA.months[DATA.months.length - 1] || '';
+    populateMonthFilter(DATA.months);
+
+    // Populate group filter
+    if (DATA.propertyGroups.length > 0) populateGroupFilter(DATA.propertyGroups);
+
+    // ── COMPUTE NOI SUMMARY FROM FINANCIAL DATA (for all months) ──
+    // Since v_noi_summary may only have 1 month, build comprehensive NOI from financial_snapshots
+    if (DATA.financial.length > 0) {
+      const noiMap = {}; // key: "propName|month"
+      DATA.financial.forEach(r => {
+        const key = `${r.property_name}|${r.snapshot_month}`;
+        if (!noiMap[key]) noiMap[key] = { property_name: r.property_name, property_id: r.property_id, month: r.snapshot_month, total_income: 0, total_expenses: 0, noi: 0, non_operating: 0 };
+        const sec = (r.t12_section || '').toLowerCase();
+        if (sec === 'income') {
+          noiMap[key].total_income += r.total_amount;
+        } else if (sec === 'expense' || sec === 'operating_expense') {
+          noiMap[key].total_expenses += r.total_amount;
+        } else if (sec.includes('non_operating')) {
+          noiMap[key].non_operating += r.total_amount;
+        }
+      });
+      // NOI = Income minus Expenses (Buildium stores both as positive)
+      Object.values(noiMap).forEach(r => {
+        r.noi = r.total_income - r.total_expenses;
+        // Add units from property lookup
+        const prop = nameToProp[r.property_name];
+        r.units = prop ? prop.units : 0;
+        if (!r.property_id && prop) r.property_id = prop.id;
+      });
+      DATA.noiSummary = Object.values(noiMap);
+      console.log(`Built NOI summary: ${DATA.noiSummary.length} rows, ${DATA.months.length} months`);
+    }
+
+    // ── COERCE OCCUPANCY DATA ──
+    // v_occupancy_summary returns total_units=0 and physical_occupancy=0 for many rows
+    // even when occupied/vacant are populated. Derive both from occ+vac whenever missing
+    // so every view (Overview, Occupancy, Unit Tracker, Property Performance) gets right values.
+    if (DATA.occupancy) DATA.occupancy.forEach(r => {
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      // Derive total_units from occ+vac if missing/zero
+      const rawTotal = parseInt(r.total_units) || 0;
+      r.total_units = rawTotal > 0 ? rawTotal : (r.occupied_units + r.vacant_units);
+      // Derive physical_occupancy if missing/zero
+      const rawOcc = parseFloat(r.physical_occupancy) || 0;
+      r.physical_occupancy = rawOcc > 0
+        ? rawOcc
+        : (r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0);
+      // Ensure property_id is set via name lookup
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE RENT ROLL DATA ──
+    // Field mapping: BigQuery uses lease_rent, tenant_names, lease_from_date, lease_to_date
+    if (DATA.rentRoll) DATA.rentRoll.forEach(r => {
+      r.rent = parseFloat(r.lease_rent || r.rent_amount || r.rent) || 0;
+      r.market_rent = parseFloat(r.market_rent) || 0;
+      r.tenant_name = r.tenant_names || r.tenant_name || '';
+      r.lease_start = r.lease_from_date || r.lease_start || '';
+      r.lease_end = r.lease_to_date || r.lease_end || '';
+      r.days_until_expiry = parseInt(r.days_until_expiry) || 0;
+      // Derive status from lease data
+      if (!r.status) {
+        if (r.lease_id) r.status = 'Current';
+        else r.status = 'Vacant';
+      }
+      // MTM: lease_type = 'AtWill' or 'Month-to-Month' or 'MonthToMonth'
+      const lt = (r.lease_type || '').toLowerCase();
+      r.is_mtm = lt.includes('atwill') || lt.includes('month-to-month') || lt.includes('monthtomonth');
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE EXPIRATIONS DATA ──
+    if (DATA.expirations) DATA.expirations.forEach(r => {
+      r.rent = parseFloat(r.rent_amount || r.rent) || 0;
+      r.tenant_name = r.tenant_names || r.tenant_name || '';
+      r.lease_end = r.lease_to_date || r.lease_end || '';
+      r.days_until_expiry = parseInt(r.days_until_expiry) || 0;
+      r.bucket = r.expiry_bucket || r.bucket || '';
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE VACANCY DATA ──
+    if (DATA.vacancy) DATA.vacancy.forEach(r => {
+      r.market_rent = parseFloat(r.market_rent) || 0;
+      r.days_vacant = parseInt(r.days_vacant) || 0;
+      if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE OCCUPANCY SNAPSHOT (v_occupancy_snapshot_summary) ──
+    // Historical physical + preleased occupancy, one row per property × snapshot_month.
+    // This is what we filter by selected month — v_occupancy_summary (DATA.occupancy) is
+    // live/current-state and has no history, so it can't answer historical month questions.
+    if (DATA.occupancySnapshot) DATA.occupancySnapshot.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_units = parseInt(r.total_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.preleased_occupancy_pct = parseFloat(r.preleased_occupancy_pct) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+
+    // ── COERCE ECONOMIC OCCUPANCY DATA ──
+    // Cash-basis pivot (2026-04-13): numerator comes from lease_historical_payments via
+    // v_economic_occupancy. Authoritative portfolio formula:
+    //   SUM(recurring_collected) / SUM(estimated_charge_potential) × 100
+    // The per-property economic_occupancy_pct is for display only.
+    if (DATA.economicOccupancy) DATA.economicOccupancy.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.total_units = parseInt(r.total_units) || 0;
+      r.occupied_units = parseInt(r.occupied_units) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      // New cash-basis columns
+      r.total_collected = parseFloat(r.total_collected) || 0;
+      r.recurring_collected = parseFloat(r.recurring_collected) || 0;
+      r.non_recurring_collected = parseFloat(r.non_recurring_collected) || 0;
+      r.pass_through_collected = parseFloat(r.pass_through_collected) || 0;
+      r.prepayment_received = parseFloat(r.prepayment_received) || 0;
+      r.estimated_charge_potential = parseFloat(r.estimated_charge_potential) || 0;
+      // Legacy accrual column aliases — kept readable for the fallback path in the
+      // portfolio rollup above, so the dashboard keeps working if an old edge-function
+      // deploy is still returning the pre-pivot column names.
+      if (r.total_income != null) r.total_income = parseFloat(r.total_income) || 0;
+      if (r.non_recurring_income != null) r.non_recurring_income = parseFloat(r.non_recurring_income) || 0;
+      if (r.recurring_income != null) r.recurring_income = parseFloat(r.recurring_income) || 0;
+      if (r.estimated_rent_potential != null) r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
+      r.economic_occupancy_pct = parseFloat(r.economic_occupancy_pct) || 0;
+      r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.economic_vs_physical_variance = parseFloat(r.economic_vs_physical_variance) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+
+    // ── COERCE UTILITY DATA ──
+    if (DATA.utilitySummary) DATA.utilitySummary.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.utility_income = parseFloat(r.utility_income) || 0;
+      r.utility_expense = parseFloat(r.utility_expense) || 0;
+    });
+
+    // ── COERCE UTILITY REIMBURSEMENT (v_utility_reimbursement) ──
+    // Post-2026-04-13: 23 utility income GLs + 11 utility expense GLs enumerated in the view.
+    // utility_reimbursement_pct = utility_income / utility_expense × 100 (already computed server-side).
+    if (DATA.utilityReimbursement) DATA.utilityReimbursement.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.utility_income = parseFloat(r.utility_income) || 0;
+      r.utility_expense = parseFloat(r.utility_expense) || 0;
+      r.utility_reimbursement_pct = parseFloat(r.utility_reimbursement_pct) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+
+    // ── COERCE GROUP SUMMARY (v_group_summary) ──
+    // Pre-aggregated KPI rollup by property group × month.
+    if (DATA.groupSummary) DATA.groupSummary.forEach(r => {
+      ['physical_occupancy_pct', 'economic_occupancy_pct', 'utility_reimbursement_pct',
+       'expense_ratio_pct', 'total_income', 'total_expenses', 'noi'].forEach(k => {
+        if (r[k] != null) r[k] = parseFloat(r[k]) || 0;
+      });
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+    });
+
+    // ── COERCE INCOME STATEMENT SNAPSHOT DATA ──
+    // Source: v_income_statement_snapshot (updated 2026-04-13)
+    //   total_income / total_expenses / noi  → OPERATING-ONLY
+    //   capital_improvements / mortgage_payment / asset_management_fee /
+    //   parent_company_expenses / total_non_operating_expense → broken out separately
+    // Resilience: handle both `month` (new alias) and `snapshot_month` (raw view column),
+    // so the dashboard works whether the edge function has been redeployed or not.
+    if (DATA.incomeStatement) DATA.incomeStatement.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.snapshot_month = normMonth(r.snapshot_month || r.month);
+      r.month = r.snapshot_month;
+      r.total_income = parseFloat(r.total_income) || 0;
+      r.total_expenses = parseFloat(r.total_expenses) || 0;
+      r.noi = parseFloat(r.noi) || 0;
+      r.capital_improvements = parseFloat(r.capital_improvements) || 0;
+      r.mortgage_payment = parseFloat(r.mortgage_payment) || 0;
+      r.asset_management_fee = parseFloat(r.asset_management_fee) || 0;
+      r.parent_company_expenses = parseFloat(r.parent_company_expenses) || 0;
+      r.total_non_operating_expense = parseFloat(r.total_non_operating_expense) || 0;
+      r.net_income = parseFloat(r.net_income) || 0;
+      r.units = parseInt(r.units) || 0;
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+    });
+
+    // ── NORMALIZE PROPERTY IDS FOR NEW DATASETS ──
+    // Economic occupancy, utility summary, property groups may only have property_name
+    [DATA.economicOccupancy, DATA.utilitySummary, DATA.propertyGroups].forEach(arr => {
+      if (arr && arr.length) {
+        arr.forEach(r => {
+          if (!r.property_id && r.property_name && nameToId[r.property_name]) {
+            r.property_id = nameToId[r.property_name];
+          } else {
+            r.property_id = parseInt(r.property_id) || r.property_id;
+          }
+        });
+      }
+    });
+
+    // ── OPERATIONAL KPI DIAGNOSTICS ──
+    console.log('[ops KPIs] occupancySnapshot rows:', (DATA.occupancySnapshot || []).length,
+      'months:', [...new Set((DATA.occupancySnapshot || []).map(r => r.snapshot_month))].sort(),
+      'sample:', (DATA.occupancySnapshot || [])[0]);
+    console.log('[ops KPIs] incomeStatement rows:', (DATA.incomeStatement || []).length,
+      'sample:', (DATA.incomeStatement || [])[0]);
+    console.log('[ops KPIs] utilitySummary rows:', (DATA.utilitySummary || []).length,
+      'sample:', (DATA.utilitySummary || [])[0]);
+    console.log('[ops KPIs] economicOccupancy rows:', (DATA.economicOccupancy || []).length,
+      'sample:', (DATA.economicOccupancy || [])[0]);
+    console.log('[ops KPIs] snapshotMeta rows:', (DATA.snapshotMeta || []).length,
+      'sample:', (DATA.snapshotMeta || [])[0]);
+    console.log('[ops KPIs] propertyGroups rows:', (DATA.propertyGroups || []).length,
+      'sample:', (DATA.propertyGroups || [])[0]);
+
+    // ── UNIT TRACKER DIAGNOSTICS ──
+    console.log('[unit tracker] rentRoll rows:', (DATA.rentRoll || []).length,
+      'sample:', (DATA.rentRoll || [])[0]);
+    console.log('[unit tracker] vacancy rows:', (DATA.vacancy || []).length,
+      'sample:', (DATA.vacancy || [])[0]);
+    console.log('[unit tracker] turns rows:', (DATA.turns || []).length,
+      'sample:', (DATA.turns || [])[0]);
+    console.log('[unit tracker] occupancy rows:', (DATA.occupancy || []).length,
+      'sample:', (DATA.occupancy || [])[0]);
+
+    // Render property dropdown
+    renderPropDropdown();
+    renderPropChips();
+
+    // If properties loaded, we're connected — even if some queries failed
+    if (allProperties.length > 0) {
+      const warnings = [];
+      if (!DATA.turns.length) warnings.push('Unit Turns');
+      const warnMsg = warnings.length ? ` (${warnings.join(', ')} unavailable)` : '';
+      setApiStatus('ok', `${allProperties.length} properties loaded${warnMsg}`);
+      showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data${warnMsg}`);
+      renderCurrentView();
+    } else {
+      throw new Error('No properties returned — check edge function');
+    }
+
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+    setApiStatus('error', 'Connection failed');
+
+    // Load demo data for development
+    loadDemoData();
+  }
+}
+
+function loadDemoData() {
+  console.log('Loading demo data for development…');
+
+  // Generate demo properties
+  const demoProps = [
+    { id: 1, name: 'Capitol City Villas', units: 69 },
+    { id: 2, name: 'Brent Village', units: 48 },
+    { id: 3, name: 'Central Heights', units: 32 },
+    { id: 4, name: 'Beverly Gardens', units: 24 },
+    { id: 5, name: 'Franklin Court', units: 56 },
+    { id: 6, name: 'Dakota Bend', units: 18 },
+    { id: 7, name: 'Altoona Terrace', units: 40 },
+    { id: 8, name: 'Boulder Ridge', units: 36 },
+    { id: 9, name: 'Champion Villas', units: 82 },
+    { id: 10, name: 'Dundee Village', units: 28 },
+    { id: 11, name: 'Adventureland Village', units: 44 },
+    { id: 12, name: '4501 Tranquility', units: 26 },
+  ];
+  allProperties = demoProps;
+  DATA.properties = demoProps;
+
+  // Generate months
+  const months = [];
+  for (let y = 2025; y <= 2026; y++) {
+    const maxM = y === 2026 ? 3 : 12;
+    for (let m = 1; m <= maxM; m++) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+    }
+  }
+  DATA.months = months;
+  selectedMonth = months[months.length - 1];
+  populateMonthFilter(months);
+
+  // Generate NOI summary
+  DATA.noiSummary = [];
+  demoProps.forEach(p => {
+    months.forEach(m => {
+      const base = p.units * (400 + Math.random() * 200);
+      const rev = base * (0.9 + Math.random() * 0.2);
+      const exp = rev * (0.35 + Math.random() * 0.25);
+      DATA.noiSummary.push({
+        property_id: p.id,
+        property_name: p.name,
+        month: m,
+        revenue: rev,
+        expenses: -exp,
+        noi: rev - exp,
+      });
+    });
+  });
+
+  // Generate financial detail
+  const incomeAccounts = ['Rental Income', 'Late Fees', 'Application Fees', 'Pet Rent', 'Utility Reimbursement', 'Parking Income'];
+  const expenseAccounts = ['Repairs & Maintenance', 'Property Management', 'Insurance', 'Property Tax', 'Utilities', 'Landscaping', 'Marketing', 'Legal & Professional'];
+  DATA.financial = [];
+  demoProps.forEach(p => {
+    months.forEach(m => {
+      incomeAccounts.forEach(acct => {
+        DATA.financial.push({
+          property_id: p.id, property_name: p.name, snapshot_month: m,
+          account_name: acct, t12_section: 'income',
+          total_amount: (acct === 'Rental Income' ? p.units * 650 : p.units * (5 + Math.random() * 30)) * (0.9 + Math.random() * 0.2),
+        });
+      });
+      expenseAccounts.forEach(acct => {
+        DATA.financial.push({
+          property_id: p.id, property_name: p.name, snapshot_month: m,
+          account_name: acct, t12_section: 'expense',
+          total_amount: -(p.units * (10 + Math.random() * 60) * (0.8 + Math.random() * 0.4)),
+        });
+      });
+    });
+  });
+
+  // Generate occupancy
+  DATA.occupancy = demoProps.map(p => ({
+    property_id: p.id,
+    property_name: p.name,
+    total_units: p.units,
+    occupied_units: Math.round(p.units * (0.82 + Math.random() * 0.16)),
+    vacant_units: 0,
+    preleased_units: Math.round(Math.random() * 3),
+    physical_occupancy: 0,
+  }));
+  DATA.occupancy.forEach(r => {
+    r.vacant_units = r.total_units - r.occupied_units;
+    r.physical_occupancy = r.total_units > 0 ? (r.occupied_units / r.total_units * 100) : 0;
+  });
+
+  // Generate rent roll
+  DATA.rentRoll = [];
+  const firstNames = ['John','Jane','Mike','Sarah','Tom','Lisa','Bob','Amy','David','Karen'];
+  const lastNames = ['Smith','Johnson','Williams','Brown','Jones','Davis','Miller','Wilson','Moore','Taylor'];
+  demoProps.forEach(p => {
+    for (let u = 1; u <= p.units; u++) {
+      const occupied = Math.random() > 0.08;
+      const rent = 500 + Math.round(Math.random() * 700);
+      const mkt = rent + Math.round((Math.random() - 0.3) * 100);
+      DATA.rentRoll.push({
+        property_id: p.id, property_name: p.name,
+        unit_number: String(100 + u),
+        bedrooms: Math.random() > 0.5 ? 2 : 1,
+        bathrooms: 1,
+        tenant_name: occupied ? `${firstNames[Math.floor(Math.random()*10)]} ${lastNames[Math.floor(Math.random()*10)]}` : null,
+        rent: occupied ? rent : 0,
+        market_rent: mkt,
+        status: occupied ? 'Current' : 'Vacant',
+        is_mtm: occupied && Math.random() > 0.85,
+        lease_start: occupied ? '2025-' + String(1 + Math.floor(Math.random()*12)).padStart(2,'0') + '-01' : null,
+        lease_end: occupied ? '2026-' + String(1 + Math.floor(Math.random()*12)).padStart(2,'0') + '-30' : null,
+      });
+    }
+  });
+
+  // Generate lease expirations
+  DATA.expirations = [];
+  DATA.rentRoll.filter(r => r.status === 'Current' && r.lease_end).forEach(r => {
+    const end = new Date(r.lease_end);
+    const now = new Date();
+    const diffDays = Math.round((end - now) / 86400000);
+    if (diffDays < 90) {
+      let bucket = 'EXPIRING_90';
+      if (diffDays < 0) bucket = 'EXPIRED';
+      else if (diffDays < 30) bucket = 'EXPIRING_30';
+      else if (diffDays < 60) bucket = 'EXPIRING_60';
+      DATA.expirations.push({
+        property_id: r.property_id, property_name: r.property_name,
+        unit_number: r.unit_number, tenant_name: r.tenant_name,
+        rent: r.rent, lease_end: r.lease_end,
+        bucket, status: r.is_mtm ? 'MTM' : 'Active',
+      });
+    }
+  });
+
+  // Generate turns
+  const statuses = ['In Progress', 'Waiting', 'Complete', 'Scheduled'];
+  const boards = ['Make Ready', 'Lease Up'];
+  const finishLevels = ['Classic', 'Partial Remodel', 'Full Remodel'];
+  const steps = ['Inspection', 'Cleaning', 'Paint', 'Flooring', 'Appliances', 'Final Walk'];
+  DATA.turns = [];
+  for (let i = 0; i < 40; i++) {
+    const p = demoProps[Math.floor(Math.random() * demoProps.length)];
+    DATA.turns.push({
+      buildium_property_id: p.id,
+      property_name: p.name,
+      unit_number: String(100 + Math.floor(Math.random() * 50)),
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      board: boards[Math.floor(Math.random() * boards.length)],
+      finish_level: finishLevels[Math.floor(Math.random() * finishLevels.length)],
+      estimated_cost: 500 + Math.round(Math.random() * 4500),
+      start_date: '2026-' + String(1 + Math.floor(Math.random() * 3)).padStart(2, '0') + '-' + String(1 + Math.floor(Math.random() * 28)).padStart(2, '0'),
+      days_in_turn: Math.floor(Math.random() * 35),
+      current_step: steps[Math.floor(Math.random() * steps.length)],
+    });
+  }
+
+  renderPropDropdown();
+  renderPropChips();
+  setApiStatus('ok', 'Demo data loaded');
+  showToast('Dashboard loaded with demo data — connect edge function for live data', 'var(--amber)');
+  renderCurrentView();
+}
+
+
+// ── REFRESH ──
+async function refreshDashboard() {
+  const btn = document.getElementById('refreshBtn');
+  const label = document.getElementById('refreshLabel');
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  label.textContent = 'Refreshing…';
+
+  // Reset the P&L dropdown so it repopulates with fresh data
+  const pnlSel = document.getElementById('pnlPropertySelect');
+  if (pnlSel) pnlSel.innerHTML = '';
+
+  await loadDashboardData();
+
+  btn.disabled = false;
+  btn.classList.remove('spinning');
+  label.textContent = 'Refresh';
+}
+
+// ── BOOT ──
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboardData();
+});
+</script>
+</body>
+</html>

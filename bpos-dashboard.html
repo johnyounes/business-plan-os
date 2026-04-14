@@ -1132,19 +1132,29 @@ function renderOverview() {
   }
   physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
-  // ECONOMIC OCCUPANCY — dollar-weighted portfolio rollup.
-  // Source: v_economic_occupancy (one row per property × snapshot_month).
+  // ECONOMIC OCCUPANCY — dollar-weighted portfolio rollup (cash-basis as of 2026-04-13).
+  // Source: v_economic_occupancy (one row per property × snapshot_month). The view was
+  // rebuilt on actual cash collected per unit per month (from lease_historical_payments),
+  // not accrual GL income. Column renames: total_income → total_collected,
+  // recurring_income → recurring_collected, non_recurring_income → non_recurring_collected.
   // Authoritative formula (matches the BigQuery portfolio rollup exactly — do NOT average
   // the per-property percentages):
-  //   econOcc = SUM(total_income − non_recurring_income) / SUM(estimated_charge_potential) × 100
-  // Expected range historically: 81.6%–88.5%, typically within ±3 pts of physical.
+  //   econOcc = SUM(recurring_collected) / SUM(estimated_charge_potential) × 100
+  // recurring_collected is rent-like cash only — excludes pass-through utilities,
+  // concessions (Credits), and raw prepayments still parked in GL 18. Expected range:
+  // physical − 1 to 5 pts healthy, 8–13 pts variance in growth/onboarding months.
   let econOcc = 0;
   let econIncomeSum = 0, econPotentialSum = 0;
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
     const econRows = DATA.economicOccupancy.filter(r =>
       (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
     econRows.forEach(r => {
-      const numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+      // Prefer new cash-basis column; fall back to legacy accrual columns for resilience
+      // if the edge function hasn't been redeployed yet.
+      let numer = parseFloat(r.recurring_collected);
+      if (!Number.isFinite(numer)) {
+        numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+      }
       const denom = parseFloat(r.estimated_charge_potential) || 0;
       if (denom > 0) {
         econIncomeSum += numer;
@@ -1163,11 +1173,12 @@ function renderOverview() {
   // No hard cap here — the dollar-weighted formula is the authoritative one and matches
   // the BigQuery portfolio rollup. If it comes in marginally higher than the Physical KPI
   // for a particular month, that reflects real property-coverage differences between
-  // v_occupancy_snapshot_summary and v_economic_occupancy (the latter drops properties
-  // without financial snapshots). Log the divergence so we can investigate if it looks
-  // off, but don't clamp.
+  // v_occupancy_snapshot_summary and v_economic_occupancy (the latter filters to "managed
+  // property-months" — properties with any lease charge/payment activity that month —
+  // so recently-onboarded or backfilled units drop out). Log the divergence so we can
+  // investigate if it looks off, but don't clamp.
   if (econOcc > 0 && physOcc > 0 && econOcc > physOcc + 0.05) {
-    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${month} — likely due to property coverage difference (v_economic_occupancy inner-joins financials).`);
+    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${month} — likely due to managed-property-month filter on v_economic_occupancy.`);
   }
 
   document.getElementById('operationalKpis').innerHTML = `
@@ -2410,21 +2421,33 @@ async function loadDashboardData() {
     });
 
     // ── COERCE ECONOMIC OCCUPANCY DATA ──
-    // Numerator/denominator columns (total_income, non_recurring_income,
-    // estimated_charge_potential) drive the dollar-weighted portfolio rollup —
-    // the only correct way to aggregate economic occupancy across properties.
+    // Cash-basis pivot (2026-04-13): numerator comes from lease_historical_payments via
+    // v_economic_occupancy. Authoritative portfolio formula:
+    //   SUM(recurring_collected) / SUM(estimated_charge_potential) × 100
+    // The per-property economic_occupancy_pct is for display only.
     if (DATA.economicOccupancy) DATA.economicOccupancy.forEach(r => {
       r.property_id = parseInt(r.property_id) || 0;
       r.total_units = parseInt(r.total_units) || 0;
       r.occupied_units = parseInt(r.occupied_units) || 0;
-      r.total_income = parseFloat(r.total_income) || 0;
-      r.non_recurring_income = parseFloat(r.non_recurring_income) || 0;
+      r.preleased_units = parseInt(r.preleased_units) || 0;
+      r.vacant_units = parseInt(r.vacant_units) || 0;
+      // New cash-basis columns
+      r.total_collected = parseFloat(r.total_collected) || 0;
+      r.recurring_collected = parseFloat(r.recurring_collected) || 0;
+      r.non_recurring_collected = parseFloat(r.non_recurring_collected) || 0;
+      r.pass_through_collected = parseFloat(r.pass_through_collected) || 0;
+      r.prepayment_received = parseFloat(r.prepayment_received) || 0;
       r.estimated_charge_potential = parseFloat(r.estimated_charge_potential) || 0;
-      // Keep legacy names readable for any fallbacks
-      r.recurring_income = parseFloat(r.recurring_income) || 0;
-      r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
+      // Legacy accrual column aliases — kept readable for the fallback path in the
+      // portfolio rollup above, so the dashboard keeps working if an old edge-function
+      // deploy is still returning the pre-pivot column names.
+      if (r.total_income != null) r.total_income = parseFloat(r.total_income) || 0;
+      if (r.non_recurring_income != null) r.non_recurring_income = parseFloat(r.non_recurring_income) || 0;
+      if (r.recurring_income != null) r.recurring_income = parseFloat(r.recurring_income) || 0;
+      if (r.estimated_rent_potential != null) r.estimated_rent_potential = parseFloat(r.estimated_rent_potential) || 0;
       r.economic_occupancy_pct = parseFloat(r.economic_occupancy_pct) || 0;
       r.physical_occupancy_pct = parseFloat(r.physical_occupancy_pct) || 0;
+      r.economic_vs_physical_variance = parseFloat(r.economic_vs_physical_variance) || 0;
       r.snapshot_month = normMonth(r.snapshot_month || r.month);
       r.month = r.snapshot_month;
       if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];

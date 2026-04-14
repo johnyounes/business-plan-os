@@ -4187,7 +4187,29 @@ async function runDailyBQRefresh(forceRefresh) {
     Object.keys(grouped).forEach(function(k){
       const g = grouped[k];
       const agg = { total:0, occupied:0, vacant:0, makeReady:0, available:0, preleased:0, leasesExp30d:0, leasesExp60d:0 };
+      // Dedupe: portfolio_occupancy can return multiple snapshot rows per
+      // Buildium property (different dates). Summing them inflates unit
+      // counts. Keep one row per building (latest Date wins), then sum
+      // across the distinct buildings within this tracker prop.
+      const latestByBuilding = {};
       g.rows.forEach(function(row){
+        let bid = getBuildiumIdField(row);
+        if (bid == null && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
+          const rn = String(row.PropertyName || row.Name || '').trim().toLowerCase();
+          const bp = buildiumPropsCache.find(function(x){
+            return x.name && x.name.trim().toLowerCase() === rn;
+          });
+          if (bp) bid = bp.id;
+        }
+        const bkey = bid != null ? 'id:' + String(bid) : 'n:' + String(row.PropertyName || row.Name || '');
+        const prev = latestByBuilding[bkey];
+        if (!prev) { latestByBuilding[bkey] = row; return; }
+        const pd = prev.Date ? new Date(prev.Date).getTime() : 0;
+        const rd = row.Date  ? new Date(row.Date).getTime()  : 0;
+        if (rd > pd) latestByBuilding[bkey] = row;
+      });
+      const dedupedRows = Object.keys(latestByBuilding).map(function(k){ return latestByBuilding[k]; });
+      dedupedRows.forEach(function(row){
         agg.total       += +row.TotalUnits    || 0;
         agg.occupied    += +row.Occupied      || 0;
         agg.vacant      += +row.Vacant        || 0;

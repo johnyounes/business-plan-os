@@ -2148,7 +2148,8 @@ function renderUtPropertiesTable(occSummary, turns) {
   // Index by BOTH property_id and property_name for robust matching.
   const propTurnsById = {};
   const propTurnsByName = {};
-  turns.filter(t => !t.is_completed).forEach(t => {
+  const isTurnActive = (t) => !t.is_completed || t.is_completed === 'false' || t.is_completed === false;
+  turns.filter(isTurnActive).forEach(t => {
     const pid = t.property_id || 0;
     const name = t.property_name || '';
     const b = String(t.board || '').toLowerCase();

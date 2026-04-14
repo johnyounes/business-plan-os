@@ -2216,7 +2216,13 @@ function renderUploadStep() {
         monthly figures in Jan–Dec columns, and 2025 actuals in column B.
         Each tab = one property.
       </div>`;
-    footer.innerHTML = `<button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn-ghost" onclick="purgeAllBudgets()"
+        title="Delete every saved budget from Supabase and clear in-memory budgets so you can re-upload from scratch."
+        style="margin-left:auto;color:#e8504a;border-color:rgba(232,80,74,.3);">
+        Reset all budgets
+      </button>`;
 
   // ── STEP 2: Select which sheets to import + choose budget year ──
   } else if (step === 2) {
@@ -4733,6 +4739,61 @@ async function dbSaveProp(prop) {
     console.error('[BPOS] dbSaveProp:', e.message);
   }
 }
+
+// Destructive: wipe every saved budget from Supabase AND in-memory state
+// so the user can re-upload from scratch. Actuals / NOI history / property
+// rows are left intact — only the contents of the `budgets` table and the
+// in-memory budget / budgetHistory / budgetYear fields are cleared.
+async function purgeAllBudgets(opts) {
+  opts = opts || {};
+  const skipConfirm = opts.confirm === false;
+  if (!skipConfirm) {
+    const ok = confirm(
+      'Delete EVERY saved budget?\n\n' +
+      '• Every row in the budgets table will be removed from Supabase\n' +
+      '• All in-memory budgets and budget history will be cleared\n' +
+      '• Properties, actuals, NOI history, and Buildium links are NOT touched\n\n' +
+      'After this, reload the page and re-upload your budget file.\n\n' +
+      'This cannot be undone. Continue?'
+    );
+    if (!ok) return;
+  }
+
+  // 1. Delete every budget row in Supabase. PostgREST requires a filter
+  // even when deleting "everything" — `year=gte.0` matches every row
+  // because year is a required non-negative integer.
+  if (dbOnline) {
+    try {
+      syncBadge('saving', '↑ Deleting…');
+      await sbReq('budgets?year=gte.0', { method: 'DELETE' });
+      syncBadge('saved', '● Cleared');
+    } catch (e) {
+      syncBadge('error', '✕ Error');
+      console.error('[BPOS] purgeAllBudgets (DB):', e.message);
+      alert('Failed to delete budgets from Supabase:\n\n' + e.message +
+            '\n\nIn-memory budgets were NOT cleared. Try again or run SQL: DELETE FROM budgets;');
+      return;
+    }
+  }
+
+  // 2. Clear in-memory budget state on every property
+  const emptyBudget = { income: [], expenses: [], nonop: [], capexBudget: 0 };
+  properties.forEach(function(p){
+    p.budget        = JSON.parse(JSON.stringify(emptyBudget));
+    p.budgetHistory = {};
+    p.budgetYear    = null;
+    p.capexBudget   = 0;
+  });
+
+  // 3. Persist cleared state to localStorage so a refresh doesn't rehydrate
+  // the old in-memory budgets.
+  try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+
+  // 4. Re-render the page so the UI reflects the wipe
+  try { if (typeof renderPage === 'function') renderPage(); } catch(e) {}
+  try { if (typeof showToast === 'function') showToast('All budgets cleared. Upload a fresh budget file to start over.'); } catch(e) {}
+}
+window.purgeAllBudgets = purgeAllBudgets;
 
 async function dbSaveBudget(prop, year, budget) {
   const uuid = getUuid(prop);

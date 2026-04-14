@@ -1094,6 +1094,11 @@ function renderPage() {
         <span class="arp-icon">⚑</span>
         <span class="arp-title">Properties with active alerts</span>
         <span class="arp-count">${riskProps.length} propert${riskProps.length!==1?'ies':'y'} · ${riskProps.reduce((s,p)=>s+getAlerts(p).filter(a=>a.sev==='red').length,0)} critical</span>
+        <button class="btn-ghost" onclick="event.stopPropagation();purgeDemoAlerts();"
+          title="Dismiss every active alert and delete any demo-sourced actuals rows"
+          style="font-size:11px;padding:4px 10px;margin-left:auto;margin-right:8px;">
+          Clear demo alerts
+        </button>
         <span class="arp-chev ${arpOpen?'open':''}" id="arp-chev">▾</span>
       </div>
       <div class="arp-body ${arpOpen?'open':''}" id="arp-body">
@@ -4891,6 +4896,75 @@ async function dbClearAlerts() {
     });
   } catch (e) { console.warn('[BPOS] dbClearAlerts:', e.message); }
 }
+
+// ══════════════════════════════════════
+// DEMO CLEANUP — wipes seeded demo actuals + dismisses every active alert.
+// Demo alerts come from two sources:
+//   1. actuals rows with source='demo' (seeded on very first launch)
+//   2. stale alert_log entries left over from those demo actuals
+// This function removes both, so the next render/BQ refresh starts clean.
+// ══════════════════════════════════════
+async function purgeDemoAndStaleAlerts(opts) {
+  opts = opts || {};
+  const confirmFirst = opts.confirm !== false;
+  if (confirmFirst) {
+    const ok = confirm(
+      'Clear all demo alerts?\n\n' +
+      '• Dismisses every active alert in the log\n' +
+      '• Deletes any actuals rows still marked source="demo"\n' +
+      '• Reloads from BigQuery on next refresh\n\n' +
+      'Real budgets and uploaded actuals are not touched.'
+    );
+    if (!ok) return;
+  }
+  showToast('Clearing demo alerts…');
+  let dismissed = 0, deleted = 0;
+  try {
+    // 1. Dismiss every active alert in the DB (so they stop resurfacing)
+    if (dbOnline) {
+      try {
+        const before = await sbReq('alert_log?dismissed=eq.false&select=id');
+        dismissed = (before || []).length;
+        await sbReq('alert_log?dismissed=eq.false', {
+          method: 'PATCH',
+          body: JSON.stringify({ dismissed: true }),
+        });
+      } catch (e) { console.warn('[BPOS] purge: dismiss alerts failed:', e.message); }
+    }
+    // 2. Delete demo-sourced actuals rows
+    if (dbOnline) {
+      try {
+        const demoRows = await sbReq('actuals?source=eq.demo&select=id');
+        deleted = (demoRows || []).length;
+        if (deleted > 0) {
+          await sbReq('actuals?source=eq.demo', { method: 'DELETE' });
+        }
+      } catch (e) { console.warn('[BPOS] purge: delete demo actuals failed:', e.message); }
+    }
+    // 3. Zero out demo actuals in memory so alerts don't keep firing from them
+    properties.forEach(function(p){
+      if (p.actualsSource === 'demo') {
+        if (Array.isArray(p.actuals.income))   p.actuals.income   = p.actuals.income.map(function(){return 0;});
+        if (Array.isArray(p.actuals.expenses)) p.actuals.expenses = p.actuals.expenses.map(function(){return 0;});
+        if (Array.isArray(p.actuals.nonop))    p.actuals.nonop    = p.actuals.nonop.map(function(){return 0;});
+        p.actuals.capexSpent  = 0;
+        p.actuals.occupancy   = 0;
+        p.actuals.collections = 0;
+        p.actualsSource = null;
+      }
+    });
+    // 4. Clear in-memory alert log
+    ALERT_LOG.forEach(function(a){ a.dismissed = true; });
+    renderPage();
+    showToast('Cleared ' + dismissed + ' alerts · deleted ' + deleted + ' demo actuals rows.');
+  } catch (e) {
+    console.error('[BPOS] purgeDemoAndStaleAlerts:', e.message);
+    showToast('Purge failed: ' + e.message, true);
+  }
+}
+
+// Expose a shorter alias so a button onclick can call it cleanly
+window.purgeDemoAlerts = purgeDemoAndStaleAlerts;
 
 // ══════════════════════════════════════
 // PATCH existing functions to persist to DB

@@ -1117,6 +1117,11 @@ function renderPage() {
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
                     <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                    <button onclick="event.stopPropagation();deleteProperty(${p.id});"
+                      title="Remove ${p.name.replace(/"/g,'&quot;')} from the tracker entirely (deletes from Supabase)"
+                      style="margin-left:8px;background:none;border:1px solid rgba(232,80,74,.3);color:#e8504a;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:var(--font);">
+                      ✕ Remove
+                    </button>
                   </div>
                   <div class="rpc-alerts">
                     ${als.slice(0,3).map(al=>`
@@ -2810,7 +2815,12 @@ function openEditProp(propId) {
     </div>`;
 
   document.getElementById('edit-prop-footer').innerHTML = `
-    <button class="btn-ghost" onclick="closeEditProp()">Cancel</button>
+    <button class="btn-ghost" onclick="deleteProperty(${prop.id})"
+      title="Remove this property from the tracker and delete its budgets, actuals, NOI history, and alerts from Supabase."
+      style="color:#e8504a;border-color:rgba(232,80,74,.3);">
+      Delete property
+    </button>
+    <button class="btn-ghost" onclick="closeEditProp()" style="margin-left:auto;">Cancel</button>
     <button class="btn-primary" onclick="saveEditProp()">Save changes</button>`;
 
   document.getElementById('edit-prop-modal').classList.add('open');
@@ -4744,6 +4754,63 @@ async function dbSaveProp(prop) {
 // so the user can re-upload from scratch. Actuals / NOI history / property
 // rows are left intact — only the contents of the `budgets` table and the
 // in-memory budget / budgetHistory / budgetYear fields are cleared.
+// Destructive: remove a single property from Supabase (and all of its
+// child rows — budgets, actuals, noi_history, alert_log) plus in-memory
+// state. Children are deleted first in case foreign-key cascade isn't
+// configured on every table.
+async function dbDeleteProperty(uuid) {
+  if (!dbOnline || !uuid) return;
+  syncBadge('saving', '↑ Deleting…');
+  const children = ['alert_log', 'noi_history', 'actuals', 'budgets'];
+  for (const table of children) {
+    try {
+      await sbReq(table + '?property_id=eq.' + uuid, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('[BPOS] dbDeleteProperty child ' + table + ':', e.message);
+      // Keep going — if FK cascade is configured, the parent delete will
+      // take care of leftovers; if not, we've done our best.
+    }
+  }
+  await sbReq('properties?id=eq.' + uuid, { method: 'DELETE' });
+  syncBadge('saved', '● Deleted');
+}
+
+function deleteProperty(propId) {
+  const prop = properties.find(function(p){return p.id === propId;});
+  if (!prop) return;
+  const ok = confirm(
+    'Delete "' + prop.name + '" from the tracker?\n\n' +
+    '• Removed from the Portfolio Tracking page\n' +
+    '• All of its budgets, actuals, NOI history, and alerts are wiped from Supabase\n' +
+    '• Buildium / BigQuery data is NOT touched — only the tracker record\n\n' +
+    'This cannot be undone. Continue?'
+  );
+  if (!ok) return;
+
+  const uuid = getUuid(prop);
+  // Kick off DB delete; don't block UI on it
+  if (uuid && dbOnline) {
+    dbDeleteProperty(uuid).catch(function(e){
+      console.error('[BPOS] dbDeleteProperty failed:', e.message);
+      alert('DB delete failed: ' + e.message + '\n\nThe property was removed from the tracker view, but may still exist in Supabase. Retry or delete manually in the dashboard.');
+    });
+  }
+
+  // Remove from in-memory state
+  properties = properties.filter(function(p){ return p.id !== propId; });
+  try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+
+  // Close the edit modal if it's open for this property
+  if (typeof closeEditProp === 'function' && editPropId === propId) {
+    closeEditProp();
+  }
+
+  // Re-render and toast
+  try { if (typeof renderPage === 'function') renderPage(); } catch(e) {}
+  try { if (typeof showToast === 'function') showToast('"' + prop.name + '" removed from tracker.'); } catch(e) {}
+}
+window.deleteProperty = deleteProperty;
+
 async function purgeAllBudgets(opts) {
   opts = opts || {};
   const skipConfirm = opts.confirm === false;
@@ -4916,36 +4983,80 @@ async function dbSaveThresholds() {
     collections_enabled:  THRESHOLDS.collectionsMin.enabled,
     cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
   };
+  // Save by first PATCHing (with return=representation so we can SEE what
+  // landed in the row), and if that returns 0 rows (e.g. RLS blocks it or
+  // the row was deleted) fall back to POST. This removes the silent-zero-
+  // rows failure mode that made saves look successful while nothing was
+  // actually persisted.
   async function trySave(payload) {
-    const rows = await sbReq('alert_thresholds?select=id&limit=1');
-    const id   = rows?.[0]?.id;
-    if (id) {
-      // UPDATE existing row
-      await sbReq('alert_thresholds?id=eq.' + id, {
+    const existing = await sbReq('alert_thresholds?select=id&order=id.asc&limit=1');
+    const id = existing?.[0]?.id;
+    console.log('[BPOS-thresholds] save start, existing row id =', id, 'payload=', payload);
+    let result;
+    if (id != null) {
+      result = await sbReq('alert_thresholds?id=eq.' + id, {
         method: 'PATCH',
+        headers: { 'Prefer': 'return=representation' },
         body: JSON.stringify(payload),
       });
+      console.log('[BPOS-thresholds] PATCH response (rows updated):', result);
+      if (!Array.isArray(result) || result.length === 0) {
+        // PATCH succeeded HTTP-wise but touched no row — likely RLS or the
+        // row vanished. Try a POST so at least a row exists next time.
+        console.warn('[BPOS-thresholds] PATCH updated 0 rows — falling back to POST (likely RLS policy blocking UPDATE)');
+        result = await sbReq('alert_thresholds', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(payload),
+        });
+        console.log('[BPOS-thresholds] fallback POST response:', result);
+      }
     } else {
-      // INSERT new row — this was the silent no-op bug. If the table
-      // is empty (fresh deploy), saves would vanish. Now we seed a row.
-      await sbReq('alert_thresholds', {
+      result = await sbReq('alert_thresholds', {
         method: 'POST',
+        headers: { 'Prefer': 'return=representation' },
         body: JSON.stringify(payload),
       });
+      console.log('[BPOS-thresholds] POST response (row inserted):', result);
+    }
+    // Final verification: re-read the row and compare specific fields the
+    // user cares about. If the DB disagrees with what we intended, scream
+    // in the console so the issue is visible without digging.
+    try {
+      const verify = await sbReq('alert_thresholds?select=*&order=id.asc&limit=1');
+      const v = verify?.[0] || {};
+      const mismatches = Object.keys(payload).filter(function(k){
+        // loose equality to tolerate string/number + null/undefined parity
+        return String(v[k]) !== String(payload[k]);
+      });
+      if (mismatches.length) {
+        console.warn('[BPOS-thresholds] ⚠ DB row disagrees with saved payload for fields:', mismatches, '| DB row:', v);
+      } else {
+        console.log('[BPOS-thresholds] ✓ DB row matches saved payload for all fields');
+      }
+    } catch (verifyErr) {
+      console.warn('[BPOS-thresholds] verify read failed:', verifyErr.message);
     }
   }
   try {
     await trySave(fullPayload);
+    syncBadge('saved', '● Saved');
   } catch (e) {
     // If the DB complains about missing columns (pace_yellow_pct etc.),
     // retry with the legacy payload so at least the older columns save.
     const msg = (e && e.message) || '';
     if (/pace_yellow|pace_red|column/.test(msg)) {
-      console.warn('[BPOS] dbSaveThresholds: new pace columns missing — run: ALTER TABLE alert_thresholds ADD COLUMN pace_yellow_pct NUMERIC DEFAULT 15, ADD COLUMN pace_yellow_enabled BOOLEAN DEFAULT true, ADD COLUMN pace_red_pct NUMERIC DEFAULT 25, ADD COLUMN pace_red_enabled BOOLEAN DEFAULT true;');
-      try { await trySave(legacyPayload); }
-      catch (e2) { console.warn('[BPOS] dbSaveThresholds fallback:', e2.message); }
+      console.warn('[BPOS-thresholds] new pace columns missing — run: ALTER TABLE alert_thresholds ADD COLUMN pace_yellow_pct NUMERIC DEFAULT 15, ADD COLUMN pace_yellow_enabled BOOLEAN DEFAULT true, ADD COLUMN pace_red_pct NUMERIC DEFAULT 25, ADD COLUMN pace_red_enabled BOOLEAN DEFAULT true;');
+      try {
+        await trySave(legacyPayload);
+        syncBadge('saved', '● Saved');
+      } catch (e2) {
+        syncBadge('error', '✕ Error');
+        console.error('[BPOS-thresholds] fallback failed:', e2.message);
+      }
     } else {
-      console.warn('[BPOS] dbSaveThresholds:', msg);
+      syncBadge('error', '✕ Error');
+      console.error('[BPOS-thresholds] save failed:', msg);
     }
   }
 }
@@ -5160,12 +5271,9 @@ saveEditProp = function() {
   if (prop) dbSaveProp(prop);
 };
 
-// saveThresholds → persist threshold changes
-const __saveThresholds = saveThresholds;
-saveThresholds = function() {
-  __saveThresholds();
-  dbSaveThresholds();
-};
+// saveThresholds already calls dbSaveThresholds internally (see line ~2102),
+// so no wrapper is needed here. A previous wrapper double-dispatched the DB
+// save and muddied diagnostic logs — removed intentionally.
 
 // dismissAlert → persist dismiss to DB
 const __dismissAlert = dismissAlert;

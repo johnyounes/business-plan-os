@@ -5061,26 +5061,48 @@ async function dbSaveThresholds() {
       console.warn('[BPOS-thresholds] verify read failed:', verifyErr.message);
     }
   }
-  try {
-    await trySave(fullPayload);
-    syncBadge('saved', '● Saved');
-  } catch (e) {
-    // If the DB complains about missing columns (pace_yellow_pct etc.),
-    // retry with the legacy payload so at least the older columns save.
-    const msg = (e && e.message) || '';
-    if (/pace_yellow|pace_red|column/.test(msg)) {
-      console.warn('[BPOS-thresholds] new pace columns missing — run: ALTER TABLE alert_thresholds ADD COLUMN pace_yellow_pct NUMERIC DEFAULT 15, ADD COLUMN pace_yellow_enabled BOOLEAN DEFAULT true, ADD COLUMN pace_red_pct NUMERIC DEFAULT 25, ADD COLUMN pace_red_enabled BOOLEAN DEFAULT true;');
-      try {
-        await trySave(legacyPayload);
-        syncBadge('saved', '● Saved');
-      } catch (e2) {
-        syncBadge('error', '✕ Error');
-        console.error('[BPOS-thresholds] fallback failed:', e2.message);
+  // Iteratively strip any column Supabase says doesn't exist and retry,
+  // instead of only knowing about one specific missing-column error class.
+  // Bounded to the number of fields so a truly broken DB can't spin forever.
+  const droppedColumns = [];
+  let payload = JSON.parse(JSON.stringify(fullPayload));
+  let lastError = null;
+  const maxAttempts = Object.keys(fullPayload).length + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await trySave(payload);
+      syncBadge('saved', '● Saved');
+      if (droppedColumns.length) {
+        console.warn('[BPOS-thresholds] saved OK after skipping missing columns:', droppedColumns,
+          '— to persist these too, run the migration:\n\nALTER TABLE alert_thresholds ' +
+          droppedColumns.map(function(c){
+            const typ = /_enabled$/.test(c) ? 'BOOLEAN DEFAULT true' : 'NUMERIC DEFAULT 0';
+            return 'ADD COLUMN IF NOT EXISTS ' + c + ' ' + typ;
+          }).join(', ') + ';');
       }
-    } else {
-      syncBadge('error', '✕ Error');
-      console.error('[BPOS-thresholds] save failed:', msg);
+      lastError = null;
+      break;
+    } catch (e) {
+      lastError = e;
+      const msg = (e && e.message) || '';
+      // PGRST204 format: "Could not find the 'column_name' column of '...'"
+      const m = msg.match(/'([a-z0-9_]+)' column/i)
+              || msg.match(/column "([a-z0-9_]+)"/i)
+              || msg.match(/column ([a-z0-9_]+) /i);
+      const badCol = m && m[1];
+      if (badCol && payload.hasOwnProperty(badCol)) {
+        console.warn('[BPOS-thresholds] DB missing column "' + badCol + '" — stripping and retrying');
+        droppedColumns.push(badCol);
+        delete payload[badCol];
+        continue;
+      }
+      // Error wasn't about a known column — give up.
+      break;
     }
+  }
+  if (lastError) {
+    syncBadge('error', '✕ Error');
+    console.error('[BPOS-thresholds] save failed:', lastError.message);
   }
 }
 

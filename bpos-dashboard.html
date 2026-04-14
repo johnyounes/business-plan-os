@@ -2003,12 +2003,18 @@ function renderUnits() {
     {};
 
   // ── DEBUG: log matching stats ──
-  const matchCount = vacancyAll.filter(v => findTurn(v).board).length;
-  console.log('[unit tracker] turn→vacancy matched:', matchCount, 'of', vacancyAll.length,
-    'vacant units |', turnsAll.length, 'turns loaded');
-  if (matchCount === 0 && turnsAll.length > 0 && vacancyAll.length > 0) {
-    console.log('[unit tracker] MISMATCH — sample turn:', { pid: turnsAll[0].property_id, prop: turnsAll[0].property_name, unit: turnsAll[0].unit_number });
-    console.log('[unit tracker] MISMATCH — sample vacancy:', { pid: vacancyAll[0].property_id, prop: vacancyAll[0].property_name, unit: vacancyAll[0].unit_number });
+  const activeTurns = turnsAll.filter(t => t.is_completed === false || t.is_completed === 'false' || !t.is_completed);
+  const completedTurns = turnsAll.filter(t => t.is_completed === true || t.is_completed === 'true');
+  const occMatchCount = rentRoll.filter(r => findTurn(r).finish_level).length;
+  const vacMatchCount = vacancyAll.filter(v => findTurn(v).board).length;
+  console.log('[unit tracker] TURNS:', turnsAll.length, 'total |', activeTurns.length, 'active |', completedTurns.length, 'completed');
+  console.log('[unit tracker] MATCHES: vacancy', vacMatchCount, '/', vacancyAll.length, '| rentRoll finish_level', occMatchCount, '/', rentRoll.length);
+  // Sample: show a rent roll unit and check if there's a turn for it
+  const sampleRR = rentRoll[0];
+  if (sampleRR) {
+    const sampleTurn = findTurn(sampleRR);
+    console.log('[unit tracker] SAMPLE rent roll unit:', { pid: sampleRR.property_id, unit: sampleRR.unit_number, prop: sampleRR.property_name });
+    console.log('[unit tracker] SAMPLE matching turn:', sampleTurn.turnover_id ? { pid: sampleTurn.property_id, unit: sampleTurn.unit_number, finish: sampleTurn.finish_level, completed: sampleTurn.is_completed } : 'NO MATCH');
   }
 
   // ── KPIs ──

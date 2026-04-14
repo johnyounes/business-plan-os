@@ -3831,7 +3831,22 @@ const BQ_NAME_OVERRIDES = {
 // BuildiumPropertyId entirely (legacy / unversioned BQ rows), and then
 // only against properties without explicit Buildium links.
 function matchBQPropFromRow(row, props) {
-  const bid = getBuildiumIdField(row);
+  let bid = getBuildiumIdField(row);
+  // Some BQ endpoints (notably portfolio_occupancy) return PropertyName but
+  // NOT BuildiumPropertyId. In that case, try to back-fill the id by looking
+  // up the row's PropertyName in buildiumPropsCache (which was populated
+  // from portfolio_summary and has a reliable name→id map). This lets the
+  // strict-id matcher work uniformly across all endpoints instead of
+  // collapsing to fuzzy fallback just because one endpoint omits the id.
+  if (bid == null && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
+    const rowName = String(row.PropertyName || row.Name || '').trim().toLowerCase();
+    if (rowName) {
+      const bp = buildiumPropsCache.find(function(x){
+        return x.name && x.name.trim().toLowerCase() === rowName;
+      });
+      if (bp) bid = bp.id;
+    }
+  }
   if (bid != null) {
     const sid = String(bid);
     const linked = props.find(function(p){
@@ -3839,9 +3854,10 @@ function matchBQPropFromRow(row, props) {
     });
     return linked || null; // strict: unclaimed IDs are dropped, never fuzzy-matched
   }
-  // No BuildiumPropertyId on this row — fall back to fuzzy name matching,
-  // but only against tracker props that are NOT explicitly linked to some
-  // other Buildium id (so linked props don't get stolen by a stray hit).
+  // No BuildiumPropertyId on this row and no name match in the Buildium cache —
+  // fall back to fuzzy name matching, but only against tracker props that are
+  // NOT explicitly linked to some other Buildium id (so linked props don't get
+  // stolen by a stray hit).
   const unlinked = props.filter(function(p){
     return !(Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.length);
   });
@@ -4152,7 +4168,12 @@ async function runDailyBQRefresh(forceRefresh) {
 
   // 2. Portfolio occupancy — same aggregation: sum unit counts across every
   // Buildium property that a tracker prop is linked to, then recompute occ %.
+  // NOTE: we clear bqOccupancy on every property BEFORE aggregating so that a
+  // property that no longer matches any BQ row doesn't silently inherit its
+  // old (possibly wrong) cached occupancy. Without this reset, the stale value
+  // restored from localStorage would never be overwritten.
   try {
+    properties.forEach(function(p){ p.bqOccupancy = null; });
     const occData = await bqFetch({ type: 'portfolio_occupancy' });
     const rows = occData.rows || [];
     const grouped = {};

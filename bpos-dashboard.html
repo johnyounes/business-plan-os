@@ -294,8 +294,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- FILTERS BAR -->
   <div class="filters-bar">
     <h1 id="viewTitle">Financial Overview</h1>
-    <div class="filter-group">
-      <span class="filter-label">Month</span>
+    <div class="filter-group" id="monthRangeGroup">
+      <span class="filter-label" id="monthFromLabel" style="display:none;">From</span>
+      <select class="filter-select" id="monthFromFilter" style="display:none;"></select>
+      <span class="filter-label" id="monthToLabel">Month</span>
       <select class="filter-select" id="monthFilter"></select>
     </div>
     <div class="filter-group">
@@ -622,7 +624,8 @@ const FN_NAME   = 'bq-dashboard';
 // ── STATE ──
 let allProperties = [];
 let selectedProps  = []; // empty = "all"
-let selectedMonth  = '';
+let selectedMonth  = '';      // "to" end of the range — also the single-month value for non-overview views
+let selectedMonthFrom = '';   // "from" end of the range — only used on Overview
 let selectedGroup  = '';
 let currentView    = 'overview';
 
@@ -724,6 +727,7 @@ document.querySelectorAll('.sb-item').forEach(el => {
     document.getElementById('view-' + view).style.display = '';
     const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker' };
     document.getElementById('viewTitle').textContent = titles[view] || '';
+    updateMonthRangeVisibility();
     renderCurrentView();
   });
 });
@@ -833,9 +837,24 @@ function renderPropChips() {
 }
 
 // ── MONTH FILTER ──
-const monthFilter = document.getElementById('monthFilter');
+const monthFilter     = document.getElementById('monthFilter');
+const monthFromFilter = document.getElementById('monthFromFilter');
 monthFilter.addEventListener('change', () => {
   selectedMonth = monthFilter.value;
+  // If user picks a "To" before the current "From", snap From forward so range is valid
+  if (selectedMonthFrom && DATA.months.indexOf(selectedMonthFrom) > DATA.months.indexOf(selectedMonth)) {
+    selectedMonthFrom = selectedMonth;
+    monthFromFilter.value = selectedMonthFrom;
+  }
+  onFiltersChanged();
+});
+monthFromFilter.addEventListener('change', () => {
+  selectedMonthFrom = monthFromFilter.value;
+  // If user picks a "From" after the current "To", snap To forward so range is valid
+  if (selectedMonth && DATA.months.indexOf(selectedMonthFrom) > DATA.months.indexOf(selectedMonth)) {
+    selectedMonth = selectedMonthFrom;
+    monthFilter.value = selectedMonth;
+  }
   onFiltersChanged();
 });
 
@@ -847,11 +866,60 @@ function populateMonthFilter(months) {
       if (sm.is_locked === 'false' || sm.is_locked === false) liveMonths.add(sm.snapshot_month);
     });
   }
-  monthFilter.innerHTML = months.map(m => {
+  const optsHtml = (selected) => months.map(m => {
     const isLive = liveMonths.has(m);
     const label = fmtMonth(m) + (isLive ? ' (Live)' : '');
-    return `<option value="${m}"${m === selectedMonth ? ' selected' : ''}>${label}</option>`;
+    return `<option value="${m}"${m === selected ? ' selected' : ''}>${label}</option>`;
   }).join('');
+  monthFilter.innerHTML     = optsHtml(selectedMonth);
+  monthFromFilter.innerHTML = optsHtml(selectedMonthFrom || selectedMonth);
+}
+
+// Returns the array of months in the currently selected range (inclusive, ordered).
+// On views other than Overview, always returns [selectedMonth] so those views keep
+// their existing single-month behavior.
+function getSelectedMonthRange() {
+  if (currentView !== 'overview') return selectedMonth ? [selectedMonth] : [];
+  if (!DATA.months || !DATA.months.length) return selectedMonth ? [selectedMonth] : [];
+  const from = selectedMonthFrom || selectedMonth;
+  const to   = selectedMonth || selectedMonthFrom;
+  if (!from || !to) return [];
+  let iFrom = DATA.months.indexOf(from);
+  let iTo   = DATA.months.indexOf(to);
+  if (iFrom === -1) iFrom = 0;
+  if (iTo === -1)   iTo = DATA.months.length - 1;
+  if (iFrom > iTo) { const t = iFrom; iFrom = iTo; iTo = t; }
+  return DATA.months.slice(iFrom, iTo + 1);
+}
+
+// Previous N-month range for period-over-period comparison
+function getPrevMonthRange() {
+  const range = getSelectedMonthRange();
+  if (!range.length || !DATA.months.length) return [];
+  const idx = DATA.months.indexOf(range[0]);
+  if (idx <= 0) return [];
+  const prevEnd = idx - 1;
+  const prevStart = Math.max(0, prevEnd - range.length + 1);
+  return DATA.months.slice(prevStart, prevEnd + 1);
+}
+
+// Human label for the selected month range
+function fmtMonthRangeLabel() {
+  const r = getSelectedMonthRange();
+  if (!r.length) return '';
+  if (r.length === 1) return fmtMonth(r[0]);
+  return `${fmtMonth(r[0])} – ${fmtMonth(r[r.length-1])}`;
+}
+
+// Show From dropdown only on Overview (user asked for range only there for now)
+function updateMonthRangeVisibility() {
+  const fromLabel = document.getElementById('monthFromLabel');
+  const fromSel   = document.getElementById('monthFromFilter');
+  const toLabel   = document.getElementById('monthToLabel');
+  const show = (currentView === 'overview');
+  if (fromLabel) fromLabel.style.display = show ? '' : 'none';
+  if (fromSel)   fromSel.style.display   = show ? '' : 'none';
+  if (toLabel)   toLabel.textContent     = show ? 'To' : 'Month';
 }
 
 // ── GROUP FILTER ──
@@ -943,75 +1011,98 @@ function renderOverview() {
     return;
   }
   const month = selectedMonth;
+  const selMonths = getSelectedMonthRange();
+  const rangeLabel = fmtMonthRangeLabel();
+  const isRange = selMonths.length > 1;
+  const inSel = (r) => {
+    const m = r.month || r.snapshot_month;
+    return selMonths.includes(m) && matchesSelectedProps(r);
+  };
 
   // ── FINANCIAL KPI SOURCE: v_income_statement_snapshot (operating-only) ──
   // Spec (2026-04-13): the dashboard must pull total_income / total_expenses / NOI
   // from v_income_statement_snapshot, where the three fields are operating-only.
   // Non-operating items (mortgage, capex, AMF, parent-co) are kept in separate columns.
   // Fall back to the financial_snapshots roll-up (DATA.noiSummary) only if the snapshot
-  // view returned nothing for the selected month — prevents blank KPIs during a deploy lag.
-  const snapRows = (DATA.incomeStatement || []).filter(r =>
-    (r.month === month || r.snapshot_month === month) && matchesSelectedProps(r));
+  // view returned nothing for the selected range — prevents blank KPIs during a deploy lag.
+  const snapRows = (DATA.incomeStatement || []).filter(inSel);
   let monthData, usingSnapshot;
   if (snapRows.length) {
     monthData = snapRows;
     usingSnapshot = true;
   } else {
-    monthData = (DATA.noiSummary || []).filter(r => r.month === month && matchesSelectedProps(r));
+    monthData = (DATA.noiSummary || []).filter(inSel);
     usingSnapshot = false;
   }
 
+  // monthData is rows across every month in the selected range. Sums therefore
+  // aggregate over the whole period (e.g. Q1 total income = Jan + Feb + Mar sums).
   const totalIncome   = monthData.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
   const totalExpense  = monthData.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
   const totalNOI      = monthData.reduce((s, r) => s + (r.noi || 0), 0);
-  const expenseRatio  = totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0;
+  // Expense ratio: simple average of per-month ratios (user-chosen aggregation for %)
+  const expenseRatio = (function() {
+    if (!selMonths.length) return 0;
+    const ratios = selMonths.map(m => {
+      const mr = monthData.filter(r => (r.month || r.snapshot_month) === m);
+      const inc = mr.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
+      const exp = mr.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
+      return inc > 0 ? (exp / inc * 100) : null;
+    }).filter(v => v !== null);
+    return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 0;
+  })();
   const totalUnits    = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
-  const noiPerUnit    = totalUnits > 0 ? totalNOI / totalUnits : 0;
+  // NOI per Unit across a range: use NOI total ÷ (units × months) so it stays a monthly figure
+  const noiPerUnit    = totalUnits > 0 ? totalNOI / (totalUnits * Math.max(1, selMonths.length)) : 0;
 
-  // Previous month comparison — mirror the snapshot-first preference above
-  const prevMonth = getPrevMonth(month);
+  // Previous period comparison — same length as selected range, immediately before it
+  const prevMonths = getPrevMonthRange();
   let prevRows = [];
-  if (usingSnapshot) {
-    prevRows = (DATA.incomeStatement || []).filter(r =>
-      (r.month === prevMonth || r.snapshot_month === prevMonth) && matchesSelectedProps(r));
-  }
-  if (!prevRows.length) {
-    prevRows = (DATA.noiSummary || []).filter(r => r.month === prevMonth && matchesSelectedProps(r));
+  if (prevMonths.length) {
+    const inPrev = (r) => prevMonths.includes(r.month || r.snapshot_month) && matchesSelectedProps(r);
+    if (usingSnapshot) prevRows = (DATA.incomeStatement || []).filter(inPrev);
+    if (!prevRows.length) prevRows = (DATA.noiSummary || []).filter(inPrev);
   }
   const prevNOI   = prevRows.reduce((s, r) => s + (r.noi || 0), 0);
   const noiChange = prevNOI !== 0 ? ((totalNOI - prevNOI) / Math.abs(prevNOI) * 100) : 0;
 
-  // Count negative NOI properties
-  const negNOI = monthData.filter(r => (r.noi || 0) < 0).length;
-  const propCount = monthData.length;
+  // Count negative-NOI properties across the range: a property is negative if
+  // its aggregated NOI for the selected range is < 0
+  const noiByProp = {};
+  monthData.forEach(r => {
+    const k = r.property_name || r.property_id;
+    noiByProp[k] = (noiByProp[k] || 0) + (r.noi || 0);
+  });
+  const negNOI = Object.values(noiByProp).filter(v => v < 0).length;
+  const propCount = Object.keys(noiByProp).length;
 
   document.getElementById('finKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Operating Income</div>
       <div class="kpi-value">${fmt$(totalIncome)}</div>
-      <div class="kpi-sub">${fmtMonth(month)}</div>
+      <div class="kpi-sub">${rangeLabel}${isRange ? ` · ${selMonths.length} mo total` : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Operating Expenses</div>
       <div class="kpi-value">${fmt$(totalExpense)}</div>
-      <div class="kpi-sub">${fmtMonth(month)}</div>
+      <div class="kpi-sub">${rangeLabel}${isRange ? ` · ${selMonths.length} mo total` : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Net Operating Income</div>
       <div class="kpi-value ${totalNOI >= 0 ? 'good' : 'bad'}">${fmt$(totalNOI)}</div>
       <div class="kpi-sub">
-        ${noiChange !== 0 ? `<span class="kpi-change ${noiChange >= 0 ? 'up' : 'down'}">${noiChange >= 0 ? '▲' : '▼'} ${Math.abs(noiChange).toFixed(1)}%</span> vs prev month` : ''}
+        ${noiChange !== 0 ? `<span class="kpi-change ${noiChange >= 0 ? 'up' : 'down'}">${noiChange >= 0 ? '▲' : '▼'} ${Math.abs(noiChange).toFixed(1)}%</span> vs prev ${isRange ? 'period' : 'month'}` : ''}
       </div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Expense Ratio</div>
       <div class="kpi-value ${expenseRatio > 50 ? 'warn' : ''}">${fmtPct1(expenseRatio)}</div>
-      <div class="kpi-sub">Expenses ÷ Income</div>
+      <div class="kpi-sub">${isRange ? 'Avg of monthly ratios' : 'Expenses ÷ Income'}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">NOI per Unit</div>
       <div class="kpi-value">${fmt$(noiPerUnit)}</div>
-      <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
+      <div class="kpi-sub">${totalUnits.toLocaleString()} total units${isRange ? ' · avg/mo' : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Negative NOI</div>
@@ -1020,13 +1111,12 @@ function renderOverview() {
     </div>
   `;
 
-  // Property Metrics — avg physical occupancy across the selected properties for the
-  // selected month. Prefer the historical snapshot; fall back to the live view only if
-  // the snapshot has no rows for this month. Derive the per-property pct from
-  // occupied_units / total_units so we don't depend on `physical_occupancy_pct` being
-  // present in the view (it isn't on v_occupancy_snapshot_summary in the deployed schema).
-  const snapForMetrics = (DATA.occupancySnapshot || []).filter(r =>
-    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  // Property Metrics — avg physical occupancy across selected properties across
+  // the selected month range. Each (property, month) row contributes one data point;
+  // we take the simple mean of the per-(property, month) percentages (user-chosen).
+  // Prefer the historical snapshot; fall back to the live view only if the snapshot
+  // has no rows for the range.
+  const snapForMetrics = (DATA.occupancySnapshot || []).filter(inSel);
   const occData = snapForMetrics.length
     ? snapForMetrics
     : (DATA.occupancy ? DATA.occupancy.filter(r => matchesSelectedProps(r)) : []);
@@ -1040,10 +1130,20 @@ function renderOverview() {
   const avgOcc = occData.length > 0
     ? occData.reduce((s, r) => s + perPropPct(r), 0) / occData.length
     : 0;
-  const negCF = monthData.filter(r => (r.noi || 0) < 0).length;
-  const highExpRatio = monthData.filter(r => {
-    const rev = r.total_income || r.revenue || 0;
-    const exp = Math.abs(r.total_expenses || r.expenses || 0);
+  // Avg Physical Occupancy sub-label: prop count = unique properties in the occ rows
+  const avgOccPropCount = new Set(occData.map(r => r.property_name || r.property_id)).size;
+
+  // Negative CF / high exp ratio counts: per-property aggregates across the range
+  const incByProp = {}, expByProp = {};
+  monthData.forEach(r => {
+    const k = r.property_name || r.property_id;
+    incByProp[k] = (incByProp[k] || 0) + (r.total_income || r.revenue || 0);
+    expByProp[k] = (expByProp[k] || 0) + Math.abs(r.total_expenses || r.expenses || 0);
+  });
+  const negCF = Object.values(noiByProp).filter(v => v < 0).length;
+  const highExpRatio = Object.keys(incByProp).filter(k => {
+    const rev = incByProp[k];
+    const exp = expByProp[k];
     return rev > 0 && (exp / rev) > 0.5;
   }).length;
 
@@ -1051,7 +1151,7 @@ function renderOverview() {
     <div class="kpi">
       <div class="kpi-label">Avg Physical Occupancy</div>
       <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
-      <div class="kpi-sub">${occData.length} properties</div>
+      <div class="kpi-sub">${avgOccPropCount} properties${isRange ? ` · ${selMonths.length} mo avg` : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Negative Cash Flow</div>
@@ -1072,65 +1172,71 @@ function renderOverview() {
 
   // ── OPERATIONAL KPIs (second row) ──
 
-  // CAPEX: from income_statement_snapshot
-  // Accepts either `r.month` (new alias) or `r.snapshot_month` (raw) so we don't break
-  // if the edge function hasn't been redeployed yet.
+  // CAPEX — sums across the range (user: "those add up")
   let capex = 0;
   if (DATA.incomeStatement && DATA.incomeStatement.length) {
-    const capexRows = DATA.incomeStatement.filter(r =>
-      (r.month === month || r.snapshot_month === month) && matchesSelectedProps(r));
-    capex = capexRows.reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
+    capex = DATA.incomeStatement.filter(inSel)
+      .reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
   }
 
-  // UTILITY REIMBURSEMENT
-  // Primary source: v_utility_reimbursement (23 utility income GLs + 11 utility expense GLs
-  // enumerated server-side; utility_reimbursement_pct pre-computed). Typical MF range: 40–80%.
-  // Fallback: the legacy client-side utility_summary roll-up via account-name LIKE matches.
+  // UTILITY REIMBURSEMENT — totals sum across the range; reimbursement % = avg of
+  // monthly pcts (simple average per user spec).
   let utilIncome = 0, utilExpense = 0, utilReimb = 0;
-  const utilReimbRows = (DATA.utilityReimbursement || []).filter(r =>
-    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
+  const utilReimbRows = (DATA.utilityReimbursement || []).filter(inSel);
+  const utilRowsByMonth = (arr) => {
+    // Given an array of util rows, compute a per-month % and simple-average.
+    const perMonth = selMonths.map(m => {
+      const mr = arr.filter(r => (r.snapshot_month || r.month) === m);
+      if (!mr.length) return null;
+      const inc = mr.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+      const exp = mr.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
+      if (exp > 0) return inc / exp * 100;
+      // Fall back to server-computed pct column if denom missing
+      const pcts = mr.map(r => parseFloat(r.utility_reimbursement_pct) || 0).filter(p => p > 0);
+      return pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : null;
+    }).filter(v => v !== null);
+    return perMonth.length ? perMonth.reduce((a, b) => a + b, 0) / perMonth.length : 0;
+  };
   if (utilReimbRows.length) {
-    utilIncome = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+    utilIncome  = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_income)  || 0), 0);
     utilExpense = utilReimbRows.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
-    // Prefer the server-computed pct when aggregated income/expense aren't both present.
-    if (utilExpense > 0) {
-      utilReimb = utilIncome / utilExpense * 100;
-    } else {
-      const pcts = utilReimbRows
-        .map(r => parseFloat(r.utility_reimbursement_pct) || 0)
-        .filter(p => p > 0);
-      utilReimb = pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : 0;
-    }
+    utilReimb   = utilRowsByMonth(utilReimbRows);
   } else if (DATA.utilitySummary && DATA.utilitySummary.length) {
-    const utilRows = DATA.utilitySummary.filter(r =>
-      (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    utilIncome = utilRows.reduce((s, r) => s + (parseFloat(r.utility_income) || 0), 0);
+    const utilRows = DATA.utilitySummary.filter(inSel);
+    utilIncome  = utilRows.reduce((s, r) => s + (parseFloat(r.utility_income)  || 0), 0);
     utilExpense = utilRows.reduce((s, r) => s + (parseFloat(r.utility_expense) || 0), 0);
-    utilReimb = utilExpense > 0 ? (utilIncome / utilExpense * 100) : 0;
+    utilReimb   = utilRowsByMonth(utilRows);
   }
 
-  // PHYSICAL OCCUPANCY — historical-aware.
-  // Prefer v_occupancy_snapshot_summary (one row per property × snapshot_month) filtered by
-  // the selected month, so historical months return their actual values. v_occupancy_summary
-  // is live/current-state only and has no history — only fall back to it when the snapshot
-  // doesn't carry the selected month (e.g., the very first or last month in the range, or
-  // if the snapshot view is missing entirely).
+  // PHYSICAL OCCUPANCY — simple average of the per-month portfolio physical-occupancy
+  // percentage (user-chosen aggregation). Within each month we still use the dollar-weighted
+  // unit-count ratio (sum occupied / sum total) — it's the averaging ACROSS months that's simple-mean.
+  // For single-month selection this collapses back to the original single-month behavior.
   let physOcc = 0, totalOccUnits = 0, totalAllUnits = 0;
-  const snapRowsForMonth = (DATA.occupancySnapshot || []).filter(r =>
-    (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-  if (snapRowsForMonth.length) {
-    totalOccUnits = snapRowsForMonth.reduce((s, r) => s + (r.occupied_units || 0), 0);
-    totalAllUnits = snapRowsForMonth.reduce((s, r) => s + (r.total_units || 0), 0);
+  const snapRowsForRange = (DATA.occupancySnapshot || []).filter(inSel);
+  if (snapRowsForRange.length) {
+    // Totals across range (for the sub-label denominator) — use latest month's unit counts
+    const lastMonth = selMonths[selMonths.length - 1];
+    const lastRows  = snapRowsForRange.filter(r => (r.snapshot_month || r.month) === lastMonth);
+    totalOccUnits = lastRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
+    totalAllUnits = lastRows.reduce((s, r) => s + (r.total_units || 0), 0);
+    const monthlyPct = selMonths.map(m => {
+      const mr = snapRowsForRange.filter(r => (r.snapshot_month || r.month) === m);
+      if (!mr.length) return null;
+      const occ = mr.reduce((s, r) => s + (r.occupied_units || 0), 0);
+      const tot = mr.reduce((s, r) => s + (r.total_units || 0), 0);
+      return tot > 0 ? (occ / tot * 100) : null;
+    }).filter(v => v !== null);
+    physOcc = monthlyPct.length ? monthlyPct.reduce((a, b) => a + b, 0) / monthlyPct.length : 0;
   } else if (DATA.occupancy && DATA.occupancy.length) {
     const occRows = DATA.occupancy.filter(r => matchesSelectedProps(r));
     totalOccUnits = occRows.reduce((s, r) => s + (r.occupied_units || 0), 0);
     totalAllUnits = occRows.reduce((s, r) => s + (r.total_units || 0), 0);
+    physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
   }
-  // Fallback: if neither source carried total_units, derive from the properties list
   if (totalAllUnits === 0) {
     totalAllUnits = getFilteredProps().reduce((s, p) => s + (p.units || 0), 0);
   }
-  physOcc = totalAllUnits > 0 ? (totalOccUnits / totalAllUnits * 100) : 0;
 
   // ECONOMIC OCCUPANCY — dollar-weighted portfolio rollup (cash-basis as of 2026-04-13).
   // Source: v_economic_occupancy (one row per property × snapshot_month). The view was
@@ -1144,31 +1250,26 @@ function renderOverview() {
   // concessions (Credits), and raw prepayments still parked in GL 18. Expected range:
   // physical − 1 to 5 pts healthy, 8–13 pts variance in growth/onboarding months.
   let econOcc = 0;
-  let econIncomeSum = 0, econPotentialSum = 0;
   if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
-    const econRows = DATA.economicOccupancy.filter(r =>
-      (r.snapshot_month === month || r.month === month) && matchesSelectedProps(r));
-    econRows.forEach(r => {
-      // Prefer new cash-basis column; fall back to legacy accrual columns for resilience
-      // if the edge function hasn't been redeployed yet.
-      let numer = parseFloat(r.recurring_collected);
-      if (!Number.isFinite(numer)) {
-        numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
-      }
-      const denom = parseFloat(r.estimated_charge_potential) || 0;
-      if (denom > 0) {
-        econIncomeSum += numer;
-        econPotentialSum += denom;
-      }
-    });
-    if (econPotentialSum > 0) {
-      econOcc = (econIncomeSum / econPotentialSum) * 100;
-    } else {
-      // Fallback: if the numerator/denominator columns are missing for some reason,
-      // simple-mean the percentage column rather than report 0.
-      const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
-      if (pcts.length) econOcc = pcts.reduce((a, b) => a + b, 0) / pcts.length;
-    }
+    const econRows = DATA.economicOccupancy.filter(inSel);
+    // Per-month portfolio econ occ (dollar-weighted within the month), then simple-average across months.
+    const monthly = selMonths.map(m => {
+      const mr = econRows.filter(r => (r.snapshot_month || r.month) === m);
+      if (!mr.length) return null;
+      let incSum = 0, potSum = 0;
+      mr.forEach(r => {
+        let numer = parseFloat(r.recurring_collected);
+        if (!Number.isFinite(numer)) {
+          numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+        }
+        const denom = parseFloat(r.estimated_charge_potential) || 0;
+        if (denom > 0) { incSum += numer; potSum += denom; }
+      });
+      if (potSum > 0) return (incSum / potSum) * 100;
+      const pcts = mr.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
+      return pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : null;
+    }).filter(v => v !== null);
+    econOcc = monthly.length ? monthly.reduce((a, b) => a + b, 0) / monthly.length : 0;
   }
   // No hard cap here — the dollar-weighted formula is the authoritative one and matches
   // the BigQuery portfolio rollup. If it comes in marginally higher than the Physical KPI
@@ -1178,29 +1279,29 @@ function renderOverview() {
   // so recently-onboarded or backfilled units drop out). Log the divergence so we can
   // investigate if it looks off, but don't clamp.
   if (econOcc > 0 && physOcc > 0 && econOcc > physOcc + 0.05) {
-    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${month} — likely due to managed-property-month filter on v_economic_occupancy.`);
+    console.info(`Economic (${econOcc.toFixed(2)}%) > Physical (${physOcc.toFixed(2)}%) for ${rangeLabel} — likely due to managed-property-month filter on v_economic_occupancy.`);
   }
 
   document.getElementById('operationalKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Total Capex</div>
       <div class="kpi-value">${fmt$(capex)}</div>
-      <div class="kpi-sub">${fmtMonth(month)} · Capital Improvements</div>
+      <div class="kpi-sub">${rangeLabel} · Capital Improvements</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Utility Reimbursement</div>
       <div class="kpi-value ${utilReimb >= 80 ? 'good' : utilReimb >= 50 ? 'warn' : 'bad'}">${fmtPct1(utilReimb)}</div>
-      <div class="kpi-sub">${fmt$(utilIncome)} income ÷ ${fmt$(utilExpense)} expense</div>
+      <div class="kpi-sub">${fmt$(utilIncome)} income ÷ ${fmt$(utilExpense)} expense${isRange ? ` · avg of ${selMonths.length} mo` : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Physical Occupancy</div>
       <div class="kpi-value ${physOcc >= 90 ? 'good' : physOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(physOcc)}</div>
-      <div class="kpi-sub">${totalOccUnits.toLocaleString()} ÷ ${totalAllUnits.toLocaleString()} units</div>
+      <div class="kpi-sub">${isRange ? `avg of ${selMonths.length} mo · ${totalAllUnits.toLocaleString()} units` : `${totalOccUnits.toLocaleString()} ÷ ${totalAllUnits.toLocaleString()} units`}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Economic Occupancy</div>
       <div class="kpi-value ${econOcc >= 90 ? 'good' : econOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(econOcc)}</div>
-      <div class="kpi-sub">Recurring Income ÷ Rent Potential</div>
+      <div class="kpi-sub">${isRange ? `avg of ${selMonths.length} mo` : 'Recurring Income ÷ Rent Potential'}</div>
     </div>
   `;
 
@@ -1224,10 +1325,12 @@ function renderIncExpChart() {
   const W = rect.width, H = 220;
   ctx.clearRect(0, 0, W, H);
 
-  const months = DATA.months.slice(-12);
-  // Prefer v_income_statement_snapshot (operating-only) for chart values, so the
-  // Income/Expenses chart aligns with the top-line KPIs. Fall back to the financial_snapshots
-  // roll-up only if the snapshot view is empty.
+  // Show only the currently selected month range on Overview (per user request).
+  // Fall back to the trailing 12 months if the range is somehow empty.
+  const months = (function(){
+    const r = getSelectedMonthRange();
+    return r.length ? r : DATA.months.slice(-12);
+  })();
   const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
   if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
 
@@ -1272,7 +1375,7 @@ function renderIncExpChart() {
   ctx.font = '10px DM Sans';
   ctx.textAlign = 'center';
   months.forEach((m, i) => {
-    const x = padL + (chartW / (months.length - 1)) * i;
+    const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
     ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
   });
 
@@ -1280,7 +1383,7 @@ function renderIncExpChart() {
   function drawLine(data, color, fillColor) {
     ctx.beginPath();
     data.forEach((v, i) => {
-      const x = padL + (chartW / (months.length - 1)) * i;
+      const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
       const y = padT + chartH - (v / maxVal) * chartH;
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
@@ -1297,7 +1400,7 @@ function renderIncExpChart() {
 
     // Dots
     data.forEach((v, i) => {
-      const x = padL + (chartW / (months.length - 1)) * i;
+      const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
       const y = padT + chartH - (v / maxVal) * chartH;
       ctx.beginPath();
       ctx.arc(x, y, 3, 0, Math.PI * 2);
@@ -1336,7 +1439,10 @@ function renderNOIChart() {
   const W = rect.width, H = 220;
   ctx.clearRect(0, 0, W, H);
 
-  const months = DATA.months.slice(-12);
+  const months = (function(){
+    const r = getSelectedMonthRange();
+    return r.length ? r : DATA.months.slice(-12);
+  })();
   const hasSnap = DATA.incomeStatement && DATA.incomeStatement.length;
   if (!months.length || (!hasSnap && !DATA.noiSummary)) return;
 
@@ -1380,14 +1486,14 @@ function renderNOIChart() {
   ctx.font = '10px DM Sans';
   ctx.textAlign = 'center';
   months.forEach((m, i) => {
-    const x = padL + (chartW / (months.length - 1)) * i;
+    const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
     ctx.fillText(fmtMonth(m).replace(' 20', ' \''), x, H - 10);
   });
 
   // NOI line
   ctx.beginPath();
   noiByMonth.forEach((v, i) => {
-    const x = padL + (chartW / (months.length - 1)) * i;
+    const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
     const y = zeroY - (v / maxVal) * (chartH / 2);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
@@ -1397,7 +1503,7 @@ function renderNOIChart() {
 
   // Dots
   noiByMonth.forEach((v, i) => {
-    const x = padL + (chartW / (months.length - 1)) * i;
+    const x = (months.length > 1 ? padL + (chartW / (months.length - 1)) * i : padL + chartW / 2);
     const y = zeroY - (v / maxVal) * (chartH / 2);
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
@@ -1415,19 +1521,56 @@ function renderPropPerfTable(monthData) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px;">No data for selected filters</td></tr>';
     return;
   }
-  const rows = monthData.map(r => {
-    // Look up property by id OR name (api_name)
-    const p = allProperties.find(x => x.id === r.property_id || x.name === r.property_name || x.apiName === r.property_name);
-    const rev = r.total_income || r.revenue || 0;
-    const exp = Math.abs(r.total_expenses || r.expenses || 0);
-    const noi = r.noi || 0;
-    const ratio = rev > 0 ? (exp / rev * 100) : 0;
-    const units = p ? (p.units || 0) : (r.units || 0);
-    const noiUnit = units > 0 ? noi / units : 0;
-    // Look up occupancy by property_name (api_name matches across views)
-    const occ = DATA.occupancy ? DATA.occupancy.find(o => o.property_name === r.property_name || (o.property_id && o.property_id === r.property_id)) : null;
-    const occPct = occ ? Math.round(occ.physical_occupancy) : null;
-    return { name: r.property_name || (p ? p.name : '?'), units, rev, exp, noi, ratio, noiUnit, occPct };
+  // monthData may span multiple months — roll up income/expenses/NOI by property.
+  // Each key represents one property; we keep its latest-seen id/name for lookups.
+  const selMonths = getSelectedMonthRange();
+  const nMonths = Math.max(1, selMonths.length);
+  const byProp = {};
+  monthData.forEach(r => {
+    const key = r.property_name || r.property_id;
+    if (!byProp[key]) {
+      byProp[key] = { name: r.property_name, id: r.property_id, rev: 0, exp: 0, noi: 0 };
+    }
+    byProp[key].rev += (r.total_income || r.revenue || 0);
+    byProp[key].exp += Math.abs(r.total_expenses || r.expenses || 0);
+    byProp[key].noi += (r.noi || 0);
+  });
+  // Per-property occupancy: average physical_occupancy_pct across range from the
+  // occupancy snapshot when available; fall back to the live v_occupancy_summary.
+  const occByProp = {};
+  const occSource = (DATA.occupancySnapshot || []).filter(r =>
+    selMonths.includes(r.snapshot_month || r.month) && matchesSelectedProps(r));
+  if (occSource.length) {
+    const groups = {};
+    occSource.forEach(r => {
+      const k = r.property_name || r.property_id;
+      const pct = parseFloat(r.physical_occupancy_pct) || 0 ||
+        (parseInt(r.total_units) > 0 ? (parseInt(r.occupied_units) / parseInt(r.total_units) * 100) : 0);
+      if (!groups[k]) groups[k] = [];
+      if (pct > 0) groups[k].push(pct);
+    });
+    Object.keys(groups).forEach(k => {
+      const arr = groups[k];
+      occByProp[k] = arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    });
+  }
+
+  const rows = Object.values(byProp).map(b => {
+    const p = allProperties.find(x =>
+      x.id === b.id || x.name === b.name || x.apiName === b.name);
+    const units = p ? (p.units || 0) : 0;
+    const ratio = b.rev > 0 ? (b.exp / b.rev * 100) : 0;
+    // NOI/unit stays a per-month figure when a range is picked
+    const noiUnit = units > 0 ? b.noi / (units * nMonths) : 0;
+    let occPct = null;
+    const key = b.name || b.id;
+    if (occByProp[key] != null) occPct = Math.round(occByProp[key]);
+    else {
+      const live = DATA.occupancy ? DATA.occupancy.find(o =>
+        o.property_name === b.name || (o.property_id && o.property_id === b.id)) : null;
+      if (live) occPct = Math.round(live.physical_occupancy);
+    }
+    return { name: b.name || (p ? p.name : '?'), units, rev: b.rev, exp: b.exp, noi: b.noi, ratio, noiUnit, occPct };
   }).sort((a, b) => b.noi - a.noi);
 
   tbody.innerHTML = rows.map(r => `
@@ -2313,7 +2456,10 @@ async function loadDashboardData() {
     const allMonths   = [...new Set([...finMonths, ...noiMonths, ...snapMonths, ...occMonths])].sort();
     DATA.months = allMonths.length ? allMonths : (finMonths.sort());
     selectedMonth = DATA.months[DATA.months.length - 1] || '';
+    // Default From = same as To (single-month behavior). User can widen via the From picker.
+    if (!selectedMonthFrom) selectedMonthFrom = selectedMonth;
     populateMonthFilter(DATA.months);
+    updateMonthRangeVisibility();
 
     // Populate group filter
     if (DATA.propertyGroups.length > 0) populateGroupFilter(DATA.propertyGroups);

@@ -4477,14 +4477,37 @@ async function boot() {
     const propRows = await sbReq('properties?select=*&order=name.asc');
 
     if (!propRows || propRows.length === 0) {
-      // First run — seed demo properties into DB
+      // Empty properties table. We only want to seed demo data on the
+      // TRUE first launch — not every time the user intentionally wipes
+      // their portfolio. The localStorage flag `bpos_seeded` records that
+      // we've already bootstrapped at least once on this machine.
+      let alreadySeeded = false;
+      try { alreadySeeded = localStorage.getItem('bpos_seeded') === '1'; } catch (_) {}
+
+      if (alreadySeeded) {
+        // User has a clean, intentionally-empty portfolio. Show it as-is.
+        properties = [];
+        _idToUuid = {};
+        try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+        if (overlay) overlay.classList.add('hidden');
+        try { syncBadge('saved', '● Live'); } catch (_) {}
+        renderPage();
+        return;
+      }
+
+      // True first launch — seed demo properties into DB
       if (msgEl) msgEl.textContent = 'First launch — saving demo portfolio…';
       await seedDemo();
+      try { localStorage.setItem('bpos_seeded', '1'); } catch (_) {}
       if (overlay) overlay.classList.add('hidden');
       try { syncBadge('saved', '● Live'); } catch (_) {}
       renderPage();
       return;
     }
+
+    // Any time we find properties in the DB, we've obviously been seeded
+    // at some point. Make sure the flag is set so future wipes stick.
+    try { localStorage.setItem('bpos_seeded', '1'); } catch (_) {}
 
     // Load budgets, actuals, NOI for all properties in parallel
     if (msgEl) msgEl.textContent = 'Loading budgets & actuals…';

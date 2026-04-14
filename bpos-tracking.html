@@ -1094,6 +1094,11 @@ function renderPage() {
         <span class="arp-icon">⚑</span>
         <span class="arp-title">Properties with active alerts</span>
         <span class="arp-count">${riskProps.length} propert${riskProps.length!==1?'ies':'y'} · ${riskProps.reduce((s,p)=>s+getAlerts(p).filter(a=>a.sev==='red').length,0)} critical</span>
+        <button class="btn-ghost" onclick="event.stopPropagation();purgeDemoAlerts();"
+          title="Dismiss every active alert and delete any demo-sourced actuals rows"
+          style="font-size:11px;padding:4px 10px;margin-left:auto;margin-right:8px;">
+          Clear demo alerts
+        </button>
         <span class="arp-chev ${arpOpen?'open':''}" id="arp-chev">▾</span>
       </div>
       <div class="arp-body ${arpOpen?'open':''}" id="arp-body">
@@ -1112,6 +1117,11 @@ function renderPage() {
                   <div class="rpc-head">
                     <span class="rpc-name">${p.name}</span>
                     <span class="rpc-alert-count">${als.filter(a=>a.sev==='red').length} critical · ${als.filter(a=>a.sev==='amber').length} warnings</span>
+                    <button onclick="event.stopPropagation();deleteProperty(${p.id});"
+                      title="Remove ${p.name.replace(/"/g,'&quot;')} from the tracker entirely (deletes from Supabase)"
+                      style="margin-left:8px;background:none;border:1px solid rgba(232,80,74,.3);color:#e8504a;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:var(--font);">
+                      ✕ Remove
+                    </button>
                   </div>
                   <div class="rpc-alerts">
                     ${als.slice(0,3).map(al=>`
@@ -2115,6 +2125,11 @@ let uploadState = {
   allSheets: [],      // [{sheetName, displayName, year, income, expenses, nonop}]
   selectedSheets: {}, // {sheetName: true/false}
   matchMap: {},       // {sheetName: propId|'new'|'skip'}
+  buildiumMap: {},    // {sheetName: [buildiumIdStr, ...]}  empty array = "no match"
+  buildiumSearch: {}, // {sheetName: 'search text'}
+  buildiumExpanded: {}, // {sheetName: true} to show full list vs. suggestions
+  buildiumNoMatch: {}, // {sheetName: true} explicit "no BQ match" flag
+  buildiumLoaded: false,
   fileName: '',
   budgetYear: null,   // user-chosen year (set in Step 4)
 };
@@ -2146,7 +2161,11 @@ function ensureNonopCategories(nonopArr) {
 }
 
 function openUploadModal() {
-  uploadState = {step:1, allSheets:[], selectedSheets:{}, matchMap:{}, fileName:'', budgetYear:null};
+  uploadState = {
+    step:1, allSheets:[], selectedSheets:{}, matchMap:{},
+    buildiumMap:{}, buildiumSearch:{}, buildiumExpanded:{}, buildiumNoMatch:{},
+    buildiumLoaded:false, fileName:'', budgetYear:null,
+  };
   document.getElementById('upload-modal').classList.add('open');
   renderUploadStep();
 }
@@ -2202,7 +2221,13 @@ function renderUploadStep() {
         monthly figures in Jan–Dec columns, and 2025 actuals in column B.
         Each tab = one property.
       </div>`;
-    footer.innerHTML = `<button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>`;
+    footer.innerHTML = `
+      <button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn-ghost" onclick="purgeAllBudgets()"
+        title="Delete every saved budget from Supabase and clear in-memory budgets so you can re-upload from scratch."
+        style="margin-left:auto;color:#e8504a;border-color:rgba(232,80,74,.3);">
+        Reset all budgets
+      </button>`;
 
   // ── STEP 2: Select which sheets to import + choose budget year ──
   } else if (step === 2) {
@@ -2278,15 +2303,29 @@ function renderUploadStep() {
   // ── STEP 3: Match each selected sheet to existing property or create new ──
   } else if (step === 3) {
     const toImport = uploadState.allSheets.filter(s=>uploadState.selectedSheets[s.sheetName]!==false);
-    const allMapped = toImport.every(s=>
+    const trackerMapped = toImport.every(s=>
       uploadState.matchMap[s.sheetName] &&
       uploadState.matchMap[s.sheetName] !== '__picking__'
     );
+    // Buildium mapping is required for non-'skip' sheets. Either at least one
+    // Buildium id is selected, OR the user explicitly chose "No Buildium match".
+    const buildiumMapped = toImport.every(s => {
+      const choice = uploadState.matchMap[s.sheetName];
+      if (choice === 'skip') return true;
+      const ids = uploadState.buildiumMap[s.sheetName] || [];
+      return ids.length > 0 || uploadState.buildiumNoMatch[s.sheetName] === true;
+    });
+    const allMapped = trackerMapped && buildiumMapped;
+    const loaded = uploadState.buildiumLoaded;
     body.innerHTML = stepsHtml + `
       <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
-        The app has checked your portfolio for matching properties. Confirm each match or reassign before saving.
+        Match each sheet to a tracker property, then pick the Buildium propert${'y(ies)'} whose actuals should fill that budget. Select more than one when a budget covers multiple Buildium properties (e.g. Maple Park + The Enclave).
       </div>
-      <div style="max-height:450px;overflow-y:auto;">
+      ${!loaded ? `
+        <div id="bq-loading-banner" style="font-size:11px;color:var(--text3);background:var(--bg3);border:1px dashed var(--border);padding:9px 12px;border-radius:8px;margin-bottom:10px;">
+          Loading Buildium property list…
+        </div>` : ''}
+      <div id="upload-match-scroll" style="max-height:500px;overflow-y:auto;">
         ${toImport.map(s=>renderMatchConfirmCard(s)).join('')}
       </div>`;
     footer.innerHTML = `
@@ -2295,6 +2334,25 @@ function renderUploadStep() {
         onclick="${allMapped?'uploadState.step=4;renderUploadStep()':''}">
         Next: Review &amp; save →
       </button>`;
+    // Kick off the Buildium list load if we haven't yet. Re-render Step 3
+    // when it finishes so the checklists populate.
+    if (!loaded) {
+      loadBuildiumProps().then(function(list){
+        uploadState.buildiumLoaded = true;
+        // Seed default selections from already-linked properties
+        toImport.forEach(function(s){
+          if (uploadState.buildiumMap[s.sheetName]) return; // user already picked
+          const pid = uploadState.matchMap[s.sheetName];
+          if (pid && pid !== 'new' && pid !== 'skip' && pid !== '__picking__') {
+            const prop = properties.find(function(p){return p.id===pid;});
+            if (prop && Array.isArray(prop.buildiumPropertyIds) && prop.buildiumPropertyIds.length) {
+              uploadState.buildiumMap[s.sheetName] = prop.buildiumPropertyIds.slice();
+            }
+          }
+        });
+        if (uploadState.step === 3) renderUploadStep();
+      });
+    }
 
     // ── STEP 4: Summary + save ──
   } else if (step === 4) {
@@ -2625,15 +2683,15 @@ function autoSuggestMatches() {
 
 function toggleSheet(sheetName, checked) {
   uploadState.selectedSheets[sheetName] = checked;
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 function selectAllSheets(val) {
   uploadState.allSheets.forEach(s=>{ uploadState.selectedSheets[s.sheetName]=val; });
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 function setMatchMap(sheetName, choice) {
   uploadState.matchMap[sheetName] = choice;
-  renderUploadStep();
+  rerenderUploadStepPreservingScroll();
 }
 
 // ── SAVE ──
@@ -2658,11 +2716,15 @@ function confirmSaveBudget() {
       capexBudget: s.nonop.filter(r=>{ const cat = r.category || categorizeNonopLabel(r.label); return cat === 'capex'; }).reduce((t,r)=>t+(r.annual||(r.monthly*12)),0),
     };
 
+    // Buildium IDs the user picked for this sheet
+    const pickedBuildium = (uploadState.buildiumMap[s.sheetName] || []).slice();
+
     if (isNew) {
       const id = Date.now() + Math.random();
       properties.push({
         id, name: s.displayName, address:'—', units:0,
         pm:'AppFolio', market:'', type:'existing',
+        buildiumPropertyIds: pickedBuildium,
         budgetYear: year,
         budget,
         budgetHistory: {[year]: budget},
@@ -2684,6 +2746,8 @@ function confirmSaveBudget() {
         prop.budgetHistory[year] = budget;
         prop.budget = budget;
         prop.budgetYear = year;
+        // Update Buildium linkage — overwrite with the user's Step 3 picks
+        prop.buildiumPropertyIds = pickedBuildium;
         // Resize actuals arrays to match new budget line counts
         if (prop.actuals.income.length !== budget.income.length)
           prop.actuals.income = budget.income.map(()=>0);
@@ -2751,7 +2815,12 @@ function openEditProp(propId) {
     </div>`;
 
   document.getElementById('edit-prop-footer').innerHTML = `
-    <button class="btn-ghost" onclick="closeEditProp()">Cancel</button>
+    <button class="btn-ghost" onclick="deleteProperty(${prop.id})"
+      title="Remove this property from the tracker and delete its budgets, actuals, NOI history, and alerts from Supabase."
+      style="color:#e8504a;border-color:rgba(232,80,74,.3);">
+      Delete property
+    </button>
+    <button class="btn-ghost" onclick="closeEditProp()" style="margin-left:auto;">Cancel</button>
     <button class="btn-primary" onclick="saveEditProp()">Save changes</button>`;
 
   document.getElementById('edit-prop-modal').classList.add('open');
@@ -2871,7 +2940,7 @@ function renderMatchConfirmCard(s) {
               ✓ Yes — add to ${topMatch.name}
             </button>
             <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
-              onclick="uploadState.matchMap['${s.sheetName}']='__picking__';renderUploadStep()">
+              onclick="uploadState.matchMap['${s.sheetName}']='__picking__';rerenderUploadStepPreservingScroll()">
               Pick different property
             </button>
             <button class="btn-ghost" style="font-size:12px;padding:7px 14px;"
@@ -2913,7 +2982,177 @@ function renderMatchConfirmCard(s) {
           </label>
         </div>`:''
       }
+
+      ${renderBuildiumPicker(s)}
     </div>`;
+}
+
+// ══════════════════════════════════════
+// Buildium multi-select picker — rendered inside each Step 3 match card.
+// Shows up to 5 fuzzy-scored suggestions, plus a search box and a "show all"
+// toggle to expose every Buildium property. Tick as many as apply — actuals
+// get summed across all ticked properties.
+// ══════════════════════════════════════
+function scoreBuildiumMatch(bqName, sheetName) {
+  const stop = new Set(['the','a','an','of','at','in','-','pgo','sd','kc','apartments','townhomes','duplexes','manhattan']);
+  function words(s){return s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(function(w){return w.length>1&&!stop.has(w);});}
+  const a = words(bqName), b = words(sheetName);
+  if (!a.length || !b.length) return 0;
+  let overlap = 0;
+  a.forEach(function(x){ if (b.some(function(y){return x===y||x.includes(y)||y.includes(x);})) overlap++; });
+  return overlap / Math.max(a.length, b.length);
+}
+
+function renderBuildiumPicker(s) {
+  // Skip the picker entirely when the user chose to skip the sheet
+  if (uploadState.matchMap[s.sheetName] === 'skip') return '';
+  const all = Array.isArray(buildiumPropsCache) ? buildiumPropsCache : [];
+  const selected = uploadState.buildiumMap[s.sheetName] || [];
+  const noMatch = uploadState.buildiumNoMatch[s.sheetName] === true;
+  const search = (uploadState.buildiumSearch[s.sheetName] || '').toLowerCase();
+  const expanded = !!uploadState.buildiumExpanded[s.sheetName];
+
+  // If the list hasn't loaded yet, show a placeholder
+  if (!uploadState.buildiumLoaded) {
+    return `
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(128,96,255,.05);border:1px dashed rgba(128,96,255,.3);border-radius:8px;font-size:11px;color:var(--text3);">
+        ⬢ Buildium actuals mapping will appear here once the Buildium property list finishes loading.
+      </div>`;
+  }
+  if (all.length === 0) {
+    return `
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(237,100,100,.05);border:1px dashed rgba(237,100,100,.3);border-radius:8px;font-size:11px;color:var(--text3);">
+        ⬢ Couldn't load Buildium properties. You can still save the budget — actuals just won't auto-populate.
+      </div>`;
+  }
+
+  // Rank by fuzzy score vs. the sheet name, then name
+  const ranked = all.map(function(p){
+    return { p: p, score: scoreBuildiumMatch(p.name, s.displayName || s.sheetName) };
+  }).sort(function(a,b){ return b.score - a.score || a.p.name.localeCompare(b.p.name); });
+
+  const filtered = search
+    ? ranked.filter(function(e){ return e.p.name.toLowerCase().includes(search) || e.p.id.toLowerCase().includes(search); })
+    : ranked;
+
+  const show = expanded ? filtered : filtered.slice(0, 6);
+  const hiddenCount = filtered.length - show.length;
+
+  function rowHtml(entry) {
+    const p = entry.p;
+    const checked = selected.indexOf(p.id) >= 0;
+    const scoreTag = entry.score > 0.3
+      ? `<span style="font-size:10px;color:var(--accent);background:rgba(61,127,255,.1);padding:1px 6px;border-radius:4px;">${Math.round(entry.score*100)}% match</span>`
+      : '';
+    return `
+      <label class="buildium-opt" style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;cursor:pointer;${checked?'background:rgba(128,96,255,.12);border:1px solid rgba(128,96,255,.4);':'border:1px solid transparent;'}" onclick="toggleBuildiumPick(event,'${s.sheetName.replace(/'/g,"\\'")}','${p.id.replace(/'/g,"\\'")}')">
+        <input type="checkbox" ${checked?'checked':''} style="accent-color:#8060FF;cursor:pointer;pointer-events:none;" />
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+          <div style="font-size:10px;color:var(--text3);">ID ${p.id}${p.units?` · ${p.units} units`:''}</div>
+        </div>
+        ${scoreTag}
+      </label>`;
+  }
+
+  const selectedNames = selected.map(function(id){
+    const f = all.find(function(x){return x.id===id;});
+    return f ? f.name : id;
+  });
+
+  return `
+    <div style="margin-top:12px;padding:12px 14px;background:rgba(128,96,255,.05);border:1px solid rgba(128,96,255,.25);border-radius:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#8060FF;">⬢ Buildium property · actuals source</div>
+        <div style="flex:1;"></div>
+        <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" ${noMatch?'checked':''} style="accent-color:#aaa;cursor:pointer;" onchange="toggleBuildiumNoMatch('${s.sheetName.replace(/'/g,"\\'")}',this.checked)" />
+          No Buildium match
+        </label>
+      </div>
+      ${!noMatch ? `
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">
+          Tick every Buildium property whose actuals should fill this budget. Multiple picks will be summed together.
+          ${selected.length ? `<span style="color:var(--accent);">· ${selected.length} selected${selectedNames.length<=2?`: ${selectedNames.join(', ')}`:''}</span>` : ''}
+        </div>
+        <input type="text" value="${search.replace(/"/g,'&quot;')}" placeholder="Search Buildium properties…"
+          style="width:100%;font-size:12px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:8px;"
+          oninput="uploadState.buildiumSearch['${s.sheetName.replace(/'/g,"\\'")}']=this.value;rerenderUploadStepPreservingScroll();setTimeout(function(){var e=document.querySelector('[data-focus-sheet=&quot;${s.sheetName.replace(/'/g,"\\'").replace(/"/g,'&quot;')}&quot;]');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},0);"
+          data-focus-sheet="${s.sheetName.replace(/"/g,'&quot;')}" />
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          ${show.map(rowHtml).join('')}
+          ${hiddenCount > 0 ? `
+            <button class="btn-ghost" style="font-size:11px;padding:5px 10px;margin-top:4px;"
+              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=true;rerenderUploadStepPreservingScroll()">
+              Show all ${filtered.length} Buildium properties →
+            </button>` : ''}
+          ${expanded && search === '' ? `
+            <button class="btn-ghost" style="font-size:11px;padding:5px 10px;margin-top:4px;"
+              onclick="uploadState.buildiumExpanded['${s.sheetName.replace(/'/g,"\\'")}']=false;rerenderUploadStepPreservingScroll()">
+              Collapse to suggestions
+            </button>` : ''}
+          ${filtered.length === 0 ? `
+            <div style="font-size:11px;color:var(--text3);padding:8px;text-align:center;">No Buildium properties match "${search}".</div>` : ''}
+        </div>` : `
+        <div style="font-size:11px;color:var(--text3);font-style:italic;">
+          Marked as no Buildium match — actuals won't auto-populate for this budget.
+        </div>`}
+    </div>`;
+}
+
+// Preserve the upload modal's scroll position across a re-render so
+// ticking a checkbox deep in the list doesn't fling the user back to
+// the top. In step 3 the actual scroll container is the inner div
+// `#upload-match-scroll` (max-height:500px, overflow-y:auto) that wraps
+// the sheet cards — NOT `.modal-body`. We also preserve modal-body's
+// scrollTop as a safety net for other steps. Uses rAF to wait for
+// layout after the re-render.
+function rerenderUploadStepPreservingScroll() {
+  const body  = document.getElementById('upload-modal-body');
+  const inner = document.getElementById('upload-match-scroll');
+  const savedBody  = body  ? body.scrollTop  : 0;
+  const savedInner = inner ? inner.scrollTop : 0;
+  renderUploadStep();
+  requestAnimationFrame(function(){
+    const newBody  = document.getElementById('upload-modal-body');
+    const newInner = document.getElementById('upload-match-scroll');
+    if (newBody)  newBody.scrollTop  = savedBody;
+    if (newInner) newInner.scrollTop = savedInner;
+  });
+}
+
+function toggleBuildiumPick(event, sheetName, buildiumId) {
+  // Prevent double-fire. When a <label> is clicked, the browser ALSO
+  // synthesizes a click on the contained <input> checkbox, which bubbles
+  // back up to the label and re-fires this handler. If we don't bail out
+  // the array toggles twice (net zero change → checkbox looks unchecked)
+  // AND the second rerenderUploadStepPreservingScroll captures scrollTop=0
+  // from the just-rewritten DOM, pinning the user to the top of the list.
+  if (event) {
+    if (event.target && event.target.tagName === 'INPUT') {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    // Belt-and-suspenders: stop propagation on the label click itself so
+    // the synthetic input-click that follows can't also reach this handler.
+    if (event.stopPropagation) event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  uploadState.buildiumMap[sheetName] = uploadState.buildiumMap[sheetName] || [];
+  const arr = uploadState.buildiumMap[sheetName];
+  const idx = arr.indexOf(buildiumId);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(buildiumId);
+  // Ticking a Buildium property clears the "no match" flag implicitly
+  if (arr.length > 0) uploadState.buildiumNoMatch[sheetName] = false;
+  rerenderUploadStepPreservingScroll();
+}
+
+function toggleBuildiumNoMatch(sheetName, checked) {
+  uploadState.buildiumNoMatch[sheetName] = !!checked;
+  if (checked) uploadState.buildiumMap[sheetName] = [];
+  rerenderUploadStepPreservingScroll();
 }
 
 function switchBudgetYear(propId, year) {
@@ -3508,6 +3747,68 @@ let bitqueryConfig = {
   edgeFnReady: true,
 };
 
+// ══════════════════════════════════════
+// Buildium property directory — loaded on demand from portfolio_summary.
+// Each entry: { id, name, units? }. id is the Buildium PropertyId as a string.
+// Cached in memory and localStorage so the budget-upload picker is fast.
+// ══════════════════════════════════════
+let buildiumPropsCache = null;  // null = not loaded yet, [] = loaded but empty
+const BUILDIUM_LIST_KEY = 'bpos_buildium_props_v1';
+
+function getBuildiumIdField(row) {
+  // Row shape from bq-actuals portfolio_summary can vary across versions.
+  // Accept any of these as the Buildium ID, preferring the most specific.
+  return row.BuildiumPropertyId || row.BuildiumId || row.PropertyId || row.Id || null;
+}
+
+function restoreBuildiumPropsCache() {
+  try {
+    const raw = localStorage.getItem(BUILDIUM_LIST_KEY);
+    if (raw) buildiumPropsCache = JSON.parse(raw);
+  } catch(_) {}
+}
+function persistBuildiumPropsCache() {
+  try { localStorage.setItem(BUILDIUM_LIST_KEY, JSON.stringify(buildiumPropsCache || [])); } catch(_) {}
+}
+
+// Load the list of Buildium properties (for the upload picker). Derived from
+// portfolio_summary rows — dedup by BuildiumPropertyId. Falls back to the
+// previous month if the current one has no data yet.
+async function loadBuildiumProps(force) {
+  if (!force && buildiumPropsCache && buildiumPropsCache.length) return buildiumPropsCache;
+  const now = new Date();
+  let year = now.getFullYear(), month = now.getMonth() + 1;
+  let data;
+  try {
+    data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    if (!data || !data.rows || !data.rows.length) {
+      month -= 1; if (month < 1) { month = 12; year -= 1; }
+      data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
+    }
+  } catch (err) {
+    console.warn('[BPOS] loadBuildiumProps failed:', err.message);
+    return buildiumPropsCache || [];
+  }
+  const rows = (data && data.rows) || [];
+  const byId = {};
+  rows.forEach(function(r){
+    const id = getBuildiumIdField(r);
+    if (id == null) return;
+    const sid = String(id);
+    if (byId[sid]) return;
+    byId[sid] = {
+      id:    sid,
+      name:  String(r.PropertyName || r.Name || r.LegalName || sid),
+      units: +(r.TotalUnits || r.Units || 0) || 0,
+    };
+  });
+  buildiumPropsCache = Object.values(byId).sort(function(a,b){
+    return a.name.localeCompare(b.name);
+  });
+  persistBuildiumPropsCache();
+  return buildiumPropsCache;
+}
+
 // Match a BQ property name (e.g. "Park Place - Manhattan - PGO") to a local property
 // Strips common suffixes ("- PGO", "- SD", "- KC", "Apartments", "Townhomes")
 // and scores by how many significant words overlap.
@@ -3515,9 +3816,42 @@ let bitqueryConfig = {
 const BQ_NAME_OVERRIDES = {
   '504-604 cordes': 'CORDES',
 };
+// ID-first match: if the BQ row carries a BuildiumPropertyId and a local
+// property has that ID in its buildiumPropertyIds array, use it.
+//
+// CRITICAL: if the row HAS a BuildiumPropertyId but no tracker property
+// claims it, return null — DO NOT fuzzy-match. Falling back to fuzzy
+// matching on ID-bearing rows is how portfolio-wide data leaked onto
+// whichever property happened to share a word with the BQ row's name
+// (most commonly 1003-1005 Ave K, which accumulated every unmatched
+// Buildium property's income + unit counts). Better to drop an unmapped
+// row than to silently smear it onto the wrong tracker property.
+//
+// Fuzzy matching is only used as a last resort for rows that lack a
+// BuildiumPropertyId entirely (legacy / unversioned BQ rows), and then
+// only against properties without explicit Buildium links.
+function matchBQPropFromRow(row, props) {
+  const bid = getBuildiumIdField(row);
+  if (bid != null) {
+    const sid = String(bid);
+    const linked = props.find(function(p){
+      return Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.indexOf(sid) >= 0;
+    });
+    return linked || null; // strict: unclaimed IDs are dropped, never fuzzy-matched
+  }
+  // No BuildiumPropertyId on this row — fall back to fuzzy name matching,
+  // but only against tracker props that are NOT explicitly linked to some
+  // other Buildium id (so linked props don't get stolen by a stray hit).
+  const unlinked = props.filter(function(p){
+    return !(Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.length);
+  });
+  const fallbackPool = unlinked.length ? unlinked : props;
+  return matchBQProp(String(row.PropertyName || row.Name || ''), fallbackPool);
+}
+
 function matchBQProp(bqName, props) {
   // Check manual overrides first
-  var bqLower = bqName.toLowerCase();
+  var bqLower = String(bqName || '').toLowerCase();
   for (var key in BQ_NAME_OVERRIDES) {
     if (bqLower.indexOf(key) >= 0) {
       var target = BQ_NAME_OVERRIDES[key].toLowerCase();
@@ -3645,8 +3979,22 @@ async function refreshPropUnits(propId) {
   if (!prop) return;
   showToast('Loading unit tracker for ' + prop.name + '…');
   try {
-    const data = await bqFetch({ type: 'property_units', property: bqSearchName(prop.name) });
-    prop.bqUnits = data.rows || [];
+    let rows = [];
+    const linkedIds = Array.isArray(prop.buildiumPropertyIds) ? prop.buildiumPropertyIds : [];
+    if (linkedIds.length && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
+      for (var i = 0; i < linkedIds.length; i++) {
+        const bp = buildiumPropsCache.find(function(x){return x.id === linkedIds[i];});
+        const qname = bp ? bp.name : bqSearchName(prop.name);
+        try {
+          const d = await bqFetch({ type: 'property_units', property: qname });
+          rows = rows.concat(d.rows || []);
+        } catch (_) {}
+      }
+    } else {
+      const data = await bqFetch({ type: 'property_units', property: bqSearchName(prop.name) });
+      rows = data.rows || [];
+    }
+    prop.bqUnits = rows;
     bitqueryConfig.lastSync = Date.now();
     saveBQCache(); // persist so it shows instantly on reload
     renderPage();
@@ -3658,16 +4006,36 @@ async function refreshPropUnits(propId) {
 // BQ CACHE — localStorage persistence for bqOccupancy + bqUnits
 // So the unit tracker shows instantly on page load without waiting
 // for the daily BQ refresh to complete.
+//
+// IMPORTANT: cache is keyed by the stable Supabase UUID (`supabaseId`),
+// NOT the numeric `p.id`. The numeric id is positional — `hydrate()`
+// assigns it as `idx + 1` based on the property's position in the DB
+// row order. After deleting properties and re-uploading, properties
+// land in different positions and inherit different numeric ids, so
+// keying the cache by `p.id` would smear stale BigQuery data (units,
+// actuals) onto the wrong properties. The bump from `_v1` → `_v2`
+// invalidates any old positional cache from previous app builds.
 // ══════════════════════════════════════
-const BQ_CACHE_KEY = 'bpos_bq_cache_v1';
-const BQ_LAST_SYNC_KEY = 'bpos_bq_last_sync_v1';
+const BQ_CACHE_KEY = 'bpos_bq_cache_v2';
+// Bump the last-sync key in lockstep with the cache key. The daily
+// refresh skips work when `lastSync` is today, so without bumping this
+// the new (empty) v2 cache would never get repopulated on first load —
+// it'd just stay blank until tomorrow.
+const BQ_LAST_SYNC_KEY = 'bpos_bq_last_sync_v2';
+
+function bqCacheKeyForProp(p) {
+  // Prefer Supabase UUID (stable across upload/delete cycles). Fall back
+  // to numeric id only when offline (no UUID available).
+  return (p && (p.supabaseId || p.id)) || null;
+}
 
 function saveBQCache() {
   try {
     const cache = {};
     properties.forEach(function(p) {
-      if (!p || !p.id) return;
-      cache[p.id] = {
+      const key = bqCacheKeyForProp(p);
+      if (!key) return;
+      cache[key] = {
         bqOccupancy: p.bqOccupancy || null,
         bqUnits:     p.bqUnits || null,
         bqActuals:   p.bqActuals || null,
@@ -3685,7 +4053,8 @@ function restoreBQCache() {
     if (!raw) return;
     const cache = JSON.parse(raw);
     properties.forEach(function(p) {
-      const entry = cache[p.id];
+      const key = bqCacheKeyForProp(p);
+      const entry = key && cache[key];
       if (!entry) return;
       if (entry.bqOccupancy) p.bqOccupancy = entry.bqOccupancy;
       if (entry.bqUnits)     p.bqUnits     = entry.bqUnits;
@@ -3696,6 +4065,27 @@ function restoreBQCache() {
     const last = localStorage.getItem(BQ_LAST_SYNC_KEY);
     if (last) { bitqueryConfig.lastSync = +last; bitqueryConfig.connected = true; }
   } catch (e) { console.warn('[BPOS] restoreBQCache:', e.message); }
+}
+
+// Drop any cache entries that no longer correspond to a live property.
+// Called after delete/purge flows so removed properties don't leave
+// orphan cache rows that could be re-applied if a new property happened
+// to receive the same key (rare with UUIDs, but defensive).
+function pruneBQCache() {
+  try {
+    const raw = localStorage.getItem(BQ_CACHE_KEY);
+    if (!raw) return;
+    const cache = JSON.parse(raw);
+    const live = new Set();
+    properties.forEach(function(p){
+      const k = bqCacheKeyForProp(p);
+      if (k) live.add(String(k));
+    });
+    Object.keys(cache).forEach(function(k){
+      if (!live.has(String(k))) delete cache[k];
+    });
+    localStorage.setItem(BQ_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) { console.warn('[BPOS] pruneBQCache:', e.message); }
 }
 
 function isSameCalendarDay(tsA, tsB) {
@@ -3721,7 +4111,9 @@ async function runDailyBQRefresh(forceRefresh) {
   let year  = now.getFullYear();
   let month = now.getMonth() + 1;
 
-  // 1. Portfolio summary (income / expense / noi / capex per property)
+  // 1. Portfolio summary (income / expense / noi / capex per property).
+  // Group rows by tracker property via buildiumPropertyIds, sum the financial
+  // fields across every linked row, then apply once per tracker property.
   try {
     let data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
     if (!data.rows || data.rows.length === 0) {
@@ -3729,43 +4121,96 @@ async function runDailyBQRefresh(forceRefresh) {
       if (month < 1) { month = 12; year = year - 1; }
       data = await bqFetch({ type: 'portfolio_summary', year: year, month: month });
     }
-    (data.rows || []).forEach(function(row) {
-      const prop = matchBQProp(String(row.PropertyName || ''), properties);
-      if (prop) applyBQActuals(prop, row);
+    const rows = data.rows || [];
+    const grouped = {}; // propIdx -> { prop, rows: [] }
+    rows.forEach(function(row) {
+      const prop = matchBQPropFromRow(row, properties);
+      if (!prop) return;
+      const key = String(prop.id);
+      if (!grouped[key]) grouped[key] = { prop: prop, rows: [] };
+      grouped[key].rows.push(row);
+    });
+    Object.keys(grouped).forEach(function(k){
+      const g = grouped[k];
+      // Merge the BQ rows into a single synthetic row by summing financial
+      // fields. The original PropertyName / Date are kept from the first row.
+      const merged = Object.assign({}, g.rows[0]);
+      const sumFields = ['TotalIncome','TotalExpense','NetIncome','RentIncome','CAPEX','TotalCapex','CapExSpent','TotalNonOperating','NonOperatingExpenses'];
+      sumFields.forEach(function(f){ merged[f] = 0; });
+      g.rows.forEach(function(r){
+        sumFields.forEach(function(f){
+          const v = parseFloat(r[f]);
+          if (!isNaN(v)) merged[f] += v;
+        });
+      });
+      if (g.rows.length > 1) {
+        merged.PropertyName = g.prop.name + ' (sum of ' + g.rows.length + ' Buildium properties)';
+      }
+      applyBQActuals(g.prop, merged);
     });
   } catch (e) { console.warn('[BPOS] BQ portfolio_summary failed:', e.message); }
 
-  // 2. Portfolio occupancy (units / occupied / vacant / preleased per property)
+  // 2. Portfolio occupancy — same aggregation: sum unit counts across every
+  // Buildium property that a tracker prop is linked to, then recompute occ %.
   try {
     const occData = await bqFetch({ type: 'portfolio_occupancy' });
-    (occData.rows || []).forEach(function(row) {
-      const prop = matchBQProp(String(row.PropertyName || ''), properties);
+    const rows = occData.rows || [];
+    const grouped = {};
+    rows.forEach(function(row){
+      const prop = matchBQPropFromRow(row, properties);
       if (!prop) return;
-      prop.bqOccupancy = {
-        total:     +row.TotalUnits    || 0,
-        occupied:  +row.Occupied      || 0,
-        vacant:    +row.Vacant        || 0,
-        makeReady: +row.MakeReady     || 0,
-        available: +row.Available     || 0,
-        occPct:    +row.OccupancyPct  || 0,
-        preleased: +row.Preleased || +row.PreLeased || +row.PreleaseCount || 0,
-        leasesExp30d: +row.LeasesExpiring30d || 0,
-        leasesExp60d: +row.LeasesExpiring60d || 0,
-      };
+      const key = String(prop.id);
+      if (!grouped[key]) grouped[key] = { prop: prop, rows: [] };
+      grouped[key].rows.push(row);
+    });
+    Object.keys(grouped).forEach(function(k){
+      const g = grouped[k];
+      const agg = { total:0, occupied:0, vacant:0, makeReady:0, available:0, preleased:0, leasesExp30d:0, leasesExp60d:0 };
+      g.rows.forEach(function(row){
+        agg.total       += +row.TotalUnits    || 0;
+        agg.occupied    += +row.Occupied      || 0;
+        agg.vacant      += +row.Vacant        || 0;
+        agg.makeReady   += +row.MakeReady     || 0;
+        agg.available   += +row.Available     || 0;
+        agg.preleased   += +row.Preleased || +row.PreLeased || +row.PreleaseCount || 0;
+        agg.leasesExp30d += +row.LeasesExpiring30d || 0;
+        agg.leasesExp60d += +row.LeasesExpiring60d || 0;
+      });
+      agg.occPct = agg.total > 0 ? (agg.occupied / agg.total) * 100 : 0;
+      g.prop.bqOccupancy = agg;
     });
   } catch (e) { console.warn('[BPOS] BQ portfolio_occupancy failed:', e.message); }
 
   // 3. Per-property unit detail. Fire in parallel with a concurrency cap so
   // the edge function isn't slammed. One failure per property does not
-  // abort the others.
+  // abort the others. When a tracker property has multiple Buildium links,
+  // we query each linked Buildium property (by name) and concatenate the
+  // unit rows so the tracker shows a combined unit list.
   const CONCURRENCY = 4;
   const queue = properties.slice();
   async function worker() {
     while (queue.length) {
       const prop = queue.shift();
       try {
-        const d = await bqFetch({ type: 'property_units', property: bqSearchName(prop.name) });
-        prop.bqUnits = d.rows || [];
+        let rows = [];
+        const linkedIds = Array.isArray(prop.buildiumPropertyIds) ? prop.buildiumPropertyIds : [];
+        if (linkedIds.length && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
+          // Query each linked Buildium property by its BQ name
+          for (var i = 0; i < linkedIds.length; i++) {
+            const bpid = linkedIds[i];
+            const bp = buildiumPropsCache.find(function(x){return x.id === bpid;});
+            const qname = bp ? bp.name : bqSearchName(prop.name);
+            try {
+              const d = await bqFetch({ type: 'property_units', property: qname });
+              rows = rows.concat(d.rows || []);
+            } catch (_) {}
+          }
+        } else {
+          // No Buildium linkage — fall back to name-based single fetch
+          const d = await bqFetch({ type: 'property_units', property: bqSearchName(prop.name) });
+          rows = d.rows || [];
+        }
+        prop.bqUnits = rows;
       } catch (e) { /* per-property failure is expected for unmapped names */ }
     }
   }
@@ -4060,6 +4505,14 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
       .filter(n => n.year === (latest?.year || curYear))
       .forEach(n => { monthlyNOI[n.month - 1] = n.noi; });
 
+    // Buildium linkage: prefer new array column, fall back to legacy single-id column
+    var buildiumIds = [];
+    if (Array.isArray(row.buildium_property_ids) && row.buildium_property_ids.length) {
+      buildiumIds = row.buildium_property_ids.map(function(v){return String(v);}).filter(Boolean);
+    } else if (row.buildium_property_id) {
+      buildiumIds = [String(row.buildium_property_id)];
+    }
+
     return {
       id:          numId,           // numeric — used by all UI handlers
       supabaseId:  uuid,            // UUID — used only for DB calls
@@ -4069,6 +4522,7 @@ function hydrate(propRows, budgetsByProp, actualsByProp, noiByProp) {
       pm:          row.pm      || 'AppFolio',
       market:      row.market  || '',
       type:        row.type    || 'existing',
+      buildiumPropertyIds: buildiumIds,
       budgetYear:  latest?.year || curYear,
       budget,
       budgetHistory,
@@ -4109,14 +4563,37 @@ async function boot() {
     const propRows = await sbReq('properties?select=*&order=name.asc');
 
     if (!propRows || propRows.length === 0) {
-      // First run — seed demo properties into DB
+      // Empty properties table. We only want to seed demo data on the
+      // TRUE first launch — not every time the user intentionally wipes
+      // their portfolio. The localStorage flag `bpos_seeded` records that
+      // we've already bootstrapped at least once on this machine.
+      let alreadySeeded = false;
+      try { alreadySeeded = localStorage.getItem('bpos_seeded') === '1'; } catch (_) {}
+
+      if (alreadySeeded) {
+        // User has a clean, intentionally-empty portfolio. Show it as-is.
+        properties = [];
+        _idToUuid = {};
+        try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+        if (overlay) overlay.classList.add('hidden');
+        try { syncBadge('saved', '● Live'); } catch (_) {}
+        renderPage();
+        return;
+      }
+
+      // True first launch — seed demo properties into DB
       if (msgEl) msgEl.textContent = 'First launch — saving demo portfolio…';
       await seedDemo();
+      try { localStorage.setItem('bpos_seeded', '1'); } catch (_) {}
       if (overlay) overlay.classList.add('hidden');
       try { syncBadge('saved', '● Live'); } catch (_) {}
       renderPage();
       return;
     }
+
+    // Any time we find properties in the DB, we've obviously been seeded
+    // at some point. Make sure the flag is set so future wipes stick.
+    try { localStorage.setItem('bpos_seeded', '1'); } catch (_) {}
 
     // Load budgets, actuals, NOI for all properties in parallel
     if (msgEl) msgEl.textContent = 'Loading budgets & actuals…';
@@ -4142,6 +4619,13 @@ async function boot() {
     // Apply thresholds from DB
     if (threshRow && threshRow[0]) {
       const t = threshRow[0];
+      // Pace bands (yellow/red). These columns may not exist yet on
+      // older installs — only overwrite the localStorage-seeded value
+      // when the DB actually has a non-null value for the column.
+      if (t.pace_yellow_pct != null)     THRESHOLDS.paceYellowPct.value   = t.pace_yellow_pct;
+      if (t.pace_yellow_enabled != null) THRESHOLDS.paceYellowPct.enabled = t.pace_yellow_enabled;
+      if (t.pace_red_pct != null)        THRESHOLDS.paceRedPct.value      = t.pace_red_pct;
+      if (t.pace_red_enabled != null)    THRESHOLDS.paceRedPct.enabled    = t.pace_red_enabled;
       THRESHOLDS.noiMissPct.value          = t.noi_miss_pct       ?? 5;
       THRESHOLDS.noiMissPct.enabled        = t.noi_enabled        ?? true;
       THRESHOLDS.noiPace.value             = t.noi_pace_pct       ?? 5;
@@ -4196,6 +4680,7 @@ async function boot() {
     // unit tracker panels populate immediately, even if today's refresh
     // hasn't completed yet.
     try { restoreBQCache(); } catch (e) { console.warn('[BPOS] restoreBQCache:', e.message); }
+    try { restoreBuildiumPropsCache(); } catch (e) { console.warn('[BPOS] restoreBuildiumPropsCache:', e.message); }
 
     // ── DB load complete — render UI (errors here must NOT disable DB) ──
     if (overlay) overlay.classList.add('hidden');
@@ -4313,25 +4798,55 @@ async function dbSaveProp(prop) {
   if (!dbOnline) return;
   const uuid = getUuid(prop);
   syncBadge('saving', '↑ Saving…');
+  // Build full payload including buildium_property_ids (array of strings).
+  // If the column doesn't exist on the deployed schema, we retry without it.
+  const buildiumIds = Array.isArray(prop.buildiumPropertyIds)
+    ? prop.buildiumPropertyIds.map(function(v){return String(v);}).filter(Boolean)
+    : [];
+  const fullBody = {
+    name: prop.name, address: prop.address,
+    units: prop.units, pm: prop.pm,
+    market: prop.market, type: prop.type,
+    buildium_property_ids: buildiumIds,
+  };
+  const fullBodyNew = {
+    name: prop.name, address: prop.address || '—',
+    units: prop.units || 0, pm: prop.pm || 'AppFolio',
+    market: prop.market || '', type: prop.type || 'existing',
+    buildium_property_ids: buildiumIds,
+  };
+  function stripBuildium(obj) {
+    var copy = {};
+    Object.keys(obj).forEach(function(k){ if (k !== 'buildium_property_ids') copy[k] = obj[k]; });
+    return copy;
+  }
+  async function tryPatch(body) {
+    return sbReq('properties?id=eq.' + uuid, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  async function tryPost(body) {
+    return sbReq('properties', { method: 'POST', body: JSON.stringify(body) });
+  }
   try {
     if (uuid) {
-      await sbReq('properties?id=eq.' + uuid, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          name: prop.name, address: prop.address,
-          units: prop.units, pm: prop.pm,
-          market: prop.market, type: prop.type,
-        }),
-      });
+      try {
+        await tryPatch(fullBody);
+      } catch (err) {
+        // Column missing or type mismatch — retry without the array field
+        if (/buildium_property_ids/.test(err.message || '')) {
+          console.warn('[BPOS] buildium_property_ids column missing — run migration: ALTER TABLE properties ADD COLUMN buildium_property_ids TEXT[];');
+          await tryPatch(stripBuildium(fullBody));
+        } else { throw err; }
+      }
     } else {
-      const [saved] = await sbReq('properties', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: prop.name, address: prop.address || '—',
-          units: prop.units || 0, pm: prop.pm || 'AppFolio',
-          market: prop.market || '', type: prop.type || 'existing',
-        }),
-      });
+      let saved;
+      try {
+        [saved] = await tryPost(fullBodyNew);
+      } catch (err) {
+        if (/buildium_property_ids/.test(err.message || '')) {
+          console.warn('[BPOS] buildium_property_ids column missing — run migration: ALTER TABLE properties ADD COLUMN buildium_property_ids TEXT[];');
+          [saved] = await tryPost(stripBuildium(fullBodyNew));
+        } else { throw err; }
+      }
       if (saved?.id) {
         prop.supabaseId = saved.id;
         _idToUuid[prop.id] = saved.id;
@@ -4343,6 +4858,121 @@ async function dbSaveProp(prop) {
     console.error('[BPOS] dbSaveProp:', e.message);
   }
 }
+
+// Destructive: wipe every saved budget from Supabase AND in-memory state
+// so the user can re-upload from scratch. Actuals / NOI history / property
+// rows are left intact — only the contents of the `budgets` table and the
+// in-memory budget / budgetHistory / budgetYear fields are cleared.
+// Destructive: remove a single property from Supabase (and all of its
+// child rows — budgets, actuals, noi_history, alert_log) plus in-memory
+// state. Children are deleted first in case foreign-key cascade isn't
+// configured on every table.
+async function dbDeleteProperty(uuid) {
+  if (!dbOnline || !uuid) return;
+  syncBadge('saving', '↑ Deleting…');
+  const children = ['alert_log', 'noi_history', 'actuals', 'budgets'];
+  for (const table of children) {
+    try {
+      await sbReq(table + '?property_id=eq.' + uuid, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('[BPOS] dbDeleteProperty child ' + table + ':', e.message);
+      // Keep going — if FK cascade is configured, the parent delete will
+      // take care of leftovers; if not, we've done our best.
+    }
+  }
+  await sbReq('properties?id=eq.' + uuid, { method: 'DELETE' });
+  syncBadge('saved', '● Deleted');
+}
+
+function deleteProperty(propId) {
+  const prop = properties.find(function(p){return p.id === propId;});
+  if (!prop) return;
+  const ok = confirm(
+    'Delete "' + prop.name + '" from the tracker?\n\n' +
+    '• Removed from the Portfolio Tracking page\n' +
+    '• All of its budgets, actuals, NOI history, and alerts are wiped from Supabase\n' +
+    '• Buildium / BigQuery data is NOT touched — only the tracker record\n\n' +
+    'This cannot be undone. Continue?'
+  );
+  if (!ok) return;
+
+  const uuid = getUuid(prop);
+  // Kick off DB delete; don't block UI on it
+  if (uuid && dbOnline) {
+    dbDeleteProperty(uuid).catch(function(e){
+      console.error('[BPOS] dbDeleteProperty failed:', e.message);
+      alert('DB delete failed: ' + e.message + '\n\nThe property was removed from the tracker view, but may still exist in Supabase. Retry or delete manually in the dashboard.');
+    });
+  }
+
+  // Remove from in-memory state
+  properties = properties.filter(function(p){ return p.id !== propId; });
+  try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+  // Drop BQ cache entries for the deleted property so its stale units /
+  // actuals can't smear onto another property after a re-upload.
+  try { pruneBQCache(); } catch(e) {}
+
+  // Close the edit modal if it's open for this property
+  if (typeof closeEditProp === 'function' && editPropId === propId) {
+    closeEditProp();
+  }
+
+  // Re-render and toast
+  try { if (typeof renderPage === 'function') renderPage(); } catch(e) {}
+  try { if (typeof showToast === 'function') showToast('"' + prop.name + '" removed from tracker.'); } catch(e) {}
+}
+window.deleteProperty = deleteProperty;
+
+async function purgeAllBudgets(opts) {
+  opts = opts || {};
+  const skipConfirm = opts.confirm === false;
+  if (!skipConfirm) {
+    const ok = confirm(
+      'Delete EVERY saved budget?\n\n' +
+      '• Every row in the budgets table will be removed from Supabase\n' +
+      '• All in-memory budgets and budget history will be cleared\n' +
+      '• Properties, actuals, NOI history, and Buildium links are NOT touched\n\n' +
+      'After this, reload the page and re-upload your budget file.\n\n' +
+      'This cannot be undone. Continue?'
+    );
+    if (!ok) return;
+  }
+
+  // 1. Delete every budget row in Supabase. PostgREST requires a filter
+  // even when deleting "everything" — `year=gte.0` matches every row
+  // because year is a required non-negative integer.
+  if (dbOnline) {
+    try {
+      syncBadge('saving', '↑ Deleting…');
+      await sbReq('budgets?year=gte.0', { method: 'DELETE' });
+      syncBadge('saved', '● Cleared');
+    } catch (e) {
+      syncBadge('error', '✕ Error');
+      console.error('[BPOS] purgeAllBudgets (DB):', e.message);
+      alert('Failed to delete budgets from Supabase:\n\n' + e.message +
+            '\n\nIn-memory budgets were NOT cleared. Try again or run SQL: DELETE FROM budgets;');
+      return;
+    }
+  }
+
+  // 2. Clear in-memory budget state on every property
+  const emptyBudget = { income: [], expenses: [], nonop: [], capexBudget: 0 };
+  properties.forEach(function(p){
+    p.budget        = JSON.parse(JSON.stringify(emptyBudget));
+    p.budgetHistory = {};
+    p.budgetYear    = null;
+    p.capexBudget   = 0;
+  });
+
+  // 3. Persist cleared state to localStorage so a refresh doesn't rehydrate
+  // the old in-memory budgets.
+  try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+
+  // 4. Re-render the page so the UI reflects the wipe
+  try { if (typeof renderPage === 'function') renderPage(); } catch(e) {}
+  try { if (typeof showToast === 'function') showToast('All budgets cleared. Upload a fresh budget file to start over.'); } catch(e) {}
+}
+window.purgeAllBudgets = purgeAllBudgets;
 
 async function dbSaveBudget(prop, year, budget) {
   const uuid = getUuid(prop);
@@ -4413,35 +5043,156 @@ async function dbSaveActuals(prop) {
 
 async function dbSaveThresholds() {
   if (!dbOnline) return;
-  try {
-    const rows = await sbReq('alert_thresholds?select=id&limit=1');
-    const id   = rows?.[0]?.id;
-    if (!id) return;
-    await sbReq('alert_thresholds?id=eq.' + id, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        noi_miss_pct:         THRESHOLDS.noiMissPct.value,
-        noi_enabled:          THRESHOLDS.noiMissPct.enabled,
-        noi_pace_pct:         THRESHOLDS.noiPace.value,
-        noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
-        occupancy_min:        THRESHOLDS.occupancyMin.value,
-        occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
-        income_pace_pct:      THRESHOLDS.incomePace.value,
-        income_pace_enabled:  THRESHOLDS.incomePace.enabled,
-        expense_pace_pct:     THRESHOLDS.expensePacePct.value,
-        expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
-        capex_hit_pct:        THRESHOLDS.capexHit.value,
-        capex_enabled:        THRESHOLDS.capexHit.enabled,
-        capex_pace_pct:       THRESHOLDS.capexPace.value,
-        capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
-        unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
-        unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
-        collections_min:      THRESHOLDS.collectionsMin.value,
-        collections_enabled:  THRESHOLDS.collectionsMin.enabled,
-        cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
-      }),
-    });
-  } catch (e) { console.warn('[BPOS] dbSaveThresholds:', e.message); }
+  // Full payload including pace-band fields. If the DB is missing any of
+  // these newer columns, we retry with a reduced payload so threshold
+  // changes still persist for the columns that DO exist.
+  const fullPayload = {
+    pace_yellow_pct:      THRESHOLDS.paceYellowPct.value,
+    pace_yellow_enabled:  THRESHOLDS.paceYellowPct.enabled,
+    pace_red_pct:         THRESHOLDS.paceRedPct.value,
+    pace_red_enabled:     THRESHOLDS.paceRedPct.enabled,
+    noi_miss_pct:         THRESHOLDS.noiMissPct.value,
+    noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+    noi_pace_pct:         THRESHOLDS.noiPace.value,
+    noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
+    occupancy_min:        THRESHOLDS.occupancyMin.value,
+    occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+    income_pace_pct:      THRESHOLDS.incomePace.value,
+    income_pace_enabled:  THRESHOLDS.incomePace.enabled,
+    expense_pace_pct:     THRESHOLDS.expensePacePct.value,
+    expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
+    capex_hit_pct:        THRESHOLDS.capexHit.value,
+    capex_enabled:        THRESHOLDS.capexHit.enabled,
+    capex_pace_pct:       THRESHOLDS.capexPace.value,
+    capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
+    unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
+    unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+    collections_min:      THRESHOLDS.collectionsMin.value,
+    collections_enabled:  THRESHOLDS.collectionsMin.enabled,
+    cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
+  };
+  // Fallback payload omits columns that may not yet exist in the DB
+  // (added after initial schema). If the full payload fails with a
+  // missing-column error, we retry with this reduced set.
+  const legacyPayload = {
+    noi_miss_pct:         THRESHOLDS.noiMissPct.value,
+    noi_enabled:          THRESHOLDS.noiMissPct.enabled,
+    noi_pace_pct:         THRESHOLDS.noiPace.value,
+    noi_pace_enabled:     THRESHOLDS.noiPace.enabled,
+    occupancy_min:        THRESHOLDS.occupancyMin.value,
+    occupancy_enabled:    THRESHOLDS.occupancyMin.enabled,
+    income_pace_pct:      THRESHOLDS.incomePace.value,
+    income_pace_enabled:  THRESHOLDS.incomePace.enabled,
+    expense_pace_pct:     THRESHOLDS.expensePacePct.value,
+    expense_pace_enabled: THRESHOLDS.expensePacePct.enabled,
+    capex_hit_pct:        THRESHOLDS.capexHit.value,
+    capex_enabled:        THRESHOLDS.capexHit.enabled,
+    capex_pace_pct:       THRESHOLDS.capexPace.value,
+    capex_pace_enabled:   THRESHOLDS.capexPace.enabled,
+    unit_rent_below_pct:  THRESHOLDS.unitRentBelowPct.value,
+    unit_rent_enabled:    THRESHOLDS.unitRentBelowPct.enabled,
+    collections_min:      THRESHOLDS.collectionsMin.value,
+    collections_enabled:  THRESHOLDS.collectionsMin.enabled,
+    cf_negative_enabled:  THRESHOLDS.cfNegative.enabled,
+  };
+  // Save by first PATCHing (with return=representation so we can SEE what
+  // landed in the row), and if that returns 0 rows (e.g. RLS blocks it or
+  // the row was deleted) fall back to POST. This removes the silent-zero-
+  // rows failure mode that made saves look successful while nothing was
+  // actually persisted.
+  async function trySave(payload) {
+    const existing = await sbReq('alert_thresholds?select=id&order=id.asc&limit=1');
+    const id = existing?.[0]?.id;
+    console.log('[BPOS-thresholds] save start, existing row id =', id, 'payload=', payload);
+    let result;
+    if (id != null) {
+      result = await sbReq('alert_thresholds?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      console.log('[BPOS-thresholds] PATCH response (rows updated):', result);
+      if (!Array.isArray(result) || result.length === 0) {
+        // PATCH succeeded HTTP-wise but touched no row — likely RLS or the
+        // row vanished. Try a POST so at least a row exists next time.
+        console.warn('[BPOS-thresholds] PATCH updated 0 rows — falling back to POST (likely RLS policy blocking UPDATE)');
+        result = await sbReq('alert_thresholds', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(payload),
+        });
+        console.log('[BPOS-thresholds] fallback POST response:', result);
+      }
+    } else {
+      result = await sbReq('alert_thresholds', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      console.log('[BPOS-thresholds] POST response (row inserted):', result);
+    }
+    // Final verification: re-read the row and compare specific fields the
+    // user cares about. If the DB disagrees with what we intended, scream
+    // in the console so the issue is visible without digging.
+    try {
+      const verify = await sbReq('alert_thresholds?select=*&order=id.asc&limit=1');
+      const v = verify?.[0] || {};
+      const mismatches = Object.keys(payload).filter(function(k){
+        // loose equality to tolerate string/number + null/undefined parity
+        return String(v[k]) !== String(payload[k]);
+      });
+      if (mismatches.length) {
+        console.warn('[BPOS-thresholds] ⚠ DB row disagrees with saved payload for fields:', mismatches, '| DB row:', v);
+      } else {
+        console.log('[BPOS-thresholds] ✓ DB row matches saved payload for all fields');
+      }
+    } catch (verifyErr) {
+      console.warn('[BPOS-thresholds] verify read failed:', verifyErr.message);
+    }
+  }
+  // Iteratively strip any column Supabase says doesn't exist and retry,
+  // instead of only knowing about one specific missing-column error class.
+  // Bounded to the number of fields so a truly broken DB can't spin forever.
+  const droppedColumns = [];
+  let payload = JSON.parse(JSON.stringify(fullPayload));
+  let lastError = null;
+  const maxAttempts = Object.keys(fullPayload).length + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await trySave(payload);
+      syncBadge('saved', '● Saved');
+      if (droppedColumns.length) {
+        console.warn('[BPOS-thresholds] saved OK after skipping missing columns:', droppedColumns,
+          '— to persist these too, run the migration:\n\nALTER TABLE alert_thresholds ' +
+          droppedColumns.map(function(c){
+            const typ = /_enabled$/.test(c) ? 'BOOLEAN DEFAULT true' : 'NUMERIC DEFAULT 0';
+            return 'ADD COLUMN IF NOT EXISTS ' + c + ' ' + typ;
+          }).join(', ') + ';');
+      }
+      lastError = null;
+      break;
+    } catch (e) {
+      lastError = e;
+      const msg = (e && e.message) || '';
+      // PGRST204 format: "Could not find the 'column_name' column of '...'"
+      const m = msg.match(/'([a-z0-9_]+)' column/i)
+              || msg.match(/column "([a-z0-9_]+)"/i)
+              || msg.match(/column ([a-z0-9_]+) /i);
+      const badCol = m && m[1];
+      if (badCol && payload.hasOwnProperty(badCol)) {
+        console.warn('[BPOS-thresholds] DB missing column "' + badCol + '" — stripping and retrying');
+        droppedColumns.push(badCol);
+        delete payload[badCol];
+        continue;
+      }
+      // Error wasn't about a known column — give up.
+      break;
+    }
+  }
+  if (lastError) {
+    syncBadge('error', '✕ Error');
+    console.error('[BPOS-thresholds] save failed:', lastError.message);
+  }
 }
 
 async function dbLogAlert(alert, prop) {
@@ -4515,6 +5266,75 @@ async function dbClearAlerts() {
 }
 
 // ══════════════════════════════════════
+// DEMO CLEANUP — wipes seeded demo actuals + dismisses every active alert.
+// Demo alerts come from two sources:
+//   1. actuals rows with source='demo' (seeded on very first launch)
+//   2. stale alert_log entries left over from those demo actuals
+// This function removes both, so the next render/BQ refresh starts clean.
+// ══════════════════════════════════════
+async function purgeDemoAndStaleAlerts(opts) {
+  opts = opts || {};
+  const confirmFirst = opts.confirm !== false;
+  if (confirmFirst) {
+    const ok = confirm(
+      'Clear all demo alerts?\n\n' +
+      '• Dismisses every active alert in the log\n' +
+      '• Deletes any actuals rows still marked source="demo"\n' +
+      '• Reloads from BigQuery on next refresh\n\n' +
+      'Real budgets and uploaded actuals are not touched.'
+    );
+    if (!ok) return;
+  }
+  showToast('Clearing demo alerts…');
+  let dismissed = 0, deleted = 0;
+  try {
+    // 1. Dismiss every active alert in the DB (so they stop resurfacing)
+    if (dbOnline) {
+      try {
+        const before = await sbReq('alert_log?dismissed=eq.false&select=id');
+        dismissed = (before || []).length;
+        await sbReq('alert_log?dismissed=eq.false', {
+          method: 'PATCH',
+          body: JSON.stringify({ dismissed: true }),
+        });
+      } catch (e) { console.warn('[BPOS] purge: dismiss alerts failed:', e.message); }
+    }
+    // 2. Delete demo-sourced actuals rows
+    if (dbOnline) {
+      try {
+        const demoRows = await sbReq('actuals?source=eq.demo&select=id');
+        deleted = (demoRows || []).length;
+        if (deleted > 0) {
+          await sbReq('actuals?source=eq.demo', { method: 'DELETE' });
+        }
+      } catch (e) { console.warn('[BPOS] purge: delete demo actuals failed:', e.message); }
+    }
+    // 3. Zero out demo actuals in memory so alerts don't keep firing from them
+    properties.forEach(function(p){
+      if (p.actualsSource === 'demo') {
+        if (Array.isArray(p.actuals.income))   p.actuals.income   = p.actuals.income.map(function(){return 0;});
+        if (Array.isArray(p.actuals.expenses)) p.actuals.expenses = p.actuals.expenses.map(function(){return 0;});
+        if (Array.isArray(p.actuals.nonop))    p.actuals.nonop    = p.actuals.nonop.map(function(){return 0;});
+        p.actuals.capexSpent  = 0;
+        p.actuals.occupancy   = 0;
+        p.actuals.collections = 0;
+        p.actualsSource = null;
+      }
+    });
+    // 4. Clear in-memory alert log
+    ALERT_LOG.forEach(function(a){ a.dismissed = true; });
+    renderPage();
+    showToast('Cleared ' + dismissed + ' alerts · deleted ' + deleted + ' demo actuals rows.');
+  } catch (e) {
+    console.error('[BPOS] purgeDemoAndStaleAlerts:', e.message);
+    showToast('Purge failed: ' + e.message, true);
+  }
+}
+
+// Expose a shorter alias so a button onclick can call it cleanly
+window.purgeDemoAlerts = purgeDemoAndStaleAlerts;
+
+// ══════════════════════════════════════
 // PATCH existing functions to persist to DB
 // All patches are additive — original function still runs first
 // ══════════════════════════════════════
@@ -4585,12 +5405,9 @@ saveEditProp = function() {
   if (prop) dbSaveProp(prop);
 };
 
-// saveThresholds → persist threshold changes
-const __saveThresholds = saveThresholds;
-saveThresholds = function() {
-  __saveThresholds();
-  dbSaveThresholds();
-};
+// saveThresholds already calls dbSaveThresholds internally (see line ~2102),
+// so no wrapper is needed here. A previous wrapper double-dispatched the DB
+// save and muddied diagnostic logs — removed intentionally.
 
 // dismissAlert → persist dismiss to DB
 const __dismissAlert = dismissAlert;

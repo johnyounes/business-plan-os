@@ -229,21 +229,53 @@ const QUERIES: Record<string, string> = {
     ORDER BY property_name, snapshot_month, t12_section, account_name
   `,
 
-  // PropUp unit turns with cross-system mapping
-  // Pure SELECT t.* — no computed columns that reference specific fields.
-  // This way renamed/missing columns in propup_data.turnovers never break the query.
-  // The dashboard reads whatever fields happen to be present and handles missing ones client-side.
+  // PropUp unit turns with cross-system mapping + step schedule dates.
+  // Aliases match what bpos-dashboard.html expects:
+  //   board_name → board, unit_name → unit_number, date_move_out → move_out_date,
+  //   turnover_start_date → start_date, date_available → end_date
+  // Initial Walk / Final Walk dates come from turn_step_schedules (one LEFT JOIN each).
   turns: `
     SELECT
-      t.*,
+      t.turnover_id,
+      t.board_name                  AS board,
+      t.unit_name                   AS unit_number,
+      t.property_name               AS propup_property_name,
+      t.unit_type,
+      t.square_footage,
+      t.finish_level,
+      t.active_workflow_step,
+      t.assignee_name,
+      t.vacancy_loss,
+      t.last_rent_cost,
+      t.unit_rent,
+      t.is_unit_down,
+      t.is_unit_on_hold,
+      t.date_move_out               AS move_out_date,
+      t.pms_move_out_date,
+      t.turnover_start_date         AS start_date,
+      t.date_showable,
+      t.date_available              AS end_date,
+      t.date_created,
+      t.date_updated,
+      t.is_completed,
+      t.is_canceled,
+      iw.due_date                   AS initial_walk_date,
+      iw.status                     AS initial_walk_status,
+      fw.due_date                   AS final_walk_date,
+      fw.status                     AS final_walk_status,
       pm.buildium_property_id,
-      bp.t12_name AS property_name
+      bp.t12_name                   AS property_name
     FROM \`${PROJECT_ID}.propup_data.turnovers\` t
+    LEFT JOIN \`${PROJECT_ID}.propup_data.turn_step_schedules\` iw
+      ON t.turnover_id = iw.turnover_id AND LOWER(iw.step_name) = 'initial walk'
+    LEFT JOIN \`${PROJECT_ID}.propup_data.turn_step_schedules\` fw
+      ON t.turnover_id = fw.turnover_id AND LOWER(fw.step_name) = 'final walk'
     LEFT JOIN \`${PROJECT_ID}.propup_data.property_mapping\` pm
       ON t.property_id = pm.propup_property_id
     LEFT JOIN ${T}.properties\` bp
       ON pm.buildium_property_id = bp.property_id
-    ORDER BY bp.t12_name
+    WHERE t.is_completed = FALSE AND t.is_canceled = FALSE
+    ORDER BY bp.t12_name, t.unit_name
   `,
 
   // Economic occupancy per property per month — authoritative source.

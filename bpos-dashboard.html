@@ -694,7 +694,18 @@ const fmtPct1 = (v) => {
 };
 const fmtDate = (d) => {
   if (!d) return '—';
-  const dt = new Date(d);
+  let dt;
+  // BigQuery REST API returns TIMESTAMP as epoch seconds (float string like "1.712e+09")
+  // or as ISO string. Handle both.
+  if (typeof d === 'object' && d.v) d = d.v;  // BigQuery {v: value} wrapper
+  const num = typeof d === 'number' ? d : (typeof d === 'string' && /^[\d.eE+\-]+$/.test(d.trim()) ? parseFloat(d) : NaN);
+  if (!isNaN(num)) {
+    // If value < 1e12, it's epoch seconds — convert to ms. Otherwise already ms.
+    dt = new Date(num < 1e12 ? num * 1000 : num);
+  } else {
+    dt = new Date(d);
+  }
+  if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 const fmtMonth = (m) => {
@@ -2129,13 +2140,25 @@ function renderUnits() {
 }
 
 function renderUtPropertiesTable(occSummary, turns) {
-  const propTurns = {};
+  // Count AV/MR turns per property — index by BOTH property_id and property_name
+  // so the lookup works regardless of which name format occSummary uses.
+  const propTurnsById = {};
+  const propTurnsByName = {};
   turns.forEach(t => {
+    const pid = t.property_id || 0;
     const name = t.property_name || '';
-    if (!propTurns[name]) propTurns[name] = { av: 0, mr: 0 };
-    const b = String(t.board || '').toLowerCase();
-    if (b.includes('lease up') || b.includes('available')) propTurns[name].av++;
-    else if (b.includes('make ready')) propTurns[name].mr++;
+    if (pid) {
+      if (!propTurnsById[pid]) propTurnsById[pid] = { av: 0, mr: 0 };
+      const b = String(t.board || '').toLowerCase();
+      if (b.includes('lease up') || b.includes('available')) propTurnsById[pid].av++;
+      else if (b.includes('make ready')) propTurnsById[pid].mr++;
+    }
+    if (name) {
+      if (!propTurnsByName[name]) propTurnsByName[name] = { av: 0, mr: 0 };
+      const b = String(t.board || '').toLowerCase();
+      if (b.includes('lease up') || b.includes('available')) propTurnsByName[name].av++;
+      else if (b.includes('make ready')) propTurnsByName[name].mr++;
+    }
   });
 
   const rows = [...occSummary].sort((a, b) => {
@@ -2148,7 +2171,7 @@ function renderUtPropertiesTable(occSummary, turns) {
   if (!tbody) return;
 
   tbody.innerHTML = rows.map(p => {
-    const pt = propTurns[p.property_name] || { av: 0, mr: 0 };
+    const pt = propTurnsById[p.property_id] || propTurnsByName[p.property_name] || { av: 0, mr: 0 };
     const vac = p.vacant_units || 0;
     const occ = p.occupied_units || 0;
     // v_occupancy_summary often returns total_units=0 but has occ/vac — derive it

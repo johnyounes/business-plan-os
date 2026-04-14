@@ -2144,22 +2144,21 @@ function renderUnits() {
 }
 
 function renderUtPropertiesTable(occSummary, turns) {
-  // Count AV/MR turns per property — index by BOTH property_id and property_name
-  // so the lookup works regardless of which name format occSummary uses.
+  // Count AV/MR turns per property — only count ACTIVE turns (not completed).
+  // Index by BOTH property_id and property_name for robust matching.
   const propTurnsById = {};
   const propTurnsByName = {};
-  turns.forEach(t => {
+  turns.filter(t => !t.is_completed).forEach(t => {
     const pid = t.property_id || 0;
     const name = t.property_name || '';
+    const b = String(t.board || '').toLowerCase();
     if (pid) {
       if (!propTurnsById[pid]) propTurnsById[pid] = { av: 0, mr: 0 };
-      const b = String(t.board || '').toLowerCase();
       if (b.includes('lease up') || b.includes('available')) propTurnsById[pid].av++;
       else if (b.includes('make ready')) propTurnsById[pid].mr++;
     }
     if (name) {
       if (!propTurnsByName[name]) propTurnsByName[name] = { av: 0, mr: 0 };
-      const b = String(t.board || '').toLowerCase();
       if (b.includes('lease up') || b.includes('available')) propTurnsByName[name].av++;
       else if (b.includes('make ready')) propTurnsByName[name].mr++;
     }

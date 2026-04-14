@@ -274,8 +274,8 @@ const QUERIES: Record<string, string> = {
       ON t.property_id = pm.propup_property_id
     LEFT JOIN ${T}.properties\` bp
       ON pm.buildium_property_id = bp.property_id
-    WHERE t.is_completed = FALSE AND t.is_canceled = FALSE
-    ORDER BY bp.t12_name, t.unit_name
+    WHERE t.is_canceled = FALSE
+    ORDER BY t.is_completed DESC, bp.t12_name, t.unit_name
   `,
 
   // Economic occupancy per property per month — authoritative source.

@@ -1976,23 +1976,28 @@ function renderUnits() {
   const turnsAll = (DATA.turns || []).filter(r => matchesSelectedProps(r));
   const occSummary = (DATA.occupancy || []).filter(r => matchesSelectedProps(r));
 
-  // ── Build turn lookup (by property_name + unit_number) ──
+  // ── Build turn lookup ──
+  // Primary key: property_id + unit_number (reliable cross-system match).
+  // Fallback key: property_name + unit_number (for rows that share the same name format).
   const turnLookup = {};
+  const turnIdKey = (pid, u) => `${pid || 0}|${(u || '').trim().toLowerCase()}`;
   turnsAll.forEach(t => {
+    if (t.property_id) turnLookup[turnIdKey(t.property_id, t.unit_number)] = t;
     turnLookup[turnKey(t.property_name, t.unit_number)] = t;
   });
+  // Helper: find turn for a vacancy/rentRoll row — try property_id first, then name
+  const findTurn = (r) =>
+    turnLookup[turnIdKey(r.property_id, r.unit_number)] ||
+    turnLookup[turnKey(r.property_name, r.unit_number)] ||
+    {};
 
-  // ── DEBUG: log turn vs vacancy key mismatches ──
-  const turnKeys = Object.keys(turnLookup);
-  const vacKeys = vacancyAll.slice(0, 10).map(v => turnKey(v.property_name, v.unit_number));
-  const matchCount = vacancyAll.filter(v => turnLookup[turnKey(v.property_name, v.unit_number)]).length;
-  console.log('[unit tracker] turn lookup keys (first 10):', turnKeys.slice(0, 10));
-  console.log('[unit tracker] vacancy keys (first 10):', vacKeys);
-  console.log('[unit tracker] matched:', matchCount, 'of', vacancyAll.length, 'vacant units');
-  if (matchCount === 0 && turnKeys.length > 0 && vacKeys.length > 0) {
-    // Show a sample of each for comparison
-    console.log('[unit tracker] MISMATCH — sample turn:', turnsAll[0] ? { prop: turnsAll[0].property_name, unit: turnsAll[0].unit_number, board: turnsAll[0].board } : 'none');
-    console.log('[unit tracker] MISMATCH — sample vacancy:', vacancyAll[0] ? { prop: vacancyAll[0].property_name, unit: vacancyAll[0].unit_number } : 'none');
+  // ── DEBUG: log matching stats ──
+  const matchCount = vacancyAll.filter(v => findTurn(v).board).length;
+  console.log('[unit tracker] turn→vacancy matched:', matchCount, 'of', vacancyAll.length,
+    'vacant units |', turnsAll.length, 'turns loaded');
+  if (matchCount === 0 && turnsAll.length > 0 && vacancyAll.length > 0) {
+    console.log('[unit tracker] MISMATCH — sample turn:', { pid: turnsAll[0].property_id, prop: turnsAll[0].property_name, unit: turnsAll[0].unit_number });
+    console.log('[unit tracker] MISMATCH — sample vacancy:', { pid: vacancyAll[0].property_id, prop: vacancyAll[0].property_name, unit: vacancyAll[0].unit_number });
   }
 
   // ── KPIs ──
@@ -2048,7 +2053,7 @@ function renderUnits() {
 
   // ── PANEL 2: Vacant Units (merged with turns) ──
   const vacantRows = vacancyAll.map(v => {
-    const t = turnLookup[turnKey(v.property_name, v.unit_number)] || {};
+    const t = findTurn(v);
     return {
       property_name: v.property_name || '',
       unit_number: v.unit_number || '',

@@ -3817,10 +3817,19 @@ const BQ_NAME_OVERRIDES = {
   '504-604 cordes': 'CORDES',
 };
 // ID-first match: if the BQ row carries a BuildiumPropertyId and a local
-// property has that ID in its buildiumPropertyIds array, use it. Otherwise
-// fall back to fuzzy name matching, but only against props that are NOT
-// explicitly linked to some other Buildium id (so linked props don't get
-// stolen by a stray fuzzy hit). row is the full BQ row when available.
+// property has that ID in its buildiumPropertyIds array, use it.
+//
+// CRITICAL: if the row HAS a BuildiumPropertyId but no tracker property
+// claims it, return null — DO NOT fuzzy-match. Falling back to fuzzy
+// matching on ID-bearing rows is how portfolio-wide data leaked onto
+// whichever property happened to share a word with the BQ row's name
+// (most commonly 1003-1005 Ave K, which accumulated every unmatched
+// Buildium property's income + unit counts). Better to drop an unmapped
+// row than to silently smear it onto the wrong tracker property.
+//
+// Fuzzy matching is only used as a last resort for rows that lack a
+// BuildiumPropertyId entirely (legacy / unversioned BQ rows), and then
+// only against properties without explicit Buildium links.
 function matchBQPropFromRow(row, props) {
   const bid = getBuildiumIdField(row);
   if (bid != null) {
@@ -3828,9 +3837,11 @@ function matchBQPropFromRow(row, props) {
     const linked = props.find(function(p){
       return Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.indexOf(sid) >= 0;
     });
-    if (linked) return linked;
+    return linked || null; // strict: unclaimed IDs are dropped, never fuzzy-matched
   }
-  // Fallback: fuzzy match by name, but skip props that have explicit Buildium links
+  // No BuildiumPropertyId on this row — fall back to fuzzy name matching,
+  // but only against tracker props that are NOT explicitly linked to some
+  // other Buildium id (so linked props don't get stolen by a stray hit).
   const unlinked = props.filter(function(p){
     return !(Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.length);
   });

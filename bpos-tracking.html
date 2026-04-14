@@ -3995,16 +3995,36 @@ async function refreshPropUnits(propId) {
 // BQ CACHE — localStorage persistence for bqOccupancy + bqUnits
 // So the unit tracker shows instantly on page load without waiting
 // for the daily BQ refresh to complete.
+//
+// IMPORTANT: cache is keyed by the stable Supabase UUID (`supabaseId`),
+// NOT the numeric `p.id`. The numeric id is positional — `hydrate()`
+// assigns it as `idx + 1` based on the property's position in the DB
+// row order. After deleting properties and re-uploading, properties
+// land in different positions and inherit different numeric ids, so
+// keying the cache by `p.id` would smear stale BigQuery data (units,
+// actuals) onto the wrong properties. The bump from `_v1` → `_v2`
+// invalidates any old positional cache from previous app builds.
 // ══════════════════════════════════════
-const BQ_CACHE_KEY = 'bpos_bq_cache_v1';
-const BQ_LAST_SYNC_KEY = 'bpos_bq_last_sync_v1';
+const BQ_CACHE_KEY = 'bpos_bq_cache_v2';
+// Bump the last-sync key in lockstep with the cache key. The daily
+// refresh skips work when `lastSync` is today, so without bumping this
+// the new (empty) v2 cache would never get repopulated on first load —
+// it'd just stay blank until tomorrow.
+const BQ_LAST_SYNC_KEY = 'bpos_bq_last_sync_v2';
+
+function bqCacheKeyForProp(p) {
+  // Prefer Supabase UUID (stable across upload/delete cycles). Fall back
+  // to numeric id only when offline (no UUID available).
+  return (p && (p.supabaseId || p.id)) || null;
+}
 
 function saveBQCache() {
   try {
     const cache = {};
     properties.forEach(function(p) {
-      if (!p || !p.id) return;
-      cache[p.id] = {
+      const key = bqCacheKeyForProp(p);
+      if (!key) return;
+      cache[key] = {
         bqOccupancy: p.bqOccupancy || null,
         bqUnits:     p.bqUnits || null,
         bqActuals:   p.bqActuals || null,
@@ -4022,7 +4042,8 @@ function restoreBQCache() {
     if (!raw) return;
     const cache = JSON.parse(raw);
     properties.forEach(function(p) {
-      const entry = cache[p.id];
+      const key = bqCacheKeyForProp(p);
+      const entry = key && cache[key];
       if (!entry) return;
       if (entry.bqOccupancy) p.bqOccupancy = entry.bqOccupancy;
       if (entry.bqUnits)     p.bqUnits     = entry.bqUnits;
@@ -4033,6 +4054,27 @@ function restoreBQCache() {
     const last = localStorage.getItem(BQ_LAST_SYNC_KEY);
     if (last) { bitqueryConfig.lastSync = +last; bitqueryConfig.connected = true; }
   } catch (e) { console.warn('[BPOS] restoreBQCache:', e.message); }
+}
+
+// Drop any cache entries that no longer correspond to a live property.
+// Called after delete/purge flows so removed properties don't leave
+// orphan cache rows that could be re-applied if a new property happened
+// to receive the same key (rare with UUIDs, but defensive).
+function pruneBQCache() {
+  try {
+    const raw = localStorage.getItem(BQ_CACHE_KEY);
+    if (!raw) return;
+    const cache = JSON.parse(raw);
+    const live = new Set();
+    properties.forEach(function(p){
+      const k = bqCacheKeyForProp(p);
+      if (k) live.add(String(k));
+    });
+    Object.keys(cache).forEach(function(k){
+      if (!live.has(String(k))) delete cache[k];
+    });
+    localStorage.setItem(BQ_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) { console.warn('[BPOS] pruneBQCache:', e.message); }
 }
 
 function isSameCalendarDay(tsA, tsB) {
@@ -4855,6 +4897,9 @@ function deleteProperty(propId) {
   // Remove from in-memory state
   properties = properties.filter(function(p){ return p.id !== propId; });
   try { localStorage.setItem('bpos_props', JSON.stringify(properties)); } catch(e) {}
+  // Drop BQ cache entries for the deleted property so its stale units /
+  // actuals can't smear onto another property after a re-upload.
+  try { pruneBQCache(); } catch(e) {}
 
   // Close the edit modal if it's open for this property
   if (typeof closeEditProp === 'function' && editPropId === propId) {

@@ -3830,23 +3830,32 @@ const BQ_NAME_OVERRIDES = {
 // Fuzzy matching is only used as a last resort for rows that lack a
 // BuildiumPropertyId entirely (legacy / unversioned BQ rows), and then
 // only against properties without explicit Buildium links.
+// Normalize a property name for equality comparison: lowercase, strip
+// punctuation, collapse whitespace. Used so small formatting differences
+// between BQ endpoints (e.g. "Pennsylvania Ave." vs "Pennsylvania Ave")
+// don't defeat the cache lookup.
+function normalizeBQName(s) {
+  return String(s || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function matchBQPropFromRow(row, props) {
   let bid = getBuildiumIdField(row);
-  // Some BQ endpoints (notably portfolio_occupancy) return PropertyName but
-  // NOT BuildiumPropertyId. In that case, try to back-fill the id by looking
-  // up the row's PropertyName in buildiumPropsCache (which was populated
-  // from portfolio_summary and has a reliable name→id map). This lets the
-  // strict-id matcher work uniformly across all endpoints instead of
-  // collapsing to fuzzy fallback just because one endpoint omits the id.
-  if (bid == null && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
-    const rowName = String(row.PropertyName || row.Name || '').trim().toLowerCase();
+  const hasCache = Array.isArray(buildiumPropsCache) && buildiumPropsCache.length;
+
+  // If the row lacks a BuildiumPropertyId (portfolio_occupancy does this),
+  // try to back-fill it by looking up the row's PropertyName in
+  // buildiumPropsCache (built from portfolio_summary, which does carry ids).
+  // This lets the strict-id matcher work uniformly across all endpoints.
+  if (bid == null && hasCache) {
+    const rowName = normalizeBQName(row.PropertyName || row.Name);
     if (rowName) {
       const bp = buildiumPropsCache.find(function(x){
-        return x.name && x.name.trim().toLowerCase() === rowName;
+        return x.name && normalizeBQName(x.name) === rowName;
       });
       if (bp) bid = bp.id;
     }
   }
+
   if (bid != null) {
     const sid = String(bid);
     const linked = props.find(function(p){
@@ -3854,14 +3863,24 @@ function matchBQPropFromRow(row, props) {
     });
     return linked || null; // strict: unclaimed IDs are dropped, never fuzzy-matched
   }
-  // No BuildiumPropertyId on this row and no name match in the Buildium cache —
-  // fall back to fuzzy name matching, but only against tracker props that are
-  // NOT explicitly linked to some other Buildium id (so linked props don't get
-  // stolen by a stray hit).
-  const unlinked = props.filter(function(p){
+
+  // At this point the row has no BuildiumPropertyId and its PropertyName
+  // didn't resolve against buildiumPropsCache. If we have a cache at all,
+  // that means the row is for a Buildium property we don't know about —
+  // DROP it. Fuzzy-matching unknown addresses is how unrelated buildings
+  // ("1316 N. Pennsylvania Ave.", "1353 N. Perry Ave.", etc.) were
+  // accumulating onto 1003-1005 Ave K because they all share the word
+  // "Ave" with 1003's name and scored ≥ 0.3 on the fuzzy matcher.
+  if (hasCache) return null;
+
+  // Legacy fuzzy fallback only when we have no cache at all (pre-linkage
+  // state). Even then, NEVER match a tracker property that is explicitly
+  // linked to some other Buildium id — linked props should only ever be
+  // hit via a direct id match, never via fuzzy name overlap.
+  const fallbackPool = props.filter(function(p){
     return !(Array.isArray(p.buildiumPropertyIds) && p.buildiumPropertyIds.length);
   });
-  const fallbackPool = unlinked.length ? unlinked : props;
+  if (!fallbackPool.length) return null;
   return matchBQProp(String(row.PropertyName || row.Name || ''), fallbackPool);
 }
 
@@ -4195,13 +4214,13 @@ async function runDailyBQRefresh(forceRefresh) {
       g.rows.forEach(function(row){
         let bid = getBuildiumIdField(row);
         if (bid == null && Array.isArray(buildiumPropsCache) && buildiumPropsCache.length) {
-          const rn = String(row.PropertyName || row.Name || '').trim().toLowerCase();
+          const rn = normalizeBQName(row.PropertyName || row.Name);
           const bp = buildiumPropsCache.find(function(x){
-            return x.name && x.name.trim().toLowerCase() === rn;
+            return x.name && normalizeBQName(x.name) === rn;
           });
           if (bp) bid = bp.id;
         }
-        const bkey = bid != null ? 'id:' + String(bid) : 'n:' + String(row.PropertyName || row.Name || '');
+        const bkey = bid != null ? 'id:' + String(bid) : 'n:' + normalizeBQName(row.PropertyName || row.Name);
         const prev = latestByBuilding[bkey];
         if (!prev) { latestByBuilding[bkey] = row; return; }
         const pd = prev.Date ? new Date(prev.Date).getTime() : 0;

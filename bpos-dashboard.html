@@ -2755,6 +2755,133 @@ async function refreshDashboard() {
   label.textContent = 'Refresh';
 }
 
+// ════════════════════════════════════════
+//  CLICK-TO-SORT TABLE HEADERS (all .data-table)
+//  Cycle: unsorted → asc → desc → unsorted
+//  Numeric columns auto-detected (strips $ , % and handles (x) negatives)
+// ════════════════════════════════════════
+(function(){
+  function cellKey(td) {
+    if (!td) return { num: NaN, str: '' };
+    const raw = (td.textContent || '').trim();
+    // Treat em-dash / placeholder as smallest for numeric, empty for text
+    if (!raw || raw === '—' || raw === '–' || raw === '-' || raw === 'N/A') {
+      return { num: -Infinity, str: '' };
+    }
+    let s = raw.replace(/\u2212/g, '-'); // unicode minus → ascii
+    const paren = /^\((.+)\)$/.exec(s);
+    let sign = 1;
+    if (paren) { s = paren[1]; sign = -1; }
+    const cleaned = s.replace(/[\$,%\s]/g, '');
+    if (cleaned !== '' && /^-?\d*\.?\d+$/.test(cleaned)) {
+      return { num: sign * parseFloat(cleaned), str: raw.toLowerCase() };
+    }
+    return { num: NaN, str: raw.toLowerCase() };
+  }
+
+  function compare(a, b, idx, dir) {
+    const ka = cellKey(a.cells[idx]);
+    const kb = cellKey(b.cells[idx]);
+    const bothNum = !isNaN(ka.num) && !isNaN(kb.num);
+    let res;
+    if (bothNum) res = ka.num - kb.num;
+    else res = ka.str.localeCompare(kb.str, undefined, { numeric: true, sensitivity: 'base' });
+    return dir === 'desc' ? -res : res;
+  }
+
+  function getDataRows(tbody) {
+    // Skip structural rows (section headers, totals, empty-state, pct rows)
+    return Array.from(tbody.rows).filter(tr => {
+      if (tr.classList.contains('row-header') ||
+          tr.classList.contains('row-total') ||
+          tr.classList.contains('row-noi') ||
+          tr.classList.contains('pct-row')) return false;
+      if (tr.cells.length === 1 && tr.cells[0].hasAttribute('colspan')) return false;
+      return true;
+    });
+  }
+
+  function applySort(table, colIdx, dir) {
+    const tbody = table.tBodies[0];
+    if (!tbody) return;
+    table.__sortMutating = true;
+    try {
+      if (dir === 'none') {
+        const snap = tbody.__sortOriginal;
+        if (snap != null) tbody.innerHTML = snap;
+      } else {
+        const rows = getDataRows(tbody);
+        rows.sort((a, b) => compare(a, b, colIdx, dir));
+        const frag = document.createDocumentFragment();
+        rows.forEach(r => frag.appendChild(r));
+        tbody.appendChild(frag);
+      }
+    } finally {
+      setTimeout(() => { table.__sortMutating = false; }, 0);
+    }
+  }
+
+  function makeTableSortable(table) {
+    if (!table || table.__sortInit) return;
+    table.__sortInit = true;
+    table.__sortCol = null;
+    table.__sortDir = 'none';
+    table.__sortActive = false;
+
+    const thead = table.tHead;
+    if (!thead || !thead.rows[0]) return;
+    const ths = Array.from(thead.rows[0].cells);
+
+    ths.forEach((th, idx) => {
+      th.addEventListener('click', () => {
+        const tbody = table.tBodies[0];
+        if (!tbody) return;
+        // Numeric columns (right-aligned, class="r") default to descending first
+        // so "total units" click 1 → largest→smallest. Text columns default to asc.
+        const firstDir = th.classList.contains('r') ? 'desc' : 'asc';
+        const oppDir = firstDir === 'asc' ? 'desc' : 'asc';
+        const cur = (table.__sortCol === idx) ? table.__sortDir : 'none';
+        const next = cur === 'none' ? firstDir : cur === firstDir ? oppDir : 'none';
+
+        // Snapshot current DOM before first sort in a new cycle
+        if (!table.__sortActive && next !== 'none') {
+          tbody.__sortOriginal = tbody.innerHTML;
+          table.__sortActive = true;
+        }
+
+        table.__sortCol = next === 'none' ? null : idx;
+        table.__sortDir = next;
+        applySort(table, idx, next);
+        if (next === 'none') table.__sortActive = false;
+      });
+    });
+
+    // Reset when the app re-renders tbody (e.g. filter changes)
+    const tbody = table.tBodies[0];
+    if (tbody && typeof MutationObserver === 'function') {
+      new MutationObserver(() => {
+        if (table.__sortMutating) return;
+        tbody.__sortOriginal = null;
+        table.__sortCol = null;
+        table.__sortDir = 'none';
+        table.__sortActive = false;
+      }).observe(tbody, { childList: true });
+    }
+  }
+
+  function initAllSortableTables() {
+    document.querySelectorAll('table.data-table').forEach(makeTableSortable);
+  }
+
+  window.initSortableTables = initAllSortableTables;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllSortableTables);
+  } else {
+    initAllSortableTables();
+  }
+})();
+
+
 // ── BOOT ──
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();

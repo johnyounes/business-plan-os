@@ -1733,7 +1733,30 @@ function renderOccupancy() {
     document.getElementById('occKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
     return;
   }
-  const occ = DATA.occupancy.filter(r => matchesSelectedProps(r));
+
+  // ── Historic vs. Live mode ──
+  // If selectedMonth is not the latest available month, use occupancySnapshot
+  // (v_occupancy_snapshot_summary — historical per-property per-month data).
+  // Otherwise use live DATA.occupancy (v_occupancy_summary — current state).
+  const latestMonth = DATA.months && DATA.months.length ? DATA.months[DATA.months.length - 1] : '';
+  const isHistoric = selectedMonth && selectedMonth !== latestMonth;
+  let occ;
+  if (isHistoric && DATA.occupancySnapshot) {
+    // Filter snapshot to the selected month and adapt field names to match live format
+    occ = DATA.occupancySnapshot
+      .filter(r => (r.snapshot_month || r.month) === selectedMonth && matchesSelectedProps(r))
+      .map(r => ({
+        property_id: r.property_id,
+        property_name: r.property_name,
+        total_units: r.total_units || 0,
+        occupied_units: r.occupied_units || 0,
+        vacant_units: r.vacant_units || 0,
+        preleased_units: r.preleased_units || 0,
+        physical_occupancy: r.physical_occupancy_pct || 0,
+      }));
+  } else {
+    occ = DATA.occupancy.filter(r => matchesSelectedProps(r));
+  }
 
   const totalUnits    = occ.reduce((s, r) => s + (r.total_units || 0), 0);
   const totalOccupied = occ.reduce((s, r) => s + (r.occupied_units || 0), 0);
@@ -1741,9 +1764,13 @@ function renderOccupancy() {
   const totalPreleased = occ.reduce((s, r) => s + (r.preleased_units || 0), 0);
   const avgOcc = totalUnits > 0 ? (totalOccupied / totalUnits * 100) : 0;
 
+  const historicTag = isHistoric
+    ? `<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">(${selectedMonth} snapshot)</span>`
+    : `<span style="font-size:11px;color:var(--teal);margin-left:6px;">Live</span>`;
+
   document.getElementById('occKpis').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Physical Occupancy</div>
+      <div class="kpi-label">Physical Occupancy ${historicTag}</div>
       <div class="kpi-value ${avgOcc >= 90 ? 'good' : avgOcc >= 80 ? 'warn' : 'bad'}">${fmtPct(avgOcc)}</div>
       <div class="kpi-sub">${totalOccupied.toLocaleString()} of ${totalUnits.toLocaleString()} units</div>
     </div>

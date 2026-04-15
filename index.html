@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Business Plan OS - PGM</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -31,14 +32,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .fg input::placeholder{color:var(--text3);}
 .fg select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--bg3);}
 #auth-err{font-size:12px;color:var(--red);background:rgba(232,80,74,.08);border:1px solid rgba(232,80,74,.2);border-radius:6px;padding:8px 12px;display:none;}
+#auth-success{font-size:12px;color:var(--green);background:rgba(34,201,122,.08);border:1px solid rgba(34,201,122,.2);border-radius:6px;padding:8px 12px;display:none;}
 .btn-signin{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;transition:background .15s;}
 .btn-signin:hover{background:var(--accent2);}
+.btn-signin:disabled{opacity:.5;cursor:not-allowed;}
 .auth-hint{font-size:11px;color:var(--text3);text-align:center;}
+.auth-link{color:var(--accent);cursor:pointer;font-size:12px;text-decoration:none;text-align:center;}
+.auth-link:hover{text-decoration:underline;}
 #change-pw-screen{position:fixed;inset:0;z-index:190;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;}
 .cpw-card{width:380px;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px 36px;display:flex;flex-direction:column;gap:18px;}
 .cpw-card h2{font-size:16px;font-weight:600;color:var(--text);}
 .cpw-card p{font-size:13px;color:var(--text3);line-height:1.6;}
 #cpw-err{font-size:12px;color:var(--red);display:none;}
+#reset-pw-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:none;align-items:center;justify-content:center;}
 #app{display:none;height:100vh;width:100vw;flex-direction:row;}
 .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 .sb-header{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
@@ -47,9 +53,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .sb-header .ver{font-size:10px;color:var(--text3);margin-top:3px;}
 .sb-nav{flex:1;overflow-y:auto;padding:8px 0;}
 .nav-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:10px 18px 4px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:13px;color:var(--text2);transition:color .12s,background .12s;border-left:2px solid transparent;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:13px;color:var(--text2);transition:color .12s,background .12s;border-left:2px solid transparent;position:relative;}
 .nav-item:hover{color:var(--text);background:var(--bg3);}
 .nav-item.active{color:var(--text);background:var(--bg3);border-left-color:var(--accent);}
+.nav-item.locked{opacity:.38;cursor:default;}
+.nav-item.locked:hover{background:transparent;color:var(--text2);}
+.nav-item.locked .lock-icon{font-size:10px;margin-left:auto;color:var(--text3);}
 .ni-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
 .ni-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ni-badge{font-size:10px;font-weight:600;border-radius:10px;padding:1px 7px;font-family:var(--mono);flex-shrink:0;}
@@ -101,6 +110,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .hc-b::before{background:var(--accent);}
 .hc-c::before{background:var(--coral);}
 .hc-g::before{background:var(--green);}
+.hcard.locked{opacity:.45;cursor:default;}
+.hcard.locked:hover{border-color:var(--border);transform:none;}
 .hcard-body{padding:14px 16px;}
 .hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .hc-num{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--text3);}
@@ -134,11 +145,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .rb-underwriter{background:rgba(46,196,182,.12);color:var(--teal);border:1px solid rgba(46,196,182,.2);}
 .rb-property_manager{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
 .rb-read_only{background:rgba(140,147,158,.1);color:var(--text2);border:1px solid var(--border2);}
+.rb-dashboard{background:rgba(61,127,255,.1);color:var(--accent);border:1px solid rgba(61,127,255,.2);}
+.rb-tracker{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
 .sdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
 .sdot-active{background:var(--green);}
 .sdot-invited{background:var(--amber);}
+.sdot-disabled{background:var(--red);}
 .ppills{display:flex;gap:4px;flex-wrap:wrap;}
 .ppill{font-size:10px;padding:2px 7px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text3);}
+.ppill.ppill-group{border-color:rgba(155,122,255,.3);color:var(--purple);background:rgba(155,122,255,.06);}
 .perm-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
 .ptbl{width:100%;border-collapse:collapse;font-size:12px;}
 .ptbl th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);}
@@ -170,7 +185,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .prop-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;}
 .prop-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2);}
 .prop-item input{accent-color:var(--accent);}
+.prop-item.hidden{display:none;}
+.prop-search{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:100%;margin-bottom:6px;transition:border-color .15s;}
+.prop-search:focus{border-color:var(--accent);}
+.prop-search::placeholder{color:var(--text3);}
+.scope-tabs{display:flex;gap:0;border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.scope-tab{flex:1;padding:8px 4px;font-size:11px;font-weight:500;text-align:center;cursor:pointer;background:var(--bg3);color:var(--text3);border:none;transition:all .15s;font-family:var(--font);}
+.scope-tab:not(:last-child){border-right:1px solid var(--border2);}
+.scope-tab.active{background:var(--accent);color:#fff;}
+.scope-tab:hover:not(.active){color:var(--text2);background:var(--bg4);}
+.group-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;}
+.group-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text2);}
+.group-item input{accent-color:var(--purple);}
 .rp-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.locked-tooltip{position:fixed;z-index:999;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);box-shadow:0 4px 20px rgba(0,0,0,.5);pointer-events:none;max-width:240px;line-height:1.5;opacity:0;transition:opacity .15s;}
+.locked-tooltip.show{opacity:1;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:none;align-items:center;gap:10px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.4);}
 .toast.show{display:flex;}
 .toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -206,8 +235,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </head>
 <body>
 
+<!-- ============================================================ -->
+<!-- AUTH SCREEN - Login -->
+<!-- ============================================================ -->
 <div id="auth">
-  <div class="auth-card">
+  <div class="auth-card" id="auth-login-card">
     <div>
       <div class="eyebrow">Point Guard Management</div>
       <h1>Business Plan OS</h1>
@@ -215,15 +247,36 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="divider"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="your@email.com" autocomplete="off"/></div>
-      <div class="fg"><label>Password</label><input type="password" id="a-pw" placeholder="Password"/></div>
+      <div class="fg"><label>Email address</label><input type="email" id="a-email" placeholder="your@email.com" autocomplete="email"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="a-pw" placeholder="Password" autocomplete="current-password"/></div>
       <div id="auth-err">Incorrect email or password.</div>
-      <button class="btn-signin" onclick="doLogin()">Sign in</button>
+      <button class="btn-signin" id="btn-login" onclick="doLogin()">Sign in</button>
+      <a class="auth-link" onclick="showForgotPassword()">Forgot password?</a>
     </div>
     <div class="auth-hint">Point Guard Management &nbsp;&middot;&nbsp; Internal use only</div>
   </div>
+
+  <!-- Forgot Password Card -->
+  <div class="auth-card" id="auth-forgot-card" style="display:none;">
+    <div>
+      <div class="eyebrow">Point Guard Management</div>
+      <h1>Reset Password</h1>
+      <p class="sub">Enter your email and we'll send you a reset link.</p>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="fg"><label>Email address</label><input type="email" id="reset-email" placeholder="your@email.com" autocomplete="email"/></div>
+      <div id="reset-err" style="font-size:12px;color:var(--red);display:none;"></div>
+      <div id="auth-success">Password reset email sent! Check your inbox.</div>
+      <button class="btn-signin" id="btn-reset" onclick="doForgotPassword()">Send reset link</button>
+      <a class="auth-link" onclick="showLoginScreen()">&#8592; Back to sign in</a>
+    </div>
+  </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- FIRST LOGIN - Change Password -->
+<!-- ============================================================ -->
 <div id="change-pw-screen">
   <div class="cpw-card">
     <h2>Welcome &mdash; set your password</h2>
@@ -235,6 +288,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- MAIN APP -->
+<!-- ============================================================ -->
 <div id="app">
   <!-- Mobile sidebar toggle -->
   <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()" aria-label="Menu">
@@ -270,6 +326,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- USER MODAL -->
+<!-- ============================================================ -->
 <div class="modal-overlay" id="user-modal">
   <div class="modal">
     <div class="modal-hdr">
@@ -282,63 +341,105 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="modal-body" id="um-body"></div>
     <div class="modal-ftr">
       <button class="btn-ghost" onclick="closeUserModal()">Cancel</button>
-      <button class="btn-primary" onclick="doSaveUser()">Save user</button>
+      <button class="btn-primary" id="btn-save-user" onclick="doSaveUser()">Save user</button>
     </div>
   </div>
 </div>
+
+<!-- Locked module tooltip -->
+<div class="locked-tooltip" id="locked-tooltip"></div>
 
 <div class="toast" id="toast"><div class="dot" id="tdot"></div><span id="tmsg"></span></div>
 
 <script>
 // ============================================================
-// CREDENTIALS - base64 encoded
+// SUPABASE CONFIG
 // ============================================================
-function _d(s){return atob(s);}
+var SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
+var SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTI3NTQsImV4cCI6MjA5MDAyODc1NH0.xAjHM7s6IphX_oOA_Qma4sspmlLywX209EssAursr0w';
 
-var _creds = [
-  {id:1, e:_d('am9obkBsZWF2ZW53ZWFsdGguY29t'), p:_d('WW91bmVzOUA='), role:'superadmin', name:'John Younes', initials:'JY', bg:'linear-gradient(135deg,#3d7fff,#9b7aff)'},
-  {id:2, e:_d('dGltQHBnbXRlYW0uY29t'), p:_d('cGdtMjAyNg=='), role:'admin',      name:'Tim Farha',   initials:'TF', bg:'linear-gradient(135deg,#22c97a,#2ec4b6)'},
-  {id:3, e:_d('ZGFubnlAcGdtdGVhbS5jb20='), p:_d('cGdtMjAyNg=='), role:'asset_manager', name:'Danny Humsi', initials:'DH', bg:'linear-gradient(135deg,#f5a623,#f07052)'},
-  {id:4, e:_d('bmF0aGFuQHBnbXRlYW0uY29t'), p:_d('cGdtMjAyNg=='), role:'underwriter', name:'Nathan Farha', initials:'NF', bg:'linear-gradient(135deg,#9b7aff,#e8504a)'},
-];
+var sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
 
-var USERS = _creds.map(function(c){
-  return {id:c.id, email:c.e, pw:c.p, name:c.name, initials:c.initials,
-          role:c.role, properties:'all', status:'active', mustChangePw:false, bg:c.bg};
-});
+// Edge function helper
+async function callManageUsers(body) {
+  var session = (await sb.auth.getSession()).data.session;
+  if (!session) throw new Error('Not authenticated');
+  var res = await fetch(SUPA_URL + '/functions/v1/manage-users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + session.access_token,
+      'apikey': SUPA_ANON,
+    },
+    body: JSON.stringify(body),
+  });
+  var data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
 
-var AVATAR_BG = ['linear-gradient(135deg,#3d7fff,#9b7aff)','linear-gradient(135deg,#22c97a,#2ec4b6)','linear-gradient(135deg,#f5a623,#f07052)','linear-gradient(135deg,#9b7aff,#e8504a)','linear-gradient(135deg,#2ec4b6,#3d7fff)'];
+// Fetch property groups from BigQuery via existing edge function
+async function fetchPropertyGroups() {
+  try {
+    var res = await fetch(SUPA_URL + '/functions/v1/bq-dashboard', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPA_ANON,
+        'apikey': SUPA_ANON,
+      },
+      body: JSON.stringify({ type: 'property_groups' }),
+    });
+    if (!res.ok) return [];
+    var json = await res.json();
+    return json.data || json.rows || [];
+  } catch(e) {
+    console.warn('[BPOS] Failed to fetch property groups:', e);
+    return [];
+  }
+}
 
 // ============================================================
 // PERMISSIONS
 // ============================================================
 var ROLE_PERMS = {
-  superadmin:       {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
-  admin:            {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',users:'edit'},
-  asset_manager:    {screening:'edit',underwriting:'edit',capex:'edit',diligence:'read',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
-  underwriter:      {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'upload',planlock:'hidden',tracking:'read',users:'hidden'},
-  property_manager: {screening:'read',underwriting:'read',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'hidden',tracking:'read',users:'hidden'},
-  read_only:        {screening:'read',underwriting:'read',capex:'read',diligence:'read',onboarding:'read',planlock:'hidden',tracking:'read',users:'hidden'}
+  superadmin:       {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',dashboard:'edit',users:'edit'},
+  admin:            {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'edit',tracking:'edit',dashboard:'edit',users:'edit'},
+  asset_manager:    {screening:'edit',underwriting:'edit',capex:'edit',diligence:'read',onboarding:'edit',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  underwriter:      {screening:'edit',underwriting:'edit',capex:'edit',diligence:'edit',onboarding:'upload',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  property_manager: {screening:'read',underwriting:'read',capex:'edit',diligence:'edit',onboarding:'edit',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  read_only:        {screening:'read',underwriting:'read',capex:'read',diligence:'read',onboarding:'read',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'},
+  dashboard:        {screening:'hidden',underwriting:'hidden',capex:'hidden',diligence:'hidden',onboarding:'hidden',planlock:'hidden',tracking:'hidden',dashboard:'read',users:'hidden'},
+  tracker:          {screening:'hidden',underwriting:'hidden',capex:'hidden',diligence:'hidden',onboarding:'hidden',planlock:'hidden',tracking:'read',dashboard:'read',users:'hidden'}
 };
 
-var ROLE_LABELS = {superadmin:'Super Admin',admin:'Admin',asset_manager:'Asset Manager',underwriter:'Underwriter',property_manager:'Property Manager',read_only:'Read Only'};
+var ROLE_LABELS = {
+  superadmin:'Super Admin', admin:'Admin', asset_manager:'Asset Manager',
+  underwriter:'Underwriter', property_manager:'Property Manager', read_only:'Read Only',
+  dashboard:'Dashboard Viewer', tracker:'Tracker Viewer'
+};
 
 var MODULES = {
-  screening:    {file:'bpos-screening.html',   label:'Deal Screening',       icon:'&#9678;', badge:'nb-purple', num:'M1', phase:'Acquisition'},
-  underwriting: {file:'bpos-underwriting.html',label:'Underwriting',         icon:'&#9681;', badge:'nb-purple', num:'M2', phase:'Acquisition'},
-  capex:        {file:'bpos-capex.html',        label:'CapEx &amp; Construction',icon:'&#9680;',badge:'nb-amber', num:'M3', phase:'Diligence'},
-  diligence:    {file:'bpos-diligence.html',    label:'Due Diligence',        icon:'&#9673;', badge:'nb-teal',   num:'M4', phase:'Diligence'},
-  onboarding:   {file:'bpos-onboarding.html',   label:'PM Onboarding',        icon:'&#9655;', badge:'nb-blue',   num:'M5', phase:'Onboarding'},
-  planlock:     {file:'bpos-planlock.html',      label:'Plan Lock',            icon:'&#128274;',badge:'nb-coral', num:'M6', phase:'Onboarding'},
-  tracking:     {file:'bpos-tracking.html',      label:'Budget Tracking',      icon:'&#9772;', badge:'nb-green',  num:'M7', phase:'Operations'},
-  users:        {file:null,                      label:'User Management',      icon:'&#9672;', badge:'nb-gray',   num:'',   phase:'Admin'}
+  screening:    {file:'bpos-screening.html',    label:'Deal Screening',          icon:'&#9678;',  badge:'nb-purple', num:'M1', phase:'Acquisition'},
+  underwriting: {file:'bpos-underwriting.html', label:'Underwriting',            icon:'&#9681;',  badge:'nb-purple', num:'M2', phase:'Acquisition'},
+  capex:        {file:'bpos-capex.html',        label:'CapEx &amp; Construction',icon:'&#9680;',  badge:'nb-amber',  num:'M3', phase:'Diligence'},
+  diligence:    {file:'bpos-diligence.html',    label:'Due Diligence',           icon:'&#9673;',  badge:'nb-teal',   num:'M4', phase:'Diligence'},
+  onboarding:   {file:'bpos-onboarding.html',   label:'PM Onboarding',           icon:'&#9655;',  badge:'nb-blue',   num:'M5', phase:'Onboarding'},
+  planlock:     {file:'bpos-planlock.html',      label:'Plan Lock',               icon:'&#128274;',badge:'nb-coral',  num:'M6', phase:'Onboarding'},
+  tracking:     {file:'bpos-tracking.html',      label:'Budget Tracking',         icon:'&#9772;',  badge:'nb-green',  num:'M7', phase:'Operations'},
+  dashboard:    {file:'bpos-dashboard.html',     label:'Dashboard Analytics',     icon:'&#9673;',  badge:'nb-blue',   num:'M8', phase:'Operations'},
+  users:        {file:null,                      label:'User Management',         icon:'&#9672;',  badge:'nb-gray',   num:'',   phase:'Admin'}
 };
 
 var ALL_PROPERTIES = ['Estrella at Kiest','Sierra Gardens','Central Heights','Cedar Haven','Maple Ridge','Northgate Commons','AksarbenLIV','Bancroft','Beverly','Copperleaf','Langston','Tall Oaks','Vassar Flats','College Heights','Cordes','Dwell','Eagle Creek'];
 
-var currentUser = null;
+var AVATAR_BG = ['linear-gradient(135deg,#3d7fff,#9b7aff)','linear-gradient(135deg,#22c97a,#2ec4b6)','linear-gradient(135deg,#f5a623,#f07052)','linear-gradient(135deg,#9b7aff,#e8504a)','linear-gradient(135deg,#2ec4b6,#3d7fff)'];
+
+var currentUser  = null; // {id, email, name, initials, role, properties, status, avatar_bg}
 var currentModule = 'home';
 var editingUserId = null;
+var USERS = []; // loaded from Supabase
+var cachedPropertyGroups = []; // loaded from BigQuery
 
 // ============================================================
 // AUTH
@@ -346,95 +447,198 @@ var editingUserId = null;
 document.getElementById('a-pw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('cpw-confirm').addEventListener('keydown', function(e){ if(e.key==='Enter') doSavePassword(); });
 
-function doLogin() {
-  var emailInput = document.getElementById('a-email').value;
-  var pwInput    = document.getElementById('a-pw').value;
-  var email = emailInput.trim().toLowerCase();
-  var pw    = pwInput.trim();
-  var user  = null;
-  for (var i=0; i<USERS.length; i++) {
-    var u = USERS[i];
-    if (u.email.toLowerCase() === email && u.pw === pw && u.status !== 'disabled') {
-      user = u; break;
+// Check for existing session on page load
+(async function initAuth() {
+  try {
+    var { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await loadUserProfile(session.user.id);
+      if (currentUser) {
+        document.getElementById('auth').style.display = 'none';
+        if (currentUser.status === 'invited') {
+          document.getElementById('change-pw-screen').style.display = 'flex';
+        } else {
+          launchApp();
+        }
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('[BPOS] Session check failed:', e);
+  }
+  // No session — show login
+  document.getElementById('auth').style.display = 'flex';
+})();
+
+// Listen for auth state changes (e.g. password reset callback)
+sb.auth.onAuthStateChange(function(event, session) {
+  if (event === 'PASSWORD_RECOVERY') {
+    // User clicked the password reset link
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('change-pw-screen').style.display = 'flex';
+  }
+});
+
+async function loadUserProfile(userId) {
+  try {
+    var result = await callManageUsers({ action: 'me' });
+    if (result.data) {
+      currentUser = result.data;
+    }
+  } catch(e) {
+    // If the edge function fails, try direct table access
+    try {
+      var { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
+      if (!error && data) currentUser = data;
+    } catch(e2) {
+      console.warn('[BPOS] Could not load profile:', e2);
     }
   }
-  if (!user) {
-    document.getElementById('auth-err').style.display = 'block';
-    return;
-  }
-  document.getElementById('auth-err').style.display = 'none';
-  currentUser = user;
-  document.getElementById('auth').style.display = 'none';
-  if (user.mustChangePw) {
-    document.getElementById('change-pw-screen').style.display = 'flex';
-    return;
-  }
-  launchApp();
 }
 
-function doSavePassword() {
+async function doLogin() {
+  var btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  var email = document.getElementById('a-email').value.trim().toLowerCase();
+  var pw    = document.getElementById('a-pw').value.trim();
+
+  try {
+    var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pw });
+    if (error) throw error;
+
+    await loadUserProfile(data.user.id);
+    if (!currentUser) throw new Error('Profile not found. Contact your admin.');
+
+    document.getElementById('auth-err').style.display = 'none';
+    document.getElementById('auth').style.display = 'none';
+
+    if (currentUser.status === 'invited') {
+      document.getElementById('change-pw-screen').style.display = 'flex';
+    } else {
+      launchApp();
+    }
+  } catch(e) {
+    document.getElementById('auth-err').textContent = e.message || 'Incorrect email or password.';
+    document.getElementById('auth-err').style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function doSavePassword() {
   var np  = document.getElementById('cpw-new').value;
   var cp  = document.getElementById('cpw-confirm').value;
   var err = document.getElementById('cpw-err');
   if (np.length < 6) { err.textContent='Must be at least 6 characters.'; err.style.display='block'; return; }
   if (np !== cp)     { err.textContent='Passwords do not match.'; err.style.display='block'; return; }
-  for (var i=0; i<USERS.length; i++) {
-    if (USERS[i].id === currentUser.id) { USERS[i].pw=np; USERS[i].mustChangePw=false; currentUser=USERS[i]; break; }
+
+  try {
+    // Update password via Supabase Auth
+    var { error } = await sb.auth.updateUser({ password: np });
+    if (error) throw error;
+
+    // Mark profile as active
+    if (currentUser) {
+      await sb.from('profiles').update({ status: 'active' }).eq('id', currentUser.id);
+      currentUser.status = 'active';
+    }
+
+    document.getElementById('change-pw-screen').style.display = 'none';
+    launchApp();
+  } catch(e) {
+    err.textContent = e.message || 'Failed to update password.';
+    err.style.display = 'block';
   }
-  document.getElementById('change-pw-screen').style.display = 'none';
-  launchApp();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display  = 'none';
+  document.getElementById('auth').style.display = 'flex';
+  showLoginScreen();
+  document.getElementById('a-email').value = '';
+  document.getElementById('a-pw').value    = '';
+  document.getElementById('auth-err').style.display = 'none';
+  currentUser = null; currentModule = 'home'; USERS = [];
+}
+
+function showForgotPassword() {
+  document.getElementById('auth-login-card').style.display = 'none';
+  document.getElementById('auth-forgot-card').style.display = 'flex';
+  document.getElementById('auth-success').style.display = 'none';
+  document.getElementById('reset-err').style.display = 'none';
+}
+
+function showLoginScreen() {
+  document.getElementById('auth-login-card').style.display = 'flex';
+  document.getElementById('auth-forgot-card').style.display = 'none';
+}
+
+async function doForgotPassword() {
+  var email = document.getElementById('reset-email').value.trim().toLowerCase();
+  var btn   = document.getElementById('btn-reset');
+  if (!email) {
+    document.getElementById('reset-err').textContent = 'Enter your email address.';
+    document.getElementById('reset-err').style.display = 'block';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    var { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) throw error;
+    document.getElementById('reset-err').style.display = 'none';
+    document.getElementById('auth-success').style.display = 'block';
+  } catch(e) {
+    document.getElementById('reset-err').textContent = e.message || 'Failed to send reset email.';
+    document.getElementById('reset-err').style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send reset link';
+  }
 }
 
 function launchApp() {
   document.getElementById('app').style.display = 'flex';
-  document.getElementById('sb-av').textContent  = currentUser.initials;
-  document.getElementById('sb-av').style.background = currentUser.bg || AVATAR_BG[0];
-  document.getElementById('sb-name').textContent = currentUser.name;
+  document.getElementById('sb-av').textContent  = currentUser.initials || '??';
+  document.getElementById('sb-av').style.background = currentUser.avatar_bg || AVATAR_BG[0];
+  document.getElementById('sb-name').textContent = currentUser.name || 'User';
   document.getElementById('sb-role').textContent = ROLE_LABELS[currentUser.role] || currentUser.role;
   buildSidebar();
   goTo('home', null);
 }
 
-function doLogout() {
-  document.getElementById('app').style.display  = 'none';
-  document.getElementById('auth').style.display = 'flex';
-  document.getElementById('a-email').value = '';
-  document.getElementById('a-pw').value    = '';
-  document.getElementById('auth-err').style.display = 'none';
-  currentUser = null; currentModule = 'home';
-}
-
 // ============================================================
-// SIDEBAR
+// SIDEBAR - shows all modules, grays out locked ones
 // ============================================================
 function buildSidebar() {
   var perms   = ROLE_PERMS[currentUser.role] || ROLE_PERMS.read_only;
   var isAdmin = currentUser.role==='superadmin' || currentUser.role==='admin';
-  var phases  = {Acquisition:['screening','underwriting'],Diligence:['capex','diligence'],Onboarding:['onboarding','planlock'],Operations:['tracking']};
+  var phases  = {Acquisition:['screening','underwriting'],Diligence:['capex','diligence'],Onboarding:['onboarding','planlock'],Operations:['tracking','dashboard']};
+
   var html = '<div class="nav-section">Overview</div>'
     + '<div class="nav-item active" data-mod="home" onclick="goTo(\'home\',this)">'
-    + '<span class="ni-icon">&#11041;</span><span class="ni-label">Dashboard</span></div>';
+    + '<span class="ni-icon">&#11041;</span><span class="ni-label">Home</span></div>';
 
   var phaseKeys = Object.keys(phases);
   for (var pi=0; pi<phaseKeys.length; pi++) {
     var phase = phaseKeys[pi];
     var keys  = phases[phase];
-    var visible = [];
-    for (var ki=0; ki<keys.length; ki++) {
-      if ((perms[keys[ki]]||'hidden') !== 'hidden') visible.push(keys[ki]);
-    }
-    if (!visible.length) continue;
     html += '<div class="sb-divider"></div><div class="nav-section">'+phase+'</div>';
-    for (var vi=0; vi<visible.length; vi++) {
-      var key = visible[vi];
+    for (var ki=0; ki<keys.length; ki++) {
+      var key = keys[ki];
       var m   = MODULES[key];
-      var acc = perms[key];
+      var acc = perms[key] || 'hidden';
+      var isLocked = acc === 'hidden';
       var ro  = acc==='read' || acc==='upload';
-      html += '<div class="nav-item'+(ro?' readonly':'')+'" data-mod="'+key+'" onclick="goTo(\''+key+'\',this)">'
+      html += '<div class="nav-item'+(isLocked?' locked':'')+(ro?' readonly':'')+'" data-mod="'+key+'" onclick="'
+        + (isLocked ? 'showLockedTooltip(event,\''+key+'\')' : 'goTo(\''+key+'\',this)')
+        + '">'
         + '<span class="ni-icon">'+m.icon+'</span>'
         + '<span class="ni-label">'+m.label+'</span>'
         + (m.num ? '<span class="ni-badge '+m.badge+'">'+m.num+'</span>' : '')
         + (ro ? '<span style="font-size:9px;color:var(--text3);margin-left:2px;">&#128065;</span>' : '')
+        + (isLocked ? '<span class="lock-icon">&#128274;</span>' : '')
         + '</div>';
     }
   }
@@ -449,6 +653,21 @@ function buildSidebar() {
 
   document.getElementById('sb-nav').innerHTML = html;
 }
+
+// Locked module tooltip
+var tooltipTimer = null;
+function showLockedTooltip(event, moduleKey) {
+  event.stopPropagation();
+  var tip = document.getElementById('locked-tooltip');
+  var mod = MODULES[moduleKey];
+  tip.textContent = 'You do not have access to ' + (mod ? mod.label : moduleKey) + '. Contact your admin to request access.';
+  tip.style.left = event.clientX + 'px';
+  tip.style.top  = (event.clientY - 50) + 'px';
+  tip.classList.add('show');
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(function(){ tip.classList.remove('show'); }, 2500);
+}
+document.addEventListener('click', function(){ document.getElementById('locked-tooltip').classList.remove('show'); });
 
 // ============================================================
 // NAVIGATION
@@ -475,7 +694,7 @@ function goTo(module, el) {
   uv.style.display='none'; uv.classList.remove('active');
   mc.style.display='none';
   if (module==='home')  { hv.style.display='block'; hv.classList.add('active'); renderHome(); return; }
-  if (module==='users') { uv.style.display='block'; uv.classList.add('active'); renderUsers(); return; }
+  if (module==='users') { uv.style.display='block'; uv.classList.add('active'); loadAndRenderUsers(); return; }
   var mod = MODULES[module];
   if (!mod || !mod.file) return;
   mc.style.display='flex';
@@ -486,6 +705,11 @@ function goTo(module, el) {
 }
 
 function goToFromHome(module) {
+  var perms = ROLE_PERMS[currentUser ? currentUser.role : 'read_only'] || ROLE_PERMS.read_only;
+  if ((perms[module]||'hidden')==='hidden') {
+    showToast('You do not have access to this module. Contact your admin.', true);
+    return;
+  }
   var m = document.querySelector('[data-mod="'+module+'"]');
   goTo(module, m||null);
 }
@@ -499,18 +723,18 @@ function onFrameLoad() {
 // MOBILE SIDEBAR
 // ============================================================
 function toggleSidebar() {
-  var sb = document.getElementById('sidebar');
+  var sb2 = document.getElementById('sidebar');
   var ov = document.getElementById('sb-overlay');
-  if (sb.classList.contains('open')) { closeSidebar(); } else {
-    sb.classList.add('open');
+  if (sb2.classList.contains('open')) { closeSidebar(); } else {
+    sb2.classList.add('open');
     ov.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
 }
 function closeSidebar() {
-  var sb = document.getElementById('sidebar');
+  var sb2 = document.getElementById('sidebar');
   var ov = document.getElementById('sb-overlay');
-  sb.classList.remove('open');
+  sb2.classList.remove('open');
   ov.classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -521,19 +745,20 @@ function closeSidebar() {
 function renderHome() {
   var perms   = ROLE_PERMS[currentUser.role] || ROLE_PERMS.read_only;
   var isAdmin = currentUser.role==='superadmin' || currentUser.role==='admin';
-  var cards   = [
+  var allCards = [
     {key:'screening',  phase:'Acquisition', num:'01', col:'hc-p', badge:'nb-purple', title:'Deal Screening',        desc:'Validate deals against PGM criteria. Auto-suggest Pass/Flag/Fail with configurable thresholds.',     note:'3 demo deals'},
     {key:'underwriting',phase:'Acquisition',num:'02', col:'hc-p', badge:'nb-purple', title:'Underwriting',           desc:'Full pro forma, loan scenarios, 5-year projections, cash flow waterfall, IRR settings.',            note:'Maple Ridge loaded'},
     {key:'capex',      phase:'Diligence',   num:'03', col:'hc-a', badge:'nb-amber',  title:'CapEx &amp; Construction',desc:'Unit turn approvals, 4-quarter exterior roadmap, PM sign-off, budget vs. actual.',                note:'2 properties'},
     {key:'diligence',  phase:'Diligence',   num:'04', col:'hc-t', badge:'nb-teal',   title:'Due Diligence',          desc:'50+ checklist items across 8 categories. Critical flagging, risk panel, admin template.',          note:'2 properties'},
     {key:'onboarding', phase:'Onboarding',  num:'05', col:'hc-b', badge:'nb-blue',   title:'PM Onboarding',          desc:'AppFolio and Buildium data transfer checklist. Nav paths per item, document upload, go-live.',      note:'In progress'},
     {key:'planlock',   phase:'Onboarding',  num:'06', col:'hc-c', badge:'nb-coral',  title:'Plan Lock',               desc:'Dept sign-offs, locked metrics, annual budgets by year, API actuals panel, amendment log.',        note:'Admin only'},
-    {key:'tracking',   phase:'Operations',  num:'07', col:'hc-g', badge:'nb-green',  title:'Budget Tracking',         desc:'Portfolio and property budget vs. actuals. Real-time mid-month alerts. Budget file upload.',        note:'4 properties'}
-  ].filter(function(c){ return (perms[c.key]||'hidden')!=='hidden'; });
+    {key:'tracking',   phase:'Operations',  num:'07', col:'hc-g', badge:'nb-green',  title:'Budget Tracking',         desc:'Portfolio and property budget vs. actuals. Real-time mid-month alerts. Budget file upload.',        note:'4 properties'},
+    {key:'dashboard',  phase:'Operations',  num:'08', col:'hc-b', badge:'nb-blue',   title:'Dashboard Analytics',     desc:'Buildium data: occupancy, rent roll, financials, lease expirations, utilities, and NOI by property.', note:'BigQuery'}
+  ];
 
   var byPhase = {};
-  for (var i=0;i<cards.length;i++) {
-    var c=cards[i];
+  for (var i=0;i<allCards.length;i++) {
+    var c=allCards[i];
     if (!byPhase[c.phase]) byPhase[c.phase]=[];
     byPhase[c.phase].push(c);
   }
@@ -546,27 +771,30 @@ function renderHome() {
     phasesHtml += '<div class="phase-title">'+ph+'</div><div class="modules-grid">';
     for (var ci=0;ci<pCards.length;ci++) {
       var card=pCards[ci];
-      var acc=perms[card.key];
+      var acc=perms[card.key] || 'hidden';
+      var isLocked = acc === 'hidden';
       var roTag = acc==='read' ? '<span style="font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-right:4px;">View only</span>' : '';
-      phasesHtml += '<div class="hcard '+card.col+'" onclick="goToFromHome(\''+card.key+'\')">'
+      var lockedTag = isLocked ? '<span style="font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-right:4px;">&#128274; Locked</span>' : '';
+      phasesHtml += '<div class="hcard '+card.col+(isLocked?' locked':'')+'" onclick="goToFromHome(\''+card.key+'\')">'
         + '<div class="hcard-body">'
         + '<div class="hc-top"><span class="hc-num">MODULE '+card.num+'</span>'
         + '<span class="hc-phase-badge '+card.badge+'">'+ph+'</span></div>'
         + '<div class="hc-title">'+card.title+'</div>'
         + '<div class="hc-desc">'+card.desc+'</div>'
         + '</div>'
-        + '<div class="hcard-footer"><span class="hcf-open">Open &#x2192;</span>'
-        + '<span style="display:flex;align-items:center;">'+roTag+'<span style="font-size:10px;color:var(--text3);">'+card.note+'</span></span></div>'
+        + '<div class="hcard-footer"><span class="hcf-open">'+(isLocked?'&#128274; No Access':'Open &#x2192;')+'</span>'
+        + '<span style="display:flex;align-items:center;">'+lockedTag+roTag+'<span style="font-size:10px;color:var(--text3);">'+card.note+'</span></span></div>'
         + '</div>';
     }
     phasesHtml += '</div>';
   }
 
-  var firstName = currentUser.name.split(' ')[0];
+  var accessibleCount = allCards.filter(function(c){ return (perms[c.key]||'hidden')!=='hidden'; }).length;
+  var firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'User';
   document.getElementById('home-view').innerHTML =
     '<div style="margin-bottom:24px;">'
     + '<h1 style="font-family:var(--display);font-size:24px;font-weight:600;color:var(--text);margin-bottom:6px;">Welcome back, '+firstName+'</h1>'
-    + '<p style="font-size:13px;color:var(--text2);">'+ROLE_LABELS[currentUser.role]+' &middot; '+cards.length+' module'+(cards.length!==1?'s':'')+' available &middot; PGM Business Plan OS</p>'
+    + '<p style="font-size:13px;color:var(--text2);">'+ROLE_LABELS[currentUser.role]+' &middot; '+accessibleCount+' module'+(accessibleCount!==1?'s':'')+' available &middot; PGM Business Plan OS</p>'
     + '</div>'
     + '<div class="pipeline-row">'
     + '<div class="ps"><div class="ps-dot c-p">1</div><div class="ps-lbl">Deal<br/>Screen</div></div><div class="ps-arr">&#x2192;</div>'
@@ -575,11 +803,12 @@ function renderHome() {
     + '<div class="ps"><div class="ps-dot c-t">4</div><div class="ps-lbl">Due<br/>Dilig.</div></div><div class="ps-arr">&#x2192;</div>'
     + '<div class="ps"><div class="ps-dot c-b">5</div><div class="ps-lbl">PM<br/>Onboard</div></div><div class="ps-arr">&#x2192;</div>'
     + '<div class="ps"><div class="ps-dot c-c">6</div><div class="ps-lbl">Plan<br/>Lock</div></div><div class="ps-arr">&#x2192;</div>'
-    + '<div class="ps"><div class="ps-dot c-g">7</div><div class="ps-lbl">Budget<br/>Track</div></div>'
+    + '<div class="ps"><div class="ps-dot c-g">7</div><div class="ps-lbl">Budget<br/>Track</div></div><div class="ps-arr">&#x2192;</div>'
+    + '<div class="ps"><div class="ps-dot c-b">8</div><div class="ps-lbl">Dash-<br/>board</div></div>'
     + '</div>'
     + phasesHtml
     + '<div style="padding:14px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text3);line-height:1.7;">'
-    + '<strong style="color:var(--text2);">v1.0 &middot; PGM / LeavenWealth &middot; 2026</strong> &mdash; Pending: Looker Studio API, backend database.'
+    + '<strong style="color:var(--text2);">v1.0 &middot; PGM / LeavenWealth &middot; 2026</strong> &mdash; Supabase Auth enabled.'
     + (isAdmin ? ' <a href="#" onclick="goToFromHome(\'users\')" style="color:var(--accent);text-decoration:none;">Manage users &#x2192;</a>' : '')
     + '</div>';
 }
@@ -587,42 +816,60 @@ function renderHome() {
 // ============================================================
 // USER MANAGEMENT
 // ============================================================
+async function loadAndRenderUsers() {
+  try {
+    var result = await callManageUsers({ action: 'list' });
+    USERS = result.data || [];
+  } catch(e) {
+    console.warn('[BPOS] Failed to load users:', e);
+    showToast('Failed to load users: ' + e.message, true);
+  }
+
+  // Also load property groups for the modal
+  if (!cachedPropertyGroups.length) {
+    cachedPropertyGroups = await fetchPropertyGroups();
+  }
+
+  renderUsers();
+}
+
 function renderUsers() {
   var isSuper = currentUser.role==='superadmin';
 
   var rows = '';
   for (var i=0;i<USERS.length;i++) {
     var u=USERS[i];
-    var props = u.properties==='all'
-      ? '<span class="ppill">All properties</span>'
-      : (Array.isArray(u.properties)?u.properties:[]).map(function(p){return '<span class="ppill">'+p+'</span>';}).join('');
+    var propsDisplay = formatPropertyDisplay(u.properties);
     var canEdit   = isSuper || (currentUser.role==='admin' && u.role!=='superadmin');
     var canDelete = isSuper ? u.id!==currentUser.id : (currentUser.role==='admin' && u.role!=='superadmin' && u.id!==currentUser.id);
     var youBadge  = u.id===currentUser.id ? ' <span style="font-size:10px;color:var(--text3);">(you)</span>' : '';
+    var statusCls = u.status==='active'?'sdot-active':u.status==='invited'?'sdot-invited':'sdot-disabled';
+    var statusLbl = u.status==='active'?'Active':u.status==='invited'?'Invited':'Disabled';
     rows += '<tr>'
       + '<td><div style="display:flex;align-items:center;gap:10px;">'
-      + '<div class="uav" style="background:'+u.bg+';">'+u.initials+'</div>'
+      + '<div class="uav" style="background:'+(u.avatar_bg||AVATAR_BG[0])+';">'+u.initials+'</div>'
       + '<div><div style="font-size:13px;font-weight:500;color:var(--text);">'+u.name+youBadge+'</div>'
       + '<div style="font-size:11px;color:var(--text3);">'+u.email+'</div></div></div></td>'
       + '<td><span class="rb rb-'+u.role+'">'+(ROLE_LABELS[u.role]||u.role)+'</span></td>'
-      + '<td><span class="sdot '+(u.status==='active'?'sdot-active':'sdot-invited')+'"></span>'
-      + '<span style="font-size:12px;color:var(--text2);">'+(u.status==='active'?'Active':'Invited')+'</span></td>'
-      + '<td><div class="ppills">'+props+'</div></td>'
+      + '<td><span class="sdot '+statusCls+'"></span>'
+      + '<span style="font-size:12px;color:var(--text2);">'+statusLbl+'</span></td>'
+      + '<td><div class="ppills">'+propsDisplay+'</div></td>'
       + '<td><div style="display:flex;gap:6px;">'
-      + (canEdit?'<button class="btn-sm" onclick="openEditUser('+u.id+')">Edit</button>':'')
-      + (canDelete?'<button class="btn-danger" onclick="doDeleteUser('+u.id+')">Remove</button>':'')
+      + (canEdit?'<button class="btn-sm" onclick="openEditUser(\''+u.id+'\')">Edit</button>':'')
+      + (canDelete?'<button class="btn-danger" onclick="doDeleteUser(\''+u.id+'\')">Remove</button>':'')
       + '</div></td></tr>';
   }
 
   var matrixRows = [
-    ['Deal Screening','edit','edit','edit','read','read'],
-    ['Underwriting','edit','edit','edit','read','read'],
-    ['CapEx &amp; Construction','edit','edit','edit','edit','read'],
-    ['Due Diligence','edit','read','edit','edit','read'],
-    ['PM Onboarding','edit','edit','upload','edit','read'],
-    ['Plan Lock','edit','&mdash;','&mdash;','&mdash;','&mdash;'],
-    ['Budget Tracking','edit','read','read','read','read'],
-    ['User Management','edit','&mdash;','&mdash;','&mdash;','&mdash;']
+    ['Deal Screening','edit','edit','edit','read','read','&mdash;','&mdash;'],
+    ['Underwriting','edit','edit','edit','read','read','&mdash;','&mdash;'],
+    ['CapEx &amp; Construction','edit','edit','edit','edit','read','&mdash;','&mdash;'],
+    ['Due Diligence','edit','read','edit','edit','read','&mdash;','&mdash;'],
+    ['PM Onboarding','edit','edit','upload','edit','read','&mdash;','&mdash;'],
+    ['Plan Lock','edit','&mdash;','&mdash;','&mdash;','&mdash;','&mdash;','&mdash;'],
+    ['Budget Tracking','edit','read','read','read','read','&mdash;','read'],
+    ['Dashboard Analytics','edit','read','read','read','read','read','read'],
+    ['User Management','edit','&mdash;','&mdash;','&mdash;','&mdash;','&mdash;','&mdash;']
   ];
   var mrows = '';
   for (var mi=0;mi<matrixRows.length;mi++) {
@@ -639,12 +886,12 @@ function renderUsers() {
 
   document.getElementById('um-view').innerHTML =
     '<div class="um-top">'
-    + '<div><h1>User Management</h1><p>Manage team access, roles, and property assignments.</p></div>'
+    + '<div><h1>User Management</h1><p>Manage team access, roles, and property assignments. All logins are saved to Supabase.</p></div>'
     + '<button class="btn-primary" onclick="openAddUser()">+ Add user</button>'
     + '</div>'
     + '<div class="perm-wrap"><div style="padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text);">Permission matrix</div>'
     + '<div style="overflow-x:auto;"><table class="ptbl"><thead><tr>'
-    + '<th>Module</th><th>Admin</th><th>Asset Mgr</th><th>Underwriter</th><th>Prop. Mgr</th><th>Read Only</th>'
+    + '<th>Module</th><th>Admin</th><th>Asset Mgr</th><th>Underwriter</th><th>Prop. Mgr</th><th>Read Only</th><th>Dashboard</th><th>Tracker</th>'
     + '</tr></thead><tbody>'+mrows+'</tbody></table></div></div>'
     + '<div class="table-wrap">'
     + '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">'
@@ -652,6 +899,28 @@ function renderUsers() {
     + '<span style="font-size:11px;color:var(--text3);">Role changes apply on next login</span></div>'
     + '<table class="utbl"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Properties</th><th>Actions</th></tr></thead>'
     + '<tbody>'+rows+'</tbody></table></div>';
+}
+
+function formatPropertyDisplay(props) {
+  if (props === 'all' || props === '"all"') return '<span class="ppill">All properties</span>';
+  if (typeof props === 'string') {
+    try { props = JSON.parse(props); } catch(e) { return '<span class="ppill">All properties</span>'; }
+  }
+  if (props === 'all') return '<span class="ppill">All properties</span>';
+  if (!props || typeof props !== 'object') return '<span class="ppill">All properties</span>';
+
+  var html = '';
+  if (props.groups && props.groups.length) {
+    for (var gi=0;gi<props.groups.length;gi++) {
+      html += '<span class="ppill ppill-group">&#9673; '+props.groups[gi]+'</span>';
+    }
+  }
+  if (props.properties && props.properties.length) {
+    for (var pi=0;pi<props.properties.length;pi++) {
+      html += '<span class="ppill">'+props.properties[pi]+'</span>';
+    }
+  }
+  return html || '<span class="ppill">All properties</span>';
 }
 
 function openAddUser() {
@@ -664,6 +933,7 @@ function openEditUser(id) {
   editingUserId=id;
   var u=null;
   for(var i=0;i<USERS.length;i++){if(USERS[i].id===id){u=USERS[i];break;}}
+  if (!u) return;
   document.getElementById('um-title').textContent='Edit - '+u.name;
   renderUserModal(u);
   document.getElementById('user-modal').classList.add('open');
@@ -678,8 +948,8 @@ function renderUserModal(user) {
   var isSuperTgt   = user && user.role==='superadmin';
   var isCurrentSup = currentUser.role==='superadmin';
   var roleOpts     = isCurrentSup
-    ? ['admin','asset_manager','underwriter','property_manager','read_only']
-    : ['asset_manager','underwriter','property_manager','read_only'];
+    ? ['admin','asset_manager','underwriter','property_manager','read_only','dashboard','tracker']
+    : ['asset_manager','underwriter','property_manager','read_only','dashboard','tracker'];
 
   var roleSelect = '<select id="um-role" '+(isSuperTgt?'disabled ':'')+' onchange="renderRolePreview(this.value)">';
   if (isSuperTgt) roleSelect += '<option value="superadmin" selected>Super Admin</option>';
@@ -689,15 +959,31 @@ function renderUserModal(user) {
   }
   roleSelect += '</select>';
 
-  var propChecks = '';
+  // Parse existing property access
+  var parsedProps = parsePropertyAccess(user ? user.properties : null);
+
+  // Build property checkboxes with search
+  var propChecks = '<input type="text" class="prop-search" id="prop-search" placeholder="Search properties..." oninput="filterProperties(this.value)"/>';
   for (var pi=0;pi<ALL_PROPERTIES.length;pi++) {
     var p=ALL_PROPERTIES[pi];
-    var chk = !isEditing || user.properties==='all' || (Array.isArray(user.properties)&&user.properties.indexOf(p)>=0);
-    propChecks += '<label class="prop-item"><input type="checkbox" value="'+p+'" '+(chk?'checked':'')+'/><span>'+p+'</span></label>';
+    var chk = !isEditing || parsedProps.mode==='all' || (parsedProps.properties && parsedProps.properties.indexOf(p)>=0);
+    propChecks += '<label class="prop-item" data-name="'+p.toLowerCase()+'"><input type="checkbox" value="'+p+'" '+(chk?'checked':'')+'/><span>'+p+'</span></label>';
+  }
+
+  // Build group checkboxes
+  var uniqueGroups = getUniqueGroups();
+  var groupChecks = '';
+  for (var gi=0;gi<uniqueGroups.length;gi++) {
+    var g=uniqueGroups[gi];
+    var gchk = parsedProps.groups && parsedProps.groups.indexOf(g)>=0;
+    groupChecks += '<label class="group-item"><input type="checkbox" value="'+g+'" '+(gchk?'checked':'')+'/><span>&#9673; '+g+'</span></label>';
+  }
+  if (!uniqueGroups.length) {
+    groupChecks = '<div style="font-size:12px;color:var(--text3);padding:8px;">No property groups found. Groups are loaded from Buildium.</div>';
   }
 
   var currentRole = user ? user.role : 'read_only';
-  var scopeAll    = !isEditing || user.properties==='all';
+  var activeScope = parsedProps.mode || 'all';
 
   document.getElementById('um-body').innerHTML =
     '<div class="m2">'
@@ -710,15 +996,83 @@ function renderUserModal(user) {
     + '</div>'
     + '<div id="um-rp"></div>'
     + '<div class="mf"><label>Property access</label>'
-    + '<div style="display:flex;gap:16px;margin-bottom:8px;">'
-    + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2);"><input type="radio" name="pscope" value="all" '+(scopeAll?'checked':'')+' onchange="document.getElementById(\'plist\').style.display=\'none\'"/> All properties</label>'
-    + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2);"><input type="radio" name="pscope" value="select" '+(!scopeAll?'checked':'')+' onchange="document.getElementById(\'plist\').style.display=\'block\'"/> Specific properties</label>'
+    + '<div class="scope-tabs">'
+    + '<button class="scope-tab'+(activeScope==='all'?' active':'')+'" onclick="switchScope(\'all\',this)">All Properties</button>'
+    + '<button class="scope-tab'+(activeScope==='specific'||activeScope==='properties'?' active':'')+'" onclick="switchScope(\'specific\',this)">Specific Properties</button>'
+    + '<button class="scope-tab'+(activeScope==='groups'||activeScope==='mixed'?' active':'')+'" onclick="switchScope(\'groups\',this)">Property Groups</button>'
     + '</div>'
-    + '<div id="plist" style="display:'+(!scopeAll?'block':'none')+'"><div class="prop-list">'+propChecks+'</div></div>'
+    + '<div id="scope-all" style="display:'+(activeScope==='all'?'block':'none')+';"><div style="font-size:12px;color:var(--text3);padding:8px 0;">This user will have access to data for all properties.</div></div>'
+    + '<div id="scope-specific" style="display:'+(activeScope==='specific'||activeScope==='properties'?'block':'none')+';"><div class="prop-list" id="prop-list">'+propChecks+'</div></div>'
+    + '<div id="scope-groups" style="display:'+(activeScope==='groups'||activeScope==='mixed'?'block':'none')+';"><div class="group-list" id="group-list">'+groupChecks+'</div>'
+    + '<div style="margin-top:8px;font-size:11px;color:var(--text3);">You can also add individual properties below:</div>'
+    + '<div class="prop-list" id="group-props-list" style="margin-top:6px;">'+propChecks.replace(/prop-search/g,'group-prop-search').replace(/filterProperties/g,'filterGroupProperties')+'</div>'
+    + '</div>'
     + '</div>'
     + (isEditing ? '<div class="mf"><label>Reset password (optional)</label><input type="text" id="um-rpw" placeholder="Leave blank to keep current"/></div>' : '');
 
   renderRolePreview(currentRole);
+}
+
+function parsePropertyAccess(props) {
+  if (!props || props === 'all' || props === '"all"') return { mode: 'all', groups: [], properties: [] };
+  if (typeof props === 'string') {
+    try { props = JSON.parse(props); } catch(e) { return { mode: 'all', groups: [], properties: [] }; }
+  }
+  if (props === 'all') return { mode: 'all', groups: [], properties: [] };
+  if (Array.isArray(props)) return { mode: 'specific', groups: [], properties: props };
+  // Object format: {groups:[], properties:[]}
+  var hasGroups = props.groups && props.groups.length > 0;
+  var hasProps  = props.properties && props.properties.length > 0;
+  if (hasGroups) return { mode: 'mixed', groups: props.groups || [], properties: props.properties || [] };
+  if (hasProps)  return { mode: 'specific', groups: [], properties: props.properties || [] };
+  return { mode: 'all', groups: [], properties: [] };
+}
+
+function getUniqueGroups() {
+  var seen = {};
+  var result = [];
+  for (var i=0;i<cachedPropertyGroups.length;i++) {
+    var gn = cachedPropertyGroups[i].group_name;
+    if (gn && !seen[gn]) { seen[gn]=true; result.push(gn); }
+  }
+  return result.sort();
+}
+
+function switchScope(scope, btn) {
+  var tabs = document.querySelectorAll('.scope-tab');
+  for (var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+  btn.classList.add('active');
+  document.getElementById('scope-all').style.display = scope==='all'?'block':'none';
+  document.getElementById('scope-specific').style.display = scope==='specific'?'block':'none';
+  document.getElementById('scope-groups').style.display = scope==='groups'?'block':'none';
+}
+
+function filterProperties(query) {
+  var items = document.querySelectorAll('#prop-list .prop-item');
+  var q = query.toLowerCase();
+  for (var i=0;i<items.length;i++) {
+    var name = items[i].getAttribute('data-name') || '';
+    items[i].style.display = (!q || name.indexOf(q)>=0) ? 'flex' : 'none';
+  }
+}
+
+function filterGroupProperties(query) {
+  var items = document.querySelectorAll('#group-props-list .prop-item');
+  var q = query.toLowerCase();
+  for (var i=0;i<items.length;i++) {
+    var name = items[i].getAttribute('data-name') || '';
+    items[i].style.display = (!q || name.indexOf(q)>=0) ? 'flex' : 'none';
+  }
+}
+
+function getActiveScope() {
+  var active = document.querySelector('.scope-tab.active');
+  if (!active) return 'all';
+  var text = active.textContent.trim().toLowerCase();
+  if (text.indexOf('all') >= 0) return 'all';
+  if (text.indexOf('specific') >= 0) return 'specific';
+  if (text.indexOf('group') >= 0) return 'groups';
+  return 'all';
 }
 
 function renderRolePreview(role) {
@@ -738,7 +1092,7 @@ function renderRolePreview(role) {
   if (el) el.innerHTML='<div class="rp-wrap"><div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);">Access for '+(ROLE_LABELS[role]||role)+'</div><table style="width:100%;border-collapse:collapse;"><tbody>'+rows+'</tbody></table></div>';
 }
 
-function doSaveUser() {
+async function doSaveUser() {
   var name  = (document.getElementById('um-name')||{}).value || '';
   var email = (document.getElementById('um-email')||{}).value || '';
   var role  = (document.getElementById('um-role')||{}).value || 'read_only';
@@ -748,52 +1102,91 @@ function doSaveUser() {
   if (!name)  { showToast('Full name is required.',true); return; }
   if (!editingUserId && !email) { showToast('Email is required.',true); return; }
   if (!editingUserId && !pw)    { showToast('Temporary password is required.',true); return; }
-  if (!editingUserId) {
-    for(var i=0;i<USERS.length;i++){if(USERS[i].email===email){showToast('Email already exists.',true);return;}}
+  if (!editingUserId && pw.length < 6) { showToast('Password must be at least 6 characters.',true); return; }
+
+  // Build property access object
+  var scope = getActiveScope();
+  var properties;
+  if (scope === 'all') {
+    properties = 'all';
+  } else if (scope === 'specific') {
+    var boxes = document.querySelectorAll('#prop-list .prop-item input:checked');
+    var selected = [];
+    for (var bi=0;bi<boxes.length;bi++) selected.push(boxes[bi].value);
+    if (!selected.length) { showToast('Select at least one property.',true); return; }
+    properties = { groups: [], properties: selected };
+  } else { // groups
+    var gboxes = document.querySelectorAll('#group-list .group-item input:checked');
+    var groups = [];
+    for (var gi=0;gi<gboxes.length;gi++) groups.push(gboxes[gi].value);
+    var gpboxes = document.querySelectorAll('#group-props-list .prop-item input:checked');
+    var gprops = [];
+    for (var gpi=0;gpi<gpboxes.length;gpi++) gprops.push(gpboxes[gpi].value);
+    if (!groups.length && !gprops.length) { showToast('Select at least one group or property.',true); return; }
+    properties = { groups: groups, properties: gprops };
   }
-  var scopeEl = document.querySelector('input[name="pscope"]:checked');
-  var scope   = scopeEl ? scopeEl.value : 'all';
-  var props   = 'all';
-  if (scope==='select') {
-    var boxes = document.querySelectorAll('.prop-list input:checked');
-    props = [];
-    for(var bi=0;bi<boxes.length;bi++) props.push(boxes[bi].value);
-    if (!props.length) { showToast('Select at least one property.',true); return; }
-  }
-  if (editingUserId) {
-    for(var ui=0;ui<USERS.length;ui++){
-      if(USERS[ui].id===editingUserId){
-        if(USERS[ui].role!=='superadmin') USERS[ui].role=role;
-        USERS[ui].name=name; USERS[ui].properties=props;
-        USERS[ui].initials=name.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-        if(rpw&&rpw.length>=6){USERS[ui].pw=rpw;USERS[ui].mustChangePw=false;}
-        break;
+
+  var btn = document.getElementById('btn-save-user');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    if (editingUserId) {
+      // Update existing user
+      var updateBody = {
+        action: 'update',
+        userId: editingUserId,
+        name: name,
+        properties: properties,
+      };
+      // Only update role if target is not superadmin
+      var targetUser = USERS.find(function(u){return u.id===editingUserId;});
+      if (targetUser && targetUser.role !== 'superadmin') {
+        updateBody.role = role;
       }
+      if (rpw && rpw.length >= 6) {
+        updateBody.newPassword = rpw;
+      }
+      await callManageUsers(updateBody);
+      showToast(name+' updated.');
+    } else {
+      // Create new user
+      await callManageUsers({
+        action: 'create',
+        email: email,
+        password: pw,
+        name: name,
+        role: role,
+        properties: properties,
+        avatar_bg: AVATAR_BG[USERS.length % AVATAR_BG.length],
+      });
+      showToast(name+' added. They can sign in with the temporary password.');
     }
-    showToast(name+' updated.');
-  } else {
-    USERS.push({
-      id:Date.now(), email:email, pw:pw, name:name, role:role,
-      initials:name.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2),
-      properties:props, status:'invited', mustChangePw:true,
-      bg:AVATAR_BG[USERS.length%AVATAR_BG.length]
-    });
-    showToast(name+' added. They can sign in and set a password on first login.');
+
+    closeUserModal();
+    await loadAndRenderUsers();
+    buildSidebar();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save user';
   }
-  closeUserModal();
-  buildSidebar();
-  renderUsers();
 }
 
-function doDeleteUser(id) {
+async function doDeleteUser(id) {
   var u=null;
   for(var i=0;i<USERS.length;i++){if(USERS[i].id===id){u=USERS[i];break;}}
   if(!u) return;
   if(u.role==='superadmin'){showToast('Super Admin cannot be removed.',true);return;}
   if(!confirm('Remove '+u.name+'? This cannot be undone.')) return;
-  USERS=USERS.filter(function(x){return x.id!==id;});
-  buildSidebar(); renderUsers();
-  showToast(u.name+' removed.');
+
+  try {
+    await callManageUsers({ action: 'delete', userId: id });
+    await loadAndRenderUsers();
+    buildSidebar();
+    showToast(u.name+' removed.');
+  } catch(e) {
+    showToast('Failed to remove user: ' + e.message, true);
+  }
 }
 
 // ============================================================

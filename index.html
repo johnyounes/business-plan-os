@@ -967,6 +967,14 @@ function renderUserModal(user) {
     propChecks += '<label class="prop-item" data-name="'+p.toLowerCase()+'"><input type="checkbox" value="'+p+'" '+(chk?'checked':'')+'/><span>'+p+'</span></label>';
   }
 
+  // Build separate property checkboxes for the groups tab (defaults unchecked — only for adding extras)
+  var groupPropChecks = '<input type="text" class="prop-search" id="group-prop-search" placeholder="Search properties..." oninput="filterGroupProperties(this.value)"/>';
+  for (var gpi2=0;gpi2<ALL_PROPERTIES.length;gpi2++) {
+    var gp2=ALL_PROPERTIES[gpi2];
+    var gpChk = isEditing && parsedProps.properties && parsedProps.properties.indexOf(gp2)>=0;
+    groupPropChecks += '<label class="prop-item" data-name="'+gp2.toLowerCase()+'"><input type="checkbox" value="'+gp2+'" '+(gpChk?'checked':'')+'/><span>'+gp2+'</span></label>';
+  }
+
   // Build group checkboxes
   var uniqueGroups = getUniqueGroups();
   var groupChecks = '';
@@ -1002,7 +1010,7 @@ function renderUserModal(user) {
     + '<div id="scope-specific" style="display:'+(activeScope==='specific'||activeScope==='properties'?'block':'none')+';"><div class="prop-list" id="prop-list">'+propChecks+'</div></div>'
     + '<div id="scope-groups" style="display:'+(activeScope==='groups'||activeScope==='mixed'?'block':'none')+';"><div class="group-list" id="group-list">'+groupChecks+'</div>'
     + '<div style="margin-top:8px;font-size:11px;color:var(--text3);">You can also add individual properties below:</div>'
-    + '<div class="prop-list" id="group-props-list" style="margin-top:6px;">'+propChecks.replace(/prop-search/g,'group-prop-search').replace(/filterProperties/g,'filterGroupProperties')+'</div>'
+    + '<div class="prop-list" id="group-props-list" style="margin-top:6px;">'+groupPropChecks+'</div>'
     + '</div>'
     + '</div>'
     + (isEditing ? '<div class="mf"><label>Reset password (optional)</label><input type="text" id="um-rpw" placeholder="Leave blank to keep current"/></div>' : '');

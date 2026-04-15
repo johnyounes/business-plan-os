@@ -975,21 +975,26 @@ function getFilteredProps() {
 }
 
 // Universal row filter — matches by property_id OR property_name (api_name or t12_name)
+// ALWAYS scoped to allProperties (which may already be restricted by user access)
 function matchesSelectedProps(r) {
   const groupIds = getGroupPropertyIds();
   const hasGroupFilter = groupIds !== null;
   const hasPropFilter = selectedProps.length > 0;
 
-  if (!hasGroupFilter && !hasPropFilter) return true;
-
-  // Build effective property set
+  // Build effective property set — always start from allProperties IDs
+  // so that user-level property access restrictions are always enforced
+  const baseIds = new Set(allProperties.map(p => p.id));
   let allowedIds;
+
   if (hasGroupFilter && hasPropFilter) {
-    allowedIds = new Set(selectedProps.filter(id => groupIds.includes(id)));
+    allowedIds = new Set(selectedProps.filter(id => groupIds.includes(id) && baseIds.has(id)));
   } else if (hasGroupFilter) {
-    allowedIds = new Set(groupIds);
+    allowedIds = new Set(groupIds.filter(id => baseIds.has(id)));
+  } else if (hasPropFilter) {
+    allowedIds = new Set(selectedProps.filter(id => baseIds.has(id)));
   } else {
-    allowedIds = new Set(selectedProps);
+    // No user-applied filters — still enforce base access restriction
+    allowedIds = baseIds;
   }
 
   if (r.property_id && allowedIds.has(parseInt(r.property_id))) return true;
@@ -2601,8 +2606,31 @@ async function loadDashboardData() {
     populateMonthFilter(DATA.months);
     updateMonthRangeVisibility();
 
-    // Populate group filter
-    if (DATA.propertyGroups.length > 0) populateGroupFilter(DATA.propertyGroups);
+    // Populate group filter — restricted by user access
+    if (DATA.propertyGroups.length > 0) {
+      let visibleGroups = DATA.propertyGroups;
+      try {
+        const bposUser = JSON.parse(sessionStorage.getItem('bpos_user') || 'null');
+        if (bposUser && bposUser.properties) {
+          let userProps = bposUser.properties;
+          if (typeof userProps === 'string') { try { userProps = JSON.parse(userProps); } catch(e) { userProps = 'all'; } }
+          if (userProps !== 'all' && typeof userProps === 'object' && userProps !== null) {
+            if (userProps.groups && userProps.groups.length) {
+              // User has group access — only show their groups
+              const allowedGroups = new Set(userProps.groups.map(g => g.toLowerCase()));
+              visibleGroups = DATA.propertyGroups.filter(g => allowedGroups.has((g.group_name || '').toLowerCase()));
+              // Also restrict DATA.propertyGroups so getGroupPropertyIds() stays scoped
+              DATA.propertyGroups = visibleGroups;
+            } else {
+              // User has specific-property access only — hide group filter entirely
+              visibleGroups = [];
+              document.getElementById('groupFilter').style.display = 'none';
+            }
+          }
+        }
+      } catch(e) { console.warn('[BPOS] Group filter restriction error:', e); }
+      if (visibleGroups.length > 0) populateGroupFilter(visibleGroups);
+    }
 
     // ── COMPUTE NOI SUMMARY FROM FINANCIAL DATA (for all months) ──
     // Since v_noi_summary may only have 1 month, build comprehensive NOI from financial_snapshots

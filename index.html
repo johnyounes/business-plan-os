@@ -701,6 +701,8 @@ function goTo(module, el) {
   document.getElementById('loading').classList.remove('hidden');
   fr.classList.remove('loaded');
   document.getElementById('loading-text').textContent = 'Loading '+mod.label+'...';
+  // Store user profile so iframes can enforce property access
+  try { sessionStorage.setItem('bpos_user', JSON.stringify(currentUser)); } catch(e){}
   fr.src = mod.file;
 }
 

@@ -2500,6 +2500,53 @@ async function loadDashboardData() {
       units: parseInt(p.units) || 0,
     })).sort((a, b) => a.name.localeCompare(b.name));
 
+    // ── ENFORCE USER PROPERTY ACCESS ──
+    // If the parent app stored a user profile with restricted property access,
+    // filter allProperties to only the allowed ones.
+    try {
+      const bposUser = JSON.parse(sessionStorage.getItem('bpos_user') || 'null');
+      if (bposUser && bposUser.properties) {
+        let userProps = bposUser.properties;
+        if (typeof userProps === 'string') {
+          try { userProps = JSON.parse(userProps); } catch(e) { userProps = 'all'; }
+        }
+        if (userProps !== 'all' && typeof userProps === 'object' && userProps !== null) {
+          // Build set of allowed property IDs
+          const allowedIds = new Set();
+          const allowedNames = new Set();
+
+          // Add individually assigned properties by name
+          if (userProps.properties && userProps.properties.length) {
+            userProps.properties.forEach(name => allowedNames.add(name.toLowerCase()));
+          }
+
+          // Add properties from assigned groups
+          if (userProps.groups && userProps.groups.length && DATA.propertyGroups) {
+            const groupSet = new Set(userProps.groups.map(g => g.toLowerCase()));
+            DATA.propertyGroups.forEach(gRow => {
+              if (groupSet.has((gRow.group_name || '').toLowerCase())) {
+                allowedIds.add(parseInt(gRow.property_id));
+              }
+            });
+          }
+
+          // Filter allProperties — keep if ID matches a group OR name matches individual
+          if (allowedIds.size > 0 || allowedNames.size > 0) {
+            allProperties = allProperties.filter(p => {
+              if (allowedIds.has(p.id)) return true;
+              if (allowedNames.has(p.name.toLowerCase())) return true;
+              if (allowedNames.has((p.apiName || '').toLowerCase())) return true;
+              if (allowedNames.has((p.t12Name || '').toLowerCase())) return true;
+              return false;
+            });
+            console.log('[BPOS] Property access filtered:', allProperties.length, 'of', DATA.properties.length, 'properties visible');
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[BPOS] Property access filter error:', e);
+    }
+
     // ── BUILD NAME → ID MAPS ──
     // Map both api_name and t12_name to property_id for robust matching
     const nameToId = {};

@@ -4718,6 +4718,67 @@ async function boot() {
       if (p.budgetHistory) Object.values(p.budgetHistory).forEach(bh => ensureNonopCategories(bh?.nonop));
     });
 
+    // ── ENFORCE USER PROPERTY ACCESS ──
+    // If the parent app stored a user profile with restricted property access,
+    // filter properties to only the allowed ones.
+    try {
+      const bposUser = JSON.parse(sessionStorage.getItem('bpos_user') || 'null');
+      if (bposUser && bposUser.properties) {
+        let userProps = bposUser.properties;
+        if (typeof userProps === 'string') {
+          try { userProps = JSON.parse(userProps); } catch(e) { userProps = 'all'; }
+        }
+        if (userProps !== 'all' && typeof userProps === 'object' && userProps !== null) {
+          const allowedNames = new Set();
+
+          // Add individually assigned properties by name (case-insensitive)
+          if (userProps.properties && userProps.properties.length) {
+            userProps.properties.forEach(name => allowedNames.add(name.toLowerCase()));
+          }
+
+          // Add properties from assigned groups — need to resolve group → property names
+          // We fetch property_groups from BQ edge function to resolve group membership
+          if (userProps.groups && userProps.groups.length) {
+            try {
+              const grpRes = await fetch(SUPA_URL + '/functions/v1/bq-dashboard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPA_KEY, 'apikey': SUPA_KEY },
+                body: JSON.stringify({ type: 'property_groups' }),
+              });
+              if (grpRes.ok) {
+                const grpData = await grpRes.json();
+                const groups = grpData.data || grpData.rows || [];
+                const groupSet = new Set(userProps.groups.map(g => g.toLowerCase()));
+                // Collect property IDs from matching groups
+                const groupPropIds = new Set();
+                groups.forEach(gRow => {
+                  if (groupSet.has((gRow.group_name || '').toLowerCase())) {
+                    groupPropIds.add(String(gRow.property_id));
+                  }
+                });
+                // Resolve IDs to names using our properties array
+                properties.forEach(p => {
+                  if (p.buildiumId && groupPropIds.has(String(p.buildiumId))) allowedNames.add(p.name.toLowerCase());
+                  if (p.supabaseId && groupPropIds.has(String(p.supabaseId))) allowedNames.add(p.name.toLowerCase());
+                });
+              }
+            } catch(ge) {
+              console.warn('[BPOS] Group resolution failed:', ge.message);
+            }
+          }
+
+          // Filter properties if we have any restrictions
+          if (allowedNames.size > 0) {
+            const before = properties.length;
+            properties = properties.filter(p => allowedNames.has(p.name.toLowerCase()));
+            console.log('[BPOS] Property access filtered:', properties.length, 'of', before, 'properties visible');
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[BPOS] Property access filter error:', e);
+    }
+
     // Restore alert log from DB
     if (alertRows && alertRows.length) {
       const propLookup = {};

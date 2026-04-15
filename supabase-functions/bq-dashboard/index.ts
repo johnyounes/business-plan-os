@@ -154,15 +154,18 @@ const QUERIES: Record<string, string> = {
     ORDER BY total_units DESC
   `,
 
-  // Monthly occupancy trends (15 months of snapshots).
-  // Source of truth for historical physical + preleased occupancy and unit counts.
-  // Economic occupancy is NOT on this view — it lives on v_economic_occupancy
-  // (see the `economic_occupancy` query below).
-  // Uses SELECT * so the query can't be broken by column renames/removals in the view —
-  // previously we explicitly listed `vacant_units` which had been dropped, causing the
-  // whole query to error and the dashboard to fall back to live-only occupancy.
+  // Monthly occupancy trends (15 months of snapshots)
   occupancy_snapshot_summary: `
-    SELECT *
+    SELECT
+      snapshot_month,
+      property_id,
+      property_name,
+      total_units,
+      occupied_units,
+      vacant_units,
+      preleased_units,
+      physical_occupancy_pct,
+      preleased_occupancy_pct
     FROM ${T}.v_occupancy_snapshot_summary\`
     ORDER BY property_name, snapshot_month
   `,
@@ -198,17 +201,25 @@ const QUERIES: Record<string, string> = {
     ORDER BY property_name, month DESC, section, account_name
   `,
 
-  // Income statement snapshot — SOURCE OF TRUTH for operating Income / Expenses / NOI / Expense Ratio
-  // Post-2026-04-13 fix: total_income and total_expenses are OPERATING-ONLY.
-  // Non-operating items (mortgage, capital improvements, AMF, parent-co expenses) are
-  // broken out into their own columns so the dashboard can show them separately.
-  // Expense Ratio = total_expenses / total_income (both operating-only).
-  // Uses SELECT * to stay resilient to column additions/renames in the view. We additionally
-  // alias snapshot_month → month so dashboard code works regardless of which name it expects.
+  // Income statement snapshot: pre-aggregated NOI, CAPEX, mortgage, net income per property per month
+  // NOTE: intentionally only selects columns the dashboard uses so the query doesn't fail
+  // if optional per-unit columns are missing from v_income_statement_snapshot.
+  // snapshot_month is returned under BOTH names so dashboard code works regardless of which alias it expects.
   income_statement_snapshot: `
-    SELECT v.*, v.snapshot_month AS month
-    FROM ${T}.v_income_statement_snapshot\` v
-    ORDER BY v.property_name, v.snapshot_month
+    SELECT
+      snapshot_month,
+      snapshot_month AS month,
+      property_id,
+      property_name,
+      total_income,
+      total_expenses,
+      noi,
+      capital_improvements,
+      mortgage_payment,
+      net_income,
+      units
+    FROM ${T}.v_income_statement_snapshot\`
+    ORDER BY property_name, snapshot_month
   `,
 
   // Properties list with unit counts
@@ -229,97 +240,41 @@ const QUERIES: Record<string, string> = {
     ORDER BY property_name, snapshot_month, t12_section, account_name
   `,
 
-  // PropUp unit turns with cross-system mapping + step schedule dates.
-  // Aliases match what bpos-dashboard.html expects:
-  //   board_name → board, unit_name → unit_number, date_move_out → move_out_date,
-  //   turnover_start_date → start_date, date_available → end_date
-  // Initial Walk / Final Walk dates come from turn_step_schedules (one LEFT JOIN each).
+  // PropUp unit turns with cross-system mapping
+  // Note: turn_step_schedules may not have scheduled_start — using step_order instead
   turns: `
     SELECT
       t.turnover_id,
-      t.board_name                  AS board,
-      t.unit_name                   AS unit_number,
-      t.property_name               AS propup_property_name,
-      t.unit_type,
-      t.square_footage,
-      t.finish_level,
-      t.active_workflow_step,
-      t.assignee_name,
-      t.vacancy_loss,
-      t.last_rent_cost,
-      t.unit_rent,
-      t.is_unit_down,
-      t.is_unit_on_hold,
-      t.date_move_out               AS move_out_date,
-      t.pms_move_out_date,
-      t.turnover_start_date         AS start_date,
-      t.date_showable,
-      t.date_available              AS end_date,
-      t.date_created,
-      t.date_updated,
-      t.is_completed,
-      t.is_canceled,
-      iw.due_date                   AS initial_walk_date,
-      iw.status                     AS initial_walk_status,
-      fw.due_date                   AS final_walk_date,
-      fw.status                     AS final_walk_status,
+      t.property_id AS propup_property_id,
       pm.buildium_property_id,
-      bp.t12_name                   AS property_name
+      bp.t12_name AS property_name,
+      t.unit_number,
+      t.status,
+      t.board,
+      t.finish_level,
+      t.estimated_cost,
+      t.start_date,
+      t.end_date,
+      DATE_DIFF(COALESCE(t.end_date, CURRENT_DATE()), t.start_date, DAY) AS days_in_turn
     FROM \`${PROJECT_ID}.propup_data.turnovers\` t
-    LEFT JOIN \`${PROJECT_ID}.propup_data.turn_step_schedules\` iw
-      ON t.turnover_id = iw.turnover_id AND LOWER(iw.step_name) = 'initial walk'
-    LEFT JOIN \`${PROJECT_ID}.propup_data.turn_step_schedules\` fw
-      ON t.turnover_id = fw.turnover_id AND LOWER(fw.step_name) = 'final walk'
     LEFT JOIN \`${PROJECT_ID}.propup_data.property_mapping\` pm
       ON t.property_id = pm.propup_property_id
     LEFT JOIN ${T}.properties\` bp
       ON pm.buildium_property_id = bp.property_id
-    WHERE t.is_canceled = FALSE
-    ORDER BY t.is_completed DESC, bp.t12_name, t.unit_name
+    ORDER BY property_name, unit_number
   `,
 
-  // Economic occupancy per property per month — authoritative source.
-  // View: v_economic_occupancy (cash-basis pivot as of 2026-04-13).
-  //   Grain: one row per property_id × snapshot_month. snapshot_month is STRING 'YYYY-MM'.
-  //   economic_occupancy_pct is the per-property percentage (already ×100, rounded 1dp).
-  //
-  // CASH-BASIS PIVOT (2026-04-13): The numerator was rebuilt on actual cash collected per
-  // unit per month, sourced from lease_historical_payments (Buildium Payment, ElectronicPayment,
-  // Applied Prepayment). The old accrual-GL columns were renamed:
-  //   total_income            → total_collected
-  //   recurring_income        → recurring_collected
-  //   non_recurring_income    → non_recurring_collected
-  // New columns added: pass_through_collected (utility reimb + pass-throughs),
-  // prepayment_received (GL 18 prepayments parked awaiting application).
-  //
-  // IMPORTANT: DO NOT average economic_occupancy_pct to get a portfolio number. The
-  // authoritative portfolio rollup is dollar-weighted:
-  //   SUM(recurring_collected) / SUM(estimated_charge_potential) × 100
-  // We pull the numerator/denominator columns here so the dashboard can aggregate correctly.
-  //
-  // COVERAGE FILTER: The view now filters the denominator to "managed property-months" —
-  // properties that had any lease activity (charges or payments) in that month. This
-  // excludes units backfilled into rent_roll_snapshots for months before they were onboarded.
-  // If a month has fewer properties than the prior month, check whether Buildium payments
-  // have been ingested for that snapshot_month yet.
+  // Economic occupancy per property per month (from v_economic_occupancy view)
   economic_occupancy: `
     SELECT
       property_id,
       property_name,
       snapshot_month,
-      total_units,
-      occupied_units,
-      preleased_units,
-      vacant_units,
-      physical_occupancy_pct,
-      economic_occupancy_pct,
-      economic_vs_physical_variance,
-      total_collected,
-      recurring_collected,
-      non_recurring_collected,
-      pass_through_collected,
-      prepayment_received,
-      estimated_charge_potential
+      total_income,
+      non_recurring_income,
+      recurring_income,
+      estimated_rent_potential,
+      economic_occupancy_pct
     FROM ${T}.v_economic_occupancy\`
     ORDER BY property_name, snapshot_month
   `,
@@ -357,25 +312,6 @@ const QUERIES: Record<string, string> = {
     GROUP BY property_id, property_name, snapshot_month
     HAVING utility_income > 0 OR utility_expense > 0
     ORDER BY property_name, snapshot_month
-  `,
-
-  // Utility Reimbursement — SOURCE OF TRUTH as of 2026-04-13.
-  // Previously the dashboard LIKE-matched account names in financial_snapshots.
-  // The canonical view v_utility_reimbursement enumerates 23 utility income GLs and
-  // 11 utility expense GLs and exposes utility_reimbursement_pct directly.
-  // Typical multifamily range: 40–80%.
-  utility_reimbursement: `
-    SELECT *
-    FROM ${T}.v_utility_reimbursement\`
-    ORDER BY property_name, snapshot_month
-  `,
-
-  // Group rollup — single view with all KPIs pre-aggregated by Buildium property group × month.
-  // Use this when filtering by group_name rather than rolling up property rows client-side.
-  group_summary: `
-    SELECT *
-    FROM ${T}.v_group_summary\`
-    ORDER BY group_name, snapshot_month
   `,
 
   // Snapshot metadata — for detecting current month / live data

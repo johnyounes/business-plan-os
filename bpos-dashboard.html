@@ -86,6 +86,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .group-filter:focus{border-color:var(--accent);}
 
 /* ── KPI CARDS ── */
+/* ── Donut chart: Average Rent by Unit Type ── */
+.rent-donut-wrap{display:flex;align-items:center;gap:28px;padding:20px 24px;flex-wrap:wrap;}
+.rent-donut-svg{flex-shrink:0;}
+.rent-donut-legend{flex:1;min-width:200px;display:flex;flex-direction:column;gap:0;}
+.rent-legend-row{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:background .15s;}
+.rent-legend-row:hover,.rent-legend-row.highlight{background:rgba(61,127,255,.08);}
+.rent-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.rent-legend-type{font-size:12px;font-weight:600;color:var(--text);min-width:68px;}
+.rent-legend-rent{font-size:13px;font-weight:700;color:var(--text);min-width:55px;}
+.rent-legend-count{font-size:11px;color:var(--text-dim);margin-left:auto;white-space:nowrap;}
+.rent-legend-pct{font-size:11px;color:var(--text-dim);min-width:32px;text-align:right;}
+.donut-slice{transition:opacity .15s,transform .15s;transform-origin:center;}
+.donut-slice:hover,.donut-slice.highlight{opacity:1 !important;filter:brightness(1.15);}
+.donut-center-text{font-family:var(--mono);pointer-events:none;}
+.rent-no-data{text-align:center;padding:40px 24px;color:var(--text-dim);font-size:13px;}
 .kpi-grid{display:grid;gap:12px;margin-bottom:24px;}
 .kpi-grid.cols-4{grid-template-columns:repeat(4,1fr);}
 .kpi-grid.cols-5{grid-template-columns:repeat(5,1fr);}
@@ -390,6 +405,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <!-- VIEW: OCCUPANCY -->
   <div class="view-panel" id="view-occupancy" style="display:none;">
     <div class="kpi-grid cols-5" id="occKpis"></div>
+    <div class="section-head"><h2>Average Rent by Unit Type</h2></div>
+    <div class="data-table-wrap" id="rentByTypeWrap">
+      <div id="rentDonutContainer"></div>
+    </div>
     <div class="section-head"><h2>Occupancy by Property</h2></div>
     <div class="data-table-wrap">
       <div class="dt-header">
@@ -652,6 +671,7 @@ let DATA = {
   snapshotMeta: null,       // snapshot metadata
   incomeStatement: null,    // v_income_statement_snapshot — operating-only income/expenses/NOI
   groupSummary: null,       // v_group_summary — pre-aggregated KPIs by property group × month
+  rentRollSnapshot: null,   // v_rent_roll_snapshot — per-unit rent by month (backfilled Jan 2025+)
 };
 
 // ── SUPABASE HELPER ──
@@ -763,13 +783,18 @@ document.addEventListener('click', (e) => {
 propSearch.addEventListener('input', () => renderPropDropdown());
 document.getElementById('selectAllProps').addEventListener('click', (e) => {
   e.preventDefault();
-  selectedProps = [];
+  e.stopPropagation();
+  // Select all properties visible in the current group
+  const groupIds = getGroupPropertyIds();
+  const displayProps = groupIds ? allProperties.filter(p => groupIds.includes(p.id)) : allProperties;
+  selectedProps = displayProps.map(p => p.id);
   renderPropChips();
   renderPropDropdown();
   onFiltersChanged();
 });
 document.getElementById('clearAllProps').addEventListener('click', (e) => {
   e.preventDefault();
+  e.stopPropagation();
   selectedProps = [];
   renderPropChips();
   renderPropDropdown();
@@ -796,18 +821,23 @@ function renderPropDropdown() {
     </div>`;
   }).join('');
   list.querySelectorAll('.prop-dd-item').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent click-outside handler from closing dropdown
       const id = parseInt(el.dataset.id);
       if (selectedProps.includes(id)) {
         selectedProps = selectedProps.filter(x => x !== id);
       } else {
         selectedProps.push(id);
       }
-      // If all selected or none, treat as "all"
-      if (selectedProps.length === allProperties.length) selectedProps = [];
+      // Toggle visual state in-place (avoid full re-render which disrupts dropdown)
+      const isNowSelected = selectedProps.includes(id);
+      el.classList.toggle('selected', isNowSelected);
+      el.querySelector('.check').textContent = isNowSelected ? '✓' : '';
       renderPropChips();
-      renderPropDropdown();
       onFiltersChanged();
+      // Update count label
+      document.getElementById('propSelectedCount').textContent =
+        selectedProps.length === 0 ? `All ${allProperties.length}` : `${selectedProps.length} selected`;
     });
   });
   document.getElementById('propSelectedCount').textContent =
@@ -1616,6 +1646,153 @@ function renderPropPerfTable(monthData) {
 
 
 // ════════════════════════════════════════
+//  SECTION: AVERAGE RENT BY UNIT TYPE
+// ════════════════════════════════════════
+let activeRentTypes = null; // null = all types shown
+
+function renderRentByType() {
+  const container = document.getElementById('rentDonutContainer');
+  if (!container) return;
+
+  // ── Palette: 12 distinguishable colors, consistent with dashboard style ──
+  const DONUT_COLORS = [
+    '#3d7fff','#22c97a','#f5a623','#e8504a','#9b7aff','#2ec4b6',
+    '#ff6b8a','#45b7d1','#96ceb4','#d4a574','#7c8cf5','#ff9f43'
+  ];
+
+  // ── Gather ALL units with a unit_type (including vacant) ──
+  const useSnapshot = DATA.rentRollSnapshot && DATA.rentRollSnapshot.length > 0;
+  let allUnitRows;
+  if (useSnapshot) {
+    allUnitRows = DATA.rentRollSnapshot.filter(r =>
+      r.snapshot_month === selectedMonth && r.unit_type && matchesSelectedProps(r));
+  } else {
+    allUnitRows = (DATA.rentRoll || []).filter(r =>
+      r.unit_type && matchesSelectedProps(r));
+  }
+
+  if (!allUnitRows.length) {
+    container.innerHTML = '<div class="rent-no-data">No rent data available for the selected month</div>';
+    return;
+  }
+
+  // ── Aggregate by unit type — track occupied (with rent) and vacant separately ──
+  const typeMap = {};
+  allUnitRows.forEach(r => {
+    const t = r.unit_type;
+    const rent = useSnapshot ? r.active_rent : r.rent;
+    if (!typeMap[t]) typeMap[t] = { sum: 0, occupied: 0, total: 0 };
+    typeMap[t].total += 1;
+    if (rent > 0) { typeMap[t].sum += rent; typeMap[t].occupied += 1; }
+  });
+
+  // Sort by bedrooms then bathrooms
+  const sortType = (a, b) => {
+    if (a === 'Studio') return -1;
+    if (b === 'Studio') return 1;
+    const pa = a.match(/(\d+)BR\/([\d.]+)BA/);
+    const pb = b.match(/(\d+)BR\/([\d.]+)BA/);
+    if (pa && pb) return (+pa[1] - +pb[1]) || (+pa[2] - +pb[2]);
+    return a.localeCompare(b);
+  };
+  const types = Object.keys(typeMap).sort(sortType);
+  const totalUnits = types.reduce((s, t) => s + typeMap[t].total, 0);
+
+  // ── Precise rent format: $1,050 instead of $1K ──
+  const fmtRent = v => {
+    if (v == null || isNaN(v)) return '—';
+    return '$' + Math.round(v).toLocaleString('en-US');
+  };
+
+  // ── SVG donut chart ──
+  const SIZE = 260, CX = 130, CY = 130, R = 100, STROKE = 40;
+  const circumference = 2 * Math.PI * R;
+  let offset = 0;
+  const slices = types.map((t, i) => {
+    const d = typeMap[t];
+    const pct = d.total / totalUnits;
+    const dashLen = pct * circumference;
+    const dashGap = circumference - dashLen;
+    const color = DONUT_COLORS[i % DONUT_COLORS.length];
+    const avg = d.occupied > 0 ? d.sum / d.occupied : 0;
+    const vacant = d.total - d.occupied;
+    const slice = { type: t, pct, color, offset, dashLen, dashGap, avg, total: d.total, occupied: d.occupied, vacant };
+    offset += dashLen;
+    return slice;
+  });
+
+  // Overall weighted average rent (only from occupied units)
+  const totalOccupied = types.reduce((s, t) => s + typeMap[t].occupied, 0);
+  const totalRentSum = types.reduce((s, t) => s + typeMap[t].sum, 0);
+  const overallAvg = totalOccupied > 0 ? totalRentSum / totalOccupied : 0;
+
+  let svgPaths = slices.map((s, i) =>
+    `<circle class="donut-slice" data-idx="${i}" cx="${CX}" cy="${CY}" r="${R}"
+      fill="none" stroke="${s.color}" stroke-width="${STROKE}"
+      stroke-dasharray="${s.dashLen.toFixed(2)} ${s.dashGap.toFixed(2)}"
+      stroke-dashoffset="${(-s.offset).toFixed(2)}"
+      style="opacity:0.85;" />`
+  ).join('');
+
+  const svg = `<svg class="rent-donut-svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+    <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--border)" stroke-width="${STROKE}" opacity="0.3"/>
+    ${svgPaths}
+    <text class="donut-center-text" x="${CX}" y="${CY - 10}" text-anchor="middle" fill="var(--text-dim)" font-size="11">AVG RENT</text>
+    <text class="donut-center-text" x="${CX}" y="${CY + 14}" text-anchor="middle" fill="var(--text)" font-size="20" font-weight="700">${fmtRent(overallAvg)}</text>
+    <text class="donut-center-text" x="${CX}" y="${CY + 32}" text-anchor="middle" fill="var(--text-dim)" font-size="11">${totalUnits.toLocaleString()} units</text>
+  </svg>`;
+
+  const legend = slices.map((s, i) => {
+    const rentLabel = s.occupied > 0 ? fmtRent(s.avg) : '<span style="color:var(--text-dim);font-weight:400;font-size:11px;">vacant</span>';
+    const vacantNote = s.vacant > 0 && s.occupied > 0 ? ` <span style="color:var(--amber);font-size:10px;">(${s.vacant} vacant)</span>` : '';
+    return `<div class="rent-legend-row" data-idx="${i}">
+      <span class="rent-legend-dot" style="background:${s.color};"></span>
+      <span class="rent-legend-type">${s.type}</span>
+      <span class="rent-legend-rent">${rentLabel}</span>
+      <span class="rent-legend-pct">${(s.pct * 100).toFixed(0)}%</span>
+      <span class="rent-legend-count">${s.total} unit${s.total !== 1 ? 's' : ''}${vacantNote}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="rent-donut-wrap">${svg}<div class="rent-donut-legend">${legend}</div></div>`;
+
+  // ── Hover interaction: highlight slice ↔ legend row ──
+  const svgEl = container.querySelector('svg');
+  const allSlices = svgEl.querySelectorAll('.donut-slice');
+  const allLegendRows = container.querySelectorAll('.rent-legend-row');
+  const centerTexts = svgEl.querySelectorAll('.donut-center-text');
+
+  const highlightIdx = (idx) => {
+    allSlices.forEach((sl, i) => { sl.style.opacity = i === idx ? '1' : '0.35'; });
+    allLegendRows.forEach((row, i) => row.classList.toggle('highlight', i === idx));
+    // Update center text to show hovered type
+    if (idx !== null && slices[idx]) {
+      const s = slices[idx];
+      centerTexts[0].textContent = s.type;
+      centerTexts[1].textContent = s.occupied > 0 ? fmtRent(s.avg) : 'Vacant';
+      centerTexts[2].textContent = `${s.total} unit${s.total !== 1 ? 's' : ''}${s.vacant > 0 ? ` (${s.vacant} vac)` : ''}`;
+    }
+  };
+  const resetHighlight = () => {
+    allSlices.forEach(sl => { sl.style.opacity = '0.85'; });
+    allLegendRows.forEach(row => row.classList.remove('highlight'));
+    centerTexts[0].textContent = 'AVG RENT';
+    centerTexts[1].textContent = fmtRent(overallAvg);
+    centerTexts[2].textContent = `${totalUnits.toLocaleString()} units`;
+  };
+
+  allSlices.forEach((sl, i) => {
+    sl.addEventListener('mouseenter', () => highlightIdx(i));
+    sl.addEventListener('mouseleave', resetHighlight);
+  });
+  allLegendRows.forEach((row, i) => {
+    row.addEventListener('mouseenter', () => highlightIdx(i));
+    row.addEventListener('mouseleave', resetHighlight);
+  });
+}
+
+
+// ════════════════════════════════════════
 //  VIEW: P&L DETAIL
 // ════════════════════════════════════════
 function renderPnL() {
@@ -1754,12 +1931,131 @@ function renderPnL() {
   const erAvg = erCount > 0 ? erSum / erCount : 0;
   html += `<td></td><td class="${erAvg > 50 ? 'warn' : ''}">${fmtPct1(erAvg)}</td></tr>`;
 
-  // Non-operating sections if present
-  if (Object.keys(sections.non_operating_expense || {}).length) {
-    renderSection('Non-Operating Expenses', sections.non_operating_expense, -1);
-  }
-  if (Object.keys(sections.non_operating_income || {}).length) {
-    renderSection('Non-Operating Income', sections.non_operating_income, 1);
+  // Non-operating expenses — sub-grouped into AMF, CapEx, Mortgage, and Other
+  const nonOpExp = sections.non_operating_expense || {};
+  const nonOpInc = sections.non_operating_income || {};
+  const hasNonOp = Object.keys(nonOpExp).length > 0 || Object.keys(nonOpInc).length > 0;
+
+  if (hasNonOp) {
+    // Classify non-operating accounts into sub-groups by keyword
+    const amfAccounts = {};
+    const capexAccounts = {};
+    const mortgageAccounts = {};
+    const otherNonOpAccounts = {};
+
+    const mortgageKw = ['mortgage', 'principal', 'debt service'];
+    const amfKw = ['asset management', 'amf'];
+    // Everything else in non-operating (that isn't AMF or Mortgage) is CapEx
+
+    Object.keys(nonOpExp).forEach(acct => {
+      const lower = acct.toLowerCase();
+      if (amfKw.some(k => lower.includes(k))) {
+        amfAccounts[acct] = nonOpExp[acct];
+      } else if (mortgageKw.some(k => lower.includes(k))) {
+        mortgageAccounts[acct] = nonOpExp[acct];
+      } else if (lower.includes('parent company')) {
+        otherNonOpAccounts[acct] = nonOpExp[acct];
+      } else {
+        capexAccounts[acct] = nonOpExp[acct];
+      }
+    });
+    // Include non-operating income items in "other" bucket
+    Object.keys(nonOpInc).forEach(acct => {
+      otherNonOpAccounts[acct] = nonOpInc[acct];
+    });
+
+    // Master header
+    html += `<tr class="row-header"><td colspan="${months.length + 3}">Non-Operating Expenses</td></tr>`;
+
+    // Track grand non-op totals per month
+    let nonOpGrandTotals = {};
+    months.forEach(m => nonOpGrandTotals[m] = 0);
+
+    // Helper: render a sub-group with its own subtotal
+    function renderSubGroup(label, accounts, showSubtotal) {
+      if (!Object.keys(accounts).length) return;
+      // Sub-group header
+      html += `<tr class="row-subheader"><td colspan="${months.length + 3}" style="padding-left:16px;font-weight:600;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">${label}</td></tr>`;
+      let subTotals = {};
+      months.forEach(m => subTotals[m] = 0);
+      Object.keys(accounts).sort().forEach(acct => {
+        html += `<tr><td style="padding-left:24px;">${acct}</td>`;
+        let rowTotal = 0;
+        months.forEach(m => {
+          const v = accounts[acct][m] || 0;
+          subTotals[m] += v;
+          nonOpGrandTotals[m] += v;
+          rowTotal += v;
+          html += `<td>${fmtFull$(v)}</td>`;
+        });
+        html += `<td>${fmtFull$(rowTotal)}</td><td>${fmtFull$(rowTotal / mc)}</td></tr>`;
+      });
+      // Subtotal row
+      if (showSubtotal && Object.keys(accounts).length > 1) {
+        html += `<tr class="row-total" style="font-size:11px;"><td style="padding-left:24px;">Total ${label}</td>`;
+        let subGrand = 0;
+        months.forEach(m => {
+          subGrand += subTotals[m];
+          html += `<td>${fmtFull$(subTotals[m])}</td>`;
+        });
+        html += `<td>${fmtFull$(subGrand)}</td><td>${fmtFull$(subGrand / mc)}</td></tr>`;
+      }
+    }
+
+    // Render standalone AMF line(s)
+    if (Object.keys(amfAccounts).length) {
+      Object.keys(amfAccounts).sort().forEach(acct => {
+        html += `<tr><td>${acct}</td>`;
+        let rowTotal = 0;
+        months.forEach(m => {
+          const v = amfAccounts[acct][m] || 0;
+          nonOpGrandTotals[m] += v;
+          rowTotal += v;
+          html += `<td>${fmtFull$(v)}</td>`;
+        });
+        html += `<td>${fmtFull$(rowTotal)}</td><td>${fmtFull$(rowTotal / mc)}</td></tr>`;
+      });
+    }
+
+    // Render CapEx sub-group with subtotal
+    renderSubGroup('Capital Improvements', capexAccounts, true);
+
+    // Render Mortgage sub-group with subtotal
+    renderSubGroup('Mortgage Payment', mortgageAccounts, true);
+
+    // Render other non-op items (Parent Company, non-op income, etc.)
+    if (Object.keys(otherNonOpAccounts).length) {
+      Object.keys(otherNonOpAccounts).sort().forEach(acct => {
+        html += `<tr><td>${acct}</td>`;
+        let rowTotal = 0;
+        months.forEach(m => {
+          const v = otherNonOpAccounts[acct][m] || 0;
+          nonOpGrandTotals[m] += v;
+          rowTotal += v;
+          html += `<td>${fmtFull$(v)}</td>`;
+        });
+        html += `<td>${fmtFull$(rowTotal)}</td><td>${fmtFull$(rowTotal / mc)}</td></tr>`;
+      });
+    }
+
+    // Total Non-Operating Expenses row
+    html += `<tr class="row-total"><td>Total Non-Operating Expenses</td>`;
+    let nonOpGrand = 0;
+    months.forEach(m => {
+      nonOpGrand += nonOpGrandTotals[m];
+      html += `<td>${fmtFull$(nonOpGrandTotals[m])}</td>`;
+    });
+    html += `<td>${fmtFull$(nonOpGrand)}</td><td>${fmtFull$(nonOpGrand / mc)}</td></tr>`;
+
+    // Net Income row = NOI - Total Non-Operating Expenses
+    html += `<tr class="row-noi"><td>Net Income</td>`;
+    let niGrand = 0;
+    months.forEach(m => {
+      const ni = ((incTotals[m] || 0) - (expTotals[m] || 0)) - (nonOpGrandTotals[m] || 0);
+      niGrand += ni;
+      html += `<td>${fmtFull$(ni)}</td>`;
+    });
+    html += `<td>${fmtFull$(niGrand)}</td><td>${fmtFull$(niGrand / mc)}</td></tr>`;
   }
 
   html += '</tbody></table></div>';
@@ -1890,6 +2186,9 @@ function renderOccupancy() {
       <div class="kpi-sub">${totalUnits.toLocaleString()} total units</div>
     </div>
   `;
+
+  // Average rent by unit type (donut chart)
+  renderRentByType();
 
   // Occupancy table
   const tbody = document.getElementById('occBody');
@@ -2532,6 +2831,7 @@ async function loadDashboardData() {
       metaRes,
       incStmtRes,
       groupSummaryRes,
+      rentSnapRes,
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
@@ -2549,6 +2849,7 @@ async function loadDashboardData() {
       safeCall('snapshot_metadata'),
       safeCall('income_statement_snapshot'),
       safeCall('group_summary'),
+      safeCall('rent_roll_snapshot'),
     ]);
 
     DATA.financial   = financialRes.data || [];
@@ -2567,6 +2868,7 @@ async function loadDashboardData() {
     DATA.snapshotMeta = metaRes.data || [];
     DATA.incomeStatement = incStmtRes.data || [];
     DATA.groupSummary = groupSummaryRes.data || [];
+    DATA.rentRollSnapshot = rentSnapRes.data || [];
 
     // ── BUILD PROPERTY LIST ──
     // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views
@@ -2772,6 +3074,42 @@ async function loadDashboardData() {
       const lt = (r.lease_type || '').toLowerCase();
       r.is_mtm = lt.includes('atwill') || lt.includes('month-to-month') || lt.includes('monthtomonth');
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
+    });
+
+    // ── COERCE RENT ROLL SNAPSHOT DATA ──
+    // Historical rent per unit per month from v_rent_roll_snapshot (backfilled Jan 2025+)
+    // Buildium stores bedrooms/bathrooms as PascalCase strings ("TwoBed", "OneBath", etc.)
+    const BEDROOM_MAP = { Studio:0, OneBed:1, TwoBed:2, ThreeBed:3, FourBed:4, FiveBed:5, SixBed:6 };
+    const BATHROOM_MAP = { OneBath:1, OnePointFiveBath:1.5, TwoBath:2, TwoPointFiveBath:2.5, ThreeBath:3, ThreePointFiveBath:3.5, FourBath:4 };
+    const parseBed = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BEDROOM_MAP[v] ?? 0; };
+    const parseBath = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BATHROOM_MAP[v] ?? 0; };
+    const fmtBath = n => (n % 1 === 0.5) ? n.toFixed(1) : String(Math.floor(n));
+    // First pass: parse bedrooms/bathrooms and build unit_type; track known unit configs
+    const unitConfigLookup = {}; // key: "propertyId|unitNumber" → { bedrooms, bathrooms, unit_type }
+    if (DATA.rentRollSnapshot) DATA.rentRollSnapshot.forEach(r => {
+      r.property_id = parseInt(r.property_id) || 0;
+      r.active_rent = parseFloat(r.active_rent_amount || r.active_rent || r.rent_amount || r.rent) || 0;
+      r.future_rent = parseFloat(r.future_rent_amount || r.future_rent) || 0;
+      r.market_rent = parseFloat(r.market_rent || r.market_rent_amount) || 0;
+      const rawBed = r.bedrooms; // preserve original string before numeric conversion
+      r.bedrooms = parseBed(r.bedrooms);
+      r.bathrooms = parseBath(r.bathrooms);
+      r.unit_type = (rawBed === 'Studio') ? 'Studio'
+                   : r.bedrooms ? `${r.bedrooms}BR/${fmtBath(r.bathrooms)}BA` : '';
+      r.snapshot_month = (r.snapshot_month || r.month || '').substring(0, 7);
+      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+      // Remember unit config from months that have bedroom data (backfilled months)
+      if (r.unit_type) {
+        const key = `${r.property_id}|${r.unit_number}`;
+        unitConfigLookup[key] = { bedrooms: r.bedrooms, bathrooms: r.bathrooms, unit_type: r.unit_type };
+      }
+    });
+    // Second pass: fill in missing unit_type from known configs (for live-sync months that lack bedroom data)
+    if (DATA.rentRollSnapshot) DATA.rentRollSnapshot.forEach(r => {
+      if (!r.unit_type) {
+        const cfg = unitConfigLookup[`${r.property_id}|${r.unit_number}`];
+        if (cfg) { r.bedrooms = cfg.bedrooms; r.bathrooms = cfg.bathrooms; r.unit_type = cfg.unit_type; }
+      }
     });
 
     // ── COERCE EXPIRATIONS DATA ──

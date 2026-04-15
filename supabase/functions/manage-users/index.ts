@@ -81,6 +81,30 @@ serve(async (req) => {
       });
     }
 
+    // ── ACTIVATE OWN PROFILE (first login password set) ──
+    if (action === 'activate') {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .update({ status: 'active' })
+        .eq('id', caller.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Also update the password if provided
+      if (body.newPassword && body.newPassword.length >= 6) {
+        const { error: pwErr } = await supabase.auth.admin.updateUserById(caller.id, {
+          password: body.newPassword,
+        });
+        if (pwErr) console.warn('Password update failed:', pwErr.message);
+      }
+
+      return new Response(JSON.stringify({ data: profile }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // ── CREATE USER ──
     if (action === 'create') {
       if (!isAdmin) {

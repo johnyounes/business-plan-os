@@ -533,15 +533,10 @@ async function doSavePassword() {
   if (np !== cp)     { err.textContent='Passwords do not match.'; err.style.display='block'; return; }
 
   try {
-    // Update password via Supabase Auth
-    var { error } = await sb.auth.updateUser({ password: np });
-    if (error) throw error;
-
-    // Mark profile as active
-    if (currentUser) {
-      await sb.from('profiles').update({ status: 'active' }).eq('id', currentUser.id);
-      currentUser.status = 'active';
-    }
+    // Update password AND mark profile as active via edge function
+    // This uses the service role key so it bypasses RLS
+    await callManageUsers({ action: 'activate', newPassword: np });
+    currentUser.status = 'active';
 
     document.getElementById('change-pw-screen').style.display = 'none';
     launchApp();

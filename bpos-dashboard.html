@@ -406,7 +406,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
               <th class="r">Vacant</th>
               <th class="r">Physical Occ.</th>
               <th class="r">Preleased</th>
-              <th class="r">Net Exposure</th>
+              <th class="r">Econ Occ.</th>
             </tr>
           </thead>
           <tbody id="occBody"></tbody>
@@ -451,7 +451,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           <span class="dt-title">All Properties</span>
           <span class="dt-count" id="utPropCount"></span>
         </div>
-        <div style="overflow:auto;max-height:620px;">
+        <div style="overflow:auto;max-height:580px;">
           <table class="data-table ut-prop-table" id="utPropTable">
             <thead>
               <tr>
@@ -469,6 +469,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             <tbody id="utPropBody"></tbody>
           </table>
         </div>
+        <table class="data-table ut-prop-table" style="border-top:none;">
+          <tbody id="utPropFoot"></tbody>
+        </table>
       </div>
 
       <!-- RIGHT top: Vacant Units board -->
@@ -1617,17 +1620,20 @@ function renderPropPerfTable(monthData) {
 // ════════════════════════════════════════
 function renderPnL() {
   // Populate property dropdown — only show properties that have financial data
+  // Re-build every render so group filter changes are respected
   const sel = document.getElementById('pnlPropertySelect');
-  if (sel.children.length <= 1) {
-    // Get property names that exist in financial data
-    const finPropNames = new Set(DATA.financial.map(r => r.property_name));
-    const propsWithData = allProperties.filter(p => finPropNames.has(p.name) || finPropNames.has(p.apiName));
-    sel.innerHTML = '<option value="">— Select Property —</option>' +
-      propsWithData
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(p => `<option value="${p.id}" data-name="${p.name}">${p.name}</option>`)
-        .join('');
-  }
+  const prevVal = sel.value; // preserve current selection if still valid
+  const finPropNames = new Set(DATA.financial.map(r => r.property_name));
+  const groupIds = getGroupPropertyIds();
+  const baseProps = groupIds ? allProperties.filter(p => groupIds.includes(p.id)) : allProperties;
+  const propsWithData = baseProps.filter(p => finPropNames.has(p.name) || finPropNames.has(p.apiName));
+  sel.innerHTML = '<option value="">— Select Property —</option>' +
+    propsWithData
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(p => `<option value="${p.id}" data-name="${p.name}">${p.name}</option>`)
+      .join('');
+  // Restore previous selection if it's still in the filtered list
+  if (prevVal && [...sel.options].some(o => o.value === prevVal)) sel.value = prevVal;
 
   const propId = parseInt(sel.value);
   const selOption = sel.options[sel.selectedIndex];
@@ -1663,10 +1669,11 @@ function renderPnL() {
   // Build table
   let html = '<div class="fin-table-wrap"><table class="fin-table"><thead><tr><th>Account</th>';
   months.forEach(m => html += `<th>${fmtMonth(m)}</th>`);
-  html += '<th>Total</th></tr></thead><tbody>';
+  html += '<th>Total</th><th>Average</th></tr></thead><tbody>';
+  const mc = months.length || 1; // month count for averaging
 
   function renderSection(label, accounts, sign) {
-    html += `<tr class="row-header"><td colspan="${months.length + 2}">${label}</td></tr>`;
+    html += `<tr class="row-header"><td colspan="${months.length + 3}">${label}</td></tr>`;
     let sectionTotals = {};
     months.forEach(m => sectionTotals[m] = 0);
     Object.keys(accounts).sort().forEach(acct => {
@@ -1678,7 +1685,7 @@ function renderPnL() {
         rowTotal += v;
         html += `<td>${fmtFull$(v)}</td>`;
       });
-      html += `<td>${fmtFull$(rowTotal)}</td></tr>`;
+      html += `<td>${fmtFull$(rowTotal)}</td><td>${fmtFull$(rowTotal / mc)}</td></tr>`;
     });
     // Section total
     html += `<tr class="row-total"><td>Total ${label}</td>`;
@@ -1687,7 +1694,7 @@ function renderPnL() {
       grandTotal += sectionTotals[m];
       html += `<td>${fmtFull$(sectionTotals[m])}</td>`;
     });
-    html += `<td>${fmtFull$(grandTotal)}</td></tr>`;
+    html += `<td>${fmtFull$(grandTotal)}</td><td>${fmtFull$(grandTotal / mc)}</td></tr>`;
     return sectionTotals;
   }
 
@@ -1702,27 +1709,50 @@ function renderPnL() {
     noiGrand += noi;
     html += `<td>${fmtFull$(noi)}</td>`;
   });
-  html += `<td>${fmtFull$(noiGrand)}</td></tr>`;
+  html += `<td>${fmtFull$(noiGrand)}</td><td>${fmtFull$(noiGrand / mc)}</td></tr>`;
 
-  // Occupancy row if available — match by name or id
-  if (DATA.occupancy) {
-    const occ = DATA.occupancy.find(o => o.property_id === propId || o.property_name === propName);
-    if (occ) {
+  // Occupancy row — use historical snapshot data (per month) when available,
+  // falling back to live occupancy summary only for months without snapshot data
+  {
+    const snapRows = (DATA.occupancySnapshot || []).filter(r =>
+      (r.property_id === propId || r.property_name === propName) && months.includes(r.snapshot_month)
+    );
+    const snapByMonth = {};
+    snapRows.forEach(r => {
+      const tot = r.total_units || 0;
+      const occU = r.occupied_units || 0;
+      const pct = (r.physical_occupancy_pct > 0) ? r.physical_occupancy_pct
+                : (r.physical_occupancy > 0) ? r.physical_occupancy
+                : (tot > 0 ? (occU / tot * 100) : 0);
+      snapByMonth[r.snapshot_month] = pct;
+    });
+    // Fall back to live value for any month not in snapshot
+    const liveOcc = (DATA.occupancy || []).find(o => o.property_id === propId || o.property_name === propName);
+    const hasAny = snapRows.length > 0 || liveOcc;
+    if (hasAny) {
       html += `<tr class="pct-row"><td>Physical Occupancy</td>`;
-      months.forEach(() => html += `<td>${fmtPct(occ.physical_occupancy)}</td>`);
-      html += `<td></td></tr>`;
+      let occSum = 0; let occCount = 0;
+      months.forEach(m => {
+        const val = snapByMonth[m] != null ? snapByMonth[m] : (liveOcc ? liveOcc.physical_occupancy : null);
+        html += `<td>${val != null ? fmtPct(val) : '—'}</td>`;
+        if (val != null) { occSum += val; occCount++; }
+      });
+      html += `<td></td><td>${occCount > 0 ? fmtPct(occSum / occCount) : '—'}</td></tr>`;
     }
   }
 
   // Expense Ratio row
   html += `<tr class="pct-row"><td>Expense Ratio</td>`;
+  let erSum = 0; let erCount = 0;
   months.forEach(m => {
     const inc = incTotals[m] || 0;
     const exp = Math.abs(expTotals[m] || 0);
     const ratio = inc > 0 ? (exp / inc * 100) : 0;
     html += `<td class="${ratio > 50 ? 'warn' : ''}">${fmtPct1(ratio)}</td>`;
+    if (inc > 0) { erSum += ratio; erCount++; }
   });
-  html += `<td></td></tr>`;
+  const erAvg = erCount > 0 ? erSum / erCount : 0;
+  html += `<td></td><td class="${erAvg > 50 ? 'warn' : ''}">${fmtPct1(erAvg)}</td></tr>`;
 
   // Non-operating sections if present
   if (Object.keys(sections.non_operating_expense || {}).length) {
@@ -1794,6 +1824,45 @@ function renderOccupancy() {
     ? `<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">(${selectedMonth} snapshot)</span>`
     : `<span style="font-size:11px;color:var(--teal);margin-left:6px;">Live</span>`;
 
+  // Economic occupancy for the selected month — same dollar-weighted formula as Overview
+  let occPageEconOcc = 0;
+  if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
+    const econRows = DATA.economicOccupancy.filter(r =>
+      (r.snapshot_month || r.month) === selectedMonth && matchesSelectedProps(r));
+    if (econRows.length) {
+      let incSum = 0, potSum = 0;
+      econRows.forEach(r => {
+        let numer = parseFloat(r.recurring_collected);
+        if (!Number.isFinite(numer)) {
+          numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+        }
+        const denom = parseFloat(r.estimated_charge_potential) || 0;
+        if (denom > 0) { incSum += numer; potSum += denom; }
+      });
+      if (potSum > 0) occPageEconOcc = (incSum / potSum) * 100;
+      else {
+        const pcts = econRows.map(r => parseFloat(r.economic_occupancy_pct) || 0).filter(p => p > 0);
+        occPageEconOcc = pcts.length ? pcts.reduce((a, b) => a + b, 0) / pcts.length : 0;
+      }
+    }
+  }
+  // Build per-property economic occupancy lookup for the table
+  const econByProp = {};
+  if (DATA.economicOccupancy && DATA.economicOccupancy.length) {
+    DATA.economicOccupancy
+      .filter(r => (r.snapshot_month || r.month) === selectedMonth && matchesSelectedProps(r))
+      .forEach(r => {
+        let numer = parseFloat(r.recurring_collected);
+        if (!Number.isFinite(numer)) {
+          numer = (parseFloat(r.total_income) || 0) - (parseFloat(r.non_recurring_income) || 0);
+        }
+        const denom = parseFloat(r.estimated_charge_potential) || 0;
+        let pct = denom > 0 ? (numer / denom) * 100 : (parseFloat(r.economic_occupancy_pct) || 0);
+        const key = r.property_name || r.property_id;
+        econByProp[key] = pct;
+      });
+  }
+
   document.getElementById('occKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Physical Occupancy ${historicTag}</div>
@@ -1811,9 +1880,9 @@ function renderOccupancy() {
       <div class="kpi-sub">Future leases signed</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Net Vacancy Exposure</div>
-      <div class="kpi-value ${(totalVacant - totalPreleased) > 0 ? 'warn' : 'good'}">${totalVacant - totalPreleased}</div>
-      <div class="kpi-sub">Vacant minus preleased</div>
+      <div class="kpi-label">Economic Occupancy</div>
+      <div class="kpi-value ${occPageEconOcc >= 90 ? 'good' : occPageEconOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(occPageEconOcc)}</div>
+      <div class="kpi-sub">Cash collected vs. potential</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Properties</div>
@@ -1827,7 +1896,8 @@ function renderOccupancy() {
   const sorted = [...occ].sort((a, b) => (a.physical_occupancy || 0) - (b.physical_occupancy || 0));
   tbody.innerHTML = sorted.map(r => {
     const occPct = Math.round(r.physical_occupancy || 0);
-    const netExp = (r.vacant_units || 0) - (r.preleased_units || 0);
+    const propKey = r.property_name || r.property_id;
+    const econPct = econByProp[propKey] != null ? econByProp[propKey] : null;
     return `<tr>
       <td>${r.property_name || '—'}</td>
       <td class="r">${r.total_units || 0}</td>
@@ -1835,7 +1905,7 @@ function renderOccupancy() {
       <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
       <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
       <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
-      <td class="r ${netExp > 0 ? 'warn' : 'good'}">${netExp}</td>
+      <td class="r ${econPct != null ? (econPct >= 90 ? 'good' : econPct >= 80 ? 'warn' : 'bad') : ''}">${econPct != null ? fmtPct1(econPct) : '—'}</td>
     </tr>`;
   }).join('');
 
@@ -2208,19 +2278,23 @@ function renderUtPropertiesTable(occSummary, turns) {
       <td class="r">${pl || '—'}</td>
       <td class="r">${vac > 0 ? fmtPct1(plPct) : '—'}</td>
     </tr>`;
-  }).join('') + `
-    <tr class="ut-grand">
-      <td>TOTAL</td>
-      <td class="r">${grand.units}</td>
-      <td class="r">${grand.vac}</td>
-      <td class="r">${grand.av}</td>
-      <td class="r">${grand.mr}</td>
-      <td class="r">${grand.occ}</td>
-      <td class="r">${grand.units > 0 ? fmtPct1(grand.occ / grand.units * 100) : '—'}</td>
-      <td class="r">${grand.pl}</td>
-      <td class="r">${grand.vac > 0 ? fmtPct1(grand.pl / grand.vac * 100) : '—'}</td>
-    </tr>
-  `;
+  }).join('');
+  // Render TOTAL row in <tfoot> so it always stays at the bottom
+  const tfoot = document.getElementById('utPropFoot');
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr class="ut-grand">
+        <td>TOTAL</td>
+        <td class="r">${grand.units}</td>
+        <td class="r">${grand.vac}</td>
+        <td class="r">${grand.av}</td>
+        <td class="r">${grand.mr}</td>
+        <td class="r">${grand.occ}</td>
+        <td class="r">${grand.units > 0 ? fmtPct1(grand.occ / grand.units * 100) : '—'}</td>
+        <td class="r">${grand.pl}</td>
+        <td class="r">${grand.vac > 0 ? fmtPct1(grand.pl / grand.vac * 100) : '—'}</td>
+      </tr>`;
+  }
   document.getElementById('utPropCount').textContent = `${rows.length} properties`;
 }
 

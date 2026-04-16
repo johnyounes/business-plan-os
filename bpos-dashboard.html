@@ -264,6 +264,61 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 }
 
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+
+/* ── Period Comparison (Analytics view) ── */
+.compare-intro{font-size:12px;color:var(--text-dim);margin-bottom:16px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.compare-section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.compare-section-note{font-size:11px;color:var(--text-dim);font-weight:400;}
+.compare-periods{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch;margin-bottom:28px;}
+.compare-period-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+.compare-period-a{border-top:2px solid var(--accent);}
+.compare-period-b{border-top:2px solid #9b7aff;}
+.compare-period-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.compare-period-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:5px;background:rgba(61,127,255,.14);color:var(--accent);}
+.compare-period-b .compare-period-tag{background:rgba(155,122,255,.14);color:#b9a3ff;}
+.compare-period-label{font-size:12px;color:var(--text-dim);font-family:var(--mono);}
+.compare-period-selectors{display:flex;gap:10px;flex-wrap:wrap;}
+.compare-selector-group{display:flex;align-items:center;gap:6px;flex:1;min-width:130px;}
+.compare-selector-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);}
+.compare-month-select{flex:1;min-width:0;}
+.compare-swap-btn{align-self:center;background:var(--bg2);border:1px solid var(--border2);color:var(--text-dim);width:36px;height:36px;border-radius:50%;font-size:14px;cursor:pointer;transition:all .15s;}
+.compare-swap-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(61,127,255,.06);}
+
+/* KPI delta cards */
+.compare-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.compare-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.compare-kpi-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;}
+.compare-kpi-values{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.compare-kpi-a{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--accent);}
+.compare-kpi-vs{font-size:10px;color:var(--text-dim);}
+.compare-kpi-b{font-size:14px;font-weight:500;font-family:var(--mono);color:#b9a3ff;}
+.compare-kpi-delta{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;font-family:var(--mono);}
+.compare-kpi-delta.up{color:var(--green);background:rgba(34,201,122,.12);}
+.compare-kpi-delta.down{color:var(--red);background:rgba(232,80,74,.12);}
+.compare-kpi-delta.flat{color:var(--text-dim);background:rgba(255,255,255,.04);}
+.compare-kpi-sub{font-size:11px;color:var(--text3);}
+
+/* Rent-by-type comparison table */
+.compare-rent-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.compare-rent-table{width:100%;border-collapse:collapse;font-size:12px;}
+.compare-rent-table th{background:var(--bg3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:10px 14px;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;}
+.compare-rent-table th:first-child{text-align:left;}
+.compare-rent-table td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);color:var(--text2);vertical-align:middle;}
+.compare-rent-table td:first-child{text-align:left;font-family:var(--font);color:var(--text);font-weight:600;}
+.compare-rent-table tr:last-child td{border-bottom:none;}
+.compare-rent-table tr:hover td{background:rgba(255,255,255,.015);}
+.compare-rent-val-a{color:var(--accent);}
+.compare-rent-val-b{color:#b9a3ff;}
+.compare-rent-count{font-size:10px;color:var(--text-dim);font-family:var(--font);font-weight:400;margin-left:4px;}
+.compare-rent-no-data{padding:40px 24px;text-align:center;color:var(--text-dim);font-size:13px;}
+.compare-rent-foot td{background:var(--bg3);font-weight:700;color:var(--text);border-top:1px solid var(--border2);}
+
+@media(max-width:960px){
+  .compare-periods{grid-template-columns:1fr;}
+  .compare-swap-btn{justify-self:center;transform:rotate(90deg);}
+  .compare-kpi-grid{grid-template-columns:repeat(2,1fr);}
+}
+
 </style>
 </head>
 <body>
@@ -299,6 +354,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="sb-section">Occupancy</div>
   <div class="sb-item" data-view="occupancy"><span class="icon">🏠</span><span>Occupancy</span></div>
   <div class="sb-item" data-view="units"><span class="icon">🔑</span><span>Unit Tracker</span></div>
+  <div class="sb-section">Analytics</div>
+  <div class="sb-item" data-view="analytics"><span class="icon">📈</span><span>Period Comparison</span></div>
   <div class="sb-section">Operations</div>
   <div class="sb-item" data-view="turns"><span class="icon">🔧</span><span>Unit Turns</span></div>
 </div>
@@ -595,6 +652,60 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
   </div>
 
+  <!-- VIEW: PERIOD COMPARISON (ANALYTICS) -->
+  <div class="view-panel" id="view-analytics" style="display:none;">
+    <div class="compare-intro">
+      Compare any two date ranges side-by-side. <strong>Period A</strong> is the baseline (older); <strong>Period B</strong> is the comparison period (newer). All dollar figures are shown as <strong>monthly averages</strong> so periods of different lengths are directly comparable. Deltas read as B − A: <span style="color:var(--green);">green = increase</span>, <span style="color:var(--red);">red = decrease</span>. Results respect the group and property filters above.
+    </div>
+    <div class="compare-periods">
+      <div class="compare-period-card compare-period-a">
+        <div class="compare-period-head">
+          <span class="compare-period-tag">Period A</span>
+          <span class="compare-period-label" id="periodALabel"></span>
+        </div>
+        <div class="compare-period-selectors">
+          <div class="compare-selector-group">
+            <span class="compare-selector-label">From</span>
+            <select class="filter-select compare-month-select" id="periodAFrom"></select>
+          </div>
+          <div class="compare-selector-group">
+            <span class="compare-selector-label">To</span>
+            <select class="filter-select compare-month-select" id="periodATo"></select>
+          </div>
+        </div>
+      </div>
+      <button class="compare-swap-btn" id="periodSwapBtn" title="Swap periods">⇄</button>
+      <div class="compare-period-card compare-period-b">
+        <div class="compare-period-head">
+          <span class="compare-period-tag">Period B</span>
+          <span class="compare-period-label" id="periodBLabel"></span>
+        </div>
+        <div class="compare-period-selectors">
+          <div class="compare-selector-group">
+            <span class="compare-selector-label">From</span>
+            <select class="filter-select compare-month-select" id="periodBFrom"></select>
+          </div>
+          <div class="compare-selector-group">
+            <span class="compare-selector-label">To</span>
+            <select class="filter-select compare-month-select" id="periodBTo"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head compare-section-head">
+      <h2>Financial Summary</h2>
+      <span class="compare-section-note">Monthly averages — single-month selections show the actual month</span>
+    </div>
+    <div class="compare-kpi-grid" id="compareFinKpis"></div>
+
+    <div class="section-head compare-section-head">
+      <h2>Average Rent by Unit Type</h2>
+      <span class="compare-section-note">Average active rent across all occupied units in each period</span>
+    </div>
+    <div id="compareRentContainer"></div>
+  </div>
+
   <!-- VIEW: UNIT TURNS -->
   <div class="view-panel" id="view-turns" style="display:none;">
     <div class="kpi-grid cols-4" id="turnKpis"></div>
@@ -759,7 +870,7 @@ document.querySelectorAll('.sb-item').forEach(el => {
     currentView = view;
     document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
     document.getElementById('view-' + view).style.display = '';
-    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker' };
+    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker', analytics: 'Period Comparison' };
     document.getElementById('viewTitle').textContent = titles[view] || '';
     updateMonthRangeVisibility();
     renderCurrentView();
@@ -956,14 +1067,20 @@ function fmtMonthRangeLabel() {
 }
 
 // Show From dropdown only on Overview (user asked for range only there for now)
+// Analytics view has its own period selectors — hide the entire top-bar month picker there.
 function updateMonthRangeVisibility() {
   const fromLabel = document.getElementById('monthFromLabel');
   const fromSel   = document.getElementById('monthFromFilter');
   const toLabel   = document.getElementById('monthToLabel');
+  const monthSel  = document.getElementById('monthFilter');
+  const group     = document.getElementById('monthRangeGroup');
   const show = (currentView === 'overview');
+  const isAnalytics = (currentView === 'analytics');
+  if (group) group.style.display = isAnalytics ? 'none' : '';
   if (fromLabel) fromLabel.style.display = show ? '' : 'none';
   if (fromSel)   fromSel.style.display   = show ? '' : 'none';
   if (toLabel)   toLabel.textContent     = show ? 'To' : 'Month';
+  if (monthSel)  monthSel.style.display  = isAnalytics ? 'none' : '';
 }
 
 // ── GROUP FILTER ──
@@ -1048,6 +1165,7 @@ function renderCurrentView() {
     case 'occupancy': renderOccupancy(); break;
     case 'units': renderUnits(); break;
     case 'turns': renderTurns(); break;
+    case 'analytics': renderPeriodComparison(); break;
   }
 }
 
@@ -1789,6 +1907,329 @@ function renderRentByType() {
     row.addEventListener('mouseenter', () => highlightIdx(i));
     row.addEventListener('mouseleave', resetHighlight);
   });
+}
+
+
+// ════════════════════════════════════════
+//  VIEW: PERIOD COMPARISON (ANALYTICS)
+// ════════════════════════════════════════
+
+// Per-view state (independent of the top-bar month range used by Overview)
+let periodAFrom = '', periodATo = '';
+let periodBFrom = '', periodBTo = '';
+let periodCompWired = false;
+
+// Populate the four period selectors from DATA.months, setting sensible defaults.
+// Convention: Period A = baseline (older), Period B = current (newer/most recent).
+// Delta is always computed B − A ("how much did things change vs the baseline").
+// Default: Period B = trailing 3 months (latest); Period A = same 3 months one
+// year earlier if data exists, else the 3 months immediately before Period B.
+function initializePeriodComparison() {
+  if (!DATA.months || !DATA.months.length) return;
+  const months = DATA.months;
+  const last   = months.length - 1;
+  const bToIdx   = last;
+  const bFromIdx = Math.max(0, last - 2); // inclusive, 3 months total
+  periodBTo   = months[bToIdx];
+  periodBFrom = months[bFromIdx];
+
+  // Try same range one year earlier for Period A (baseline)
+  const shiftYear = (m) => {
+    if (!m) return null;
+    const [y, mo] = m.split('-');
+    return (parseInt(y) - 1) + '-' + mo;
+  };
+  const aFromYoY = shiftYear(periodBFrom);
+  const aToYoY   = shiftYear(periodBTo);
+  if (months.includes(aFromYoY) && months.includes(aToYoY)) {
+    periodAFrom = aFromYoY;
+    periodATo   = aToYoY;
+  } else {
+    // Fallback: 3 months immediately before period B
+    const aToIdx   = Math.max(0, bFromIdx - 1);
+    const aFromIdx = Math.max(0, aToIdx - 2);
+    periodATo   = months[aToIdx];
+    periodAFrom = months[aFromIdx];
+  }
+
+  // Fill the four selectors
+  const opts = months.map(m => `<option value="${m}">${fmtMonth(m)}</option>`).join('');
+  ['periodAFrom','periodATo','periodBFrom','periodBTo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+  document.getElementById('periodAFrom').value = periodAFrom;
+  document.getElementById('periodATo').value   = periodATo;
+  document.getElementById('periodBFrom').value = periodBFrom;
+  document.getElementById('periodBTo').value   = periodBTo;
+
+  // Wire up change handlers + swap button ONCE
+  if (!periodCompWired) {
+    const onChange = () => {
+      periodAFrom = document.getElementById('periodAFrom').value;
+      periodATo   = document.getElementById('periodATo').value;
+      periodBFrom = document.getElementById('periodBFrom').value;
+      periodBTo   = document.getElementById('periodBTo').value;
+      // Auto-correct inversions so the user can pick From/To in either order
+      if (DATA.months.indexOf(periodAFrom) > DATA.months.indexOf(periodATo)) {
+        [periodAFrom, periodATo] = [periodATo, periodAFrom];
+        document.getElementById('periodAFrom').value = periodAFrom;
+        document.getElementById('periodATo').value   = periodATo;
+      }
+      if (DATA.months.indexOf(periodBFrom) > DATA.months.indexOf(periodBTo)) {
+        [periodBFrom, periodBTo] = [periodBTo, periodBFrom];
+        document.getElementById('periodBFrom').value = periodBFrom;
+        document.getElementById('periodBTo').value   = periodBTo;
+      }
+      renderPeriodComparison();
+    };
+    ['periodAFrom','periodATo','periodBFrom','periodBTo'].forEach(id => {
+      document.getElementById(id).addEventListener('change', onChange);
+    });
+    document.getElementById('periodSwapBtn').addEventListener('click', () => {
+      [periodAFrom, periodBFrom] = [periodBFrom, periodAFrom];
+      [periodATo, periodBTo]     = [periodBTo, periodATo];
+      document.getElementById('periodAFrom').value = periodAFrom;
+      document.getElementById('periodATo').value   = periodATo;
+      document.getElementById('periodBFrom').value = periodBFrom;
+      document.getElementById('periodBTo').value   = periodBTo;
+      renderPeriodComparison();
+    });
+    periodCompWired = true;
+  }
+}
+
+// Returns the array of months between two endpoints (inclusive), respecting DATA.months order.
+function monthsInRange(from, to) {
+  if (!DATA.months || !DATA.months.length || !from || !to) return [];
+  let i = DATA.months.indexOf(from);
+  let j = DATA.months.indexOf(to);
+  if (i === -1 || j === -1) return [];
+  if (i > j) { const t = i; i = j; j = t; }
+  return DATA.months.slice(i, j + 1);
+}
+
+// Format a delta ($ and %) as a color-coded chip. Convention:
+//   delta = current − baseline  (i.e. "how much did Period B change from Period A")
+//   positive  → green (up arrow)
+//   negative  → red   (down arrow)
+//   flat      → grey
+function renderDeltaChip(current, baseline) {
+  const delta = current - baseline;
+  const pct   = baseline !== 0 ? (delta / Math.abs(baseline) * 100) : (current !== 0 ? 100 : 0);
+  let cls = 'flat', arrow = '→';
+  if (Math.abs(delta) > 0.01) {
+    arrow = delta > 0 ? '▲' : '▼';
+    cls   = delta > 0 ? 'up' : 'down';
+  }
+  const deltaStr = (delta >= 0 ? '+' : '') + fmt$(delta);
+  const pctStr   = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+  return `<span class="compare-kpi-delta ${cls}">${arrow} ${deltaStr} · ${pctStr}</span>`;
+}
+
+function renderPeriodComparison() {
+  // First-time setup: populate selectors and wire handlers
+  if (!document.getElementById('periodAFrom').options.length) {
+    initializePeriodComparison();
+  }
+  if (!DATA.months || !DATA.months.length) {
+    document.getElementById('compareFinKpis').innerHTML =
+      '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+
+  const monthsA = monthsInRange(periodAFrom, periodATo);
+  const monthsB = monthsInRange(periodBFrom, periodBTo);
+
+  // Update period range labels in header
+  const labelFor = (arr) => arr.length
+    ? (arr.length === 1 ? fmtMonth(arr[0]) : `${fmtMonth(arr[0])} – ${fmtMonth(arr[arr.length-1])} · ${arr.length} mo`)
+    : '';
+  document.getElementById('periodALabel').textContent = labelFor(monthsA);
+  document.getElementById('periodBLabel').textContent = labelFor(monthsB);
+
+  // ── Financial aggregation (matches renderOverview conventions) ──
+  // Prefer v_income_statement_snapshot (operating-only); fall back to noiSummary.
+  const useSnapshot = DATA.incomeStatement && DATA.incomeStatement.length > 0;
+  const financialRows = useSnapshot ? DATA.incomeStatement : (DATA.noiSummary || []);
+
+  // Aggregation returns MONTHLY AVERAGES across the selected range.
+  // For a 1-month period, the avg equals that month's actuals.
+  // For a 4-month period, it's total ÷ 4 — so periods of different lengths
+  // are directly comparable.
+  const aggregate = (months) => {
+    if (!months.length) return { income: 0, expense: 0, noi: 0, capex: 0, monthCount: 0 };
+    const inSet = new Set(months);
+    const rows = financialRows.filter(r =>
+      inSet.has(r.month || r.snapshot_month) && matchesSelectedProps(r));
+    const incomeTotal  = rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
+    const expenseTotal = rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
+    const noiTotal     = rows.reduce((s, r) => s + (r.noi || 0), 0);
+    let capexTotal = 0;
+    if (useSnapshot) {
+      capexTotal = rows.reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
+    }
+    const n = months.length;
+    return {
+      income:  incomeTotal  / n,
+      expense: expenseTotal / n,
+      noi:     noiTotal     / n,
+      capex:   capexTotal   / n,
+      monthCount: n,
+    };
+  };
+
+  const aggA = aggregate(monthsA);
+  const aggB = aggregate(monthsB);
+
+  // ── Render financial KPI cards ──
+  // Shows Period A → Period B with a B-vs-A delta chip (positive = green, negative = red).
+  const kpi = (label, a, b) => `
+      <div class="compare-kpi">
+        <div class="compare-kpi-label">${label}</div>
+        <div class="compare-kpi-values">
+          <span class="compare-kpi-a">${fmt$(a)}</span>
+          <span class="compare-kpi-vs">→</span>
+          <span class="compare-kpi-b">${fmt$(b)}</span>
+        </div>
+        <div class="compare-kpi-sub">${renderDeltaChip(b, a)}</div>
+      </div>`;
+
+  document.getElementById('compareFinKpis').innerHTML = [
+    kpi('Operating Income',     aggA.income,  aggB.income),
+    kpi('Operating Expenses',   aggA.expense, aggB.expense),
+    kpi('Net Operating Income', aggA.noi,     aggB.noi),
+    kpi('CAPEX',                aggA.capex,   aggB.capex),
+  ].join('');
+
+  // ── Average rent by unit type (from rent_roll_snapshots) ──
+  renderCompareRentTable(monthsA, monthsB);
+}
+
+// Build the side-by-side unit-type rent comparison table.
+// Avg rent for each period = sum of per-unit active_rent across the months / count of rows
+// (a simple average across all (unit, month) observations in the period — aligns with
+// user spec: "simple average across months in each period").
+function renderCompareRentTable(monthsA, monthsB) {
+  const container = document.getElementById('compareRentContainer');
+  if (!container) return;
+  const snap = DATA.rentRollSnapshot;
+  if (!snap || !snap.length) {
+    container.innerHTML = '<div class="compare-rent-wrap"><div class="compare-rent-no-data">Rent roll snapshot not available</div></div>';
+    return;
+  }
+
+  const setA = new Set(monthsA);
+  const setB = new Set(monthsB);
+
+  // Aggregate: per unit_type → {sumA, nA (occupied rows only), totalA; sumB, nB, totalB}
+  // We count "occupied" rows (active_rent > 0) in the avg, but include vacant rows in the
+  // unit count (same convention as renderRentByType).
+  const map = {};
+  snap.forEach(r => {
+    if (!r.unit_type || !matchesSelectedProps(r)) return;
+    const m = r.snapshot_month;
+    const inA = setA.has(m);
+    const inB = setB.has(m);
+    if (!inA && !inB) return;
+    if (!map[r.unit_type]) map[r.unit_type] = { sumA:0, nA:0, totalA:0, sumB:0, nB:0, totalB:0 };
+    const rent = parseFloat(r.active_rent) || 0;
+    if (inA) {
+      map[r.unit_type].totalA += 1;
+      if (rent > 0) { map[r.unit_type].sumA += rent; map[r.unit_type].nA += 1; }
+    }
+    if (inB) {
+      map[r.unit_type].totalB += 1;
+      if (rent > 0) { map[r.unit_type].sumB += rent; map[r.unit_type].nB += 1; }
+    }
+  });
+
+  const types = Object.keys(map);
+  if (!types.length) {
+    container.innerHTML = '<div class="compare-rent-wrap"><div class="compare-rent-no-data">No matching rent data in the selected periods</div></div>';
+    return;
+  }
+
+  // Sort by bedroom count (Studio first, then 1BR, 2BR…)
+  types.sort((a, b) => {
+    if (a === 'Studio') return -1;
+    if (b === 'Studio') return 1;
+    const pa = a.match(/(\d+)BR\/([\d.]+)BA/);
+    const pb = b.match(/(\d+)BR\/([\d.]+)BA/);
+    if (pa && pb) return (+pa[1] - +pb[1]) || (+pa[2] - +pb[2]);
+    return a.localeCompare(b);
+  });
+
+  const fmtRent = v => (v == null || isNaN(v) || v === 0) ? '—' : '$' + Math.round(v).toLocaleString('en-US');
+  // Signed rent formatter for deltas: "+$120", "-$45", "$0"
+  const fmtRentDelta = v => {
+    if (v == null || isNaN(v)) return '—';
+    const rounded = Math.round(v);
+    if (rounded === 0) return '$0';
+    const abs = Math.abs(rounded).toLocaleString('en-US');
+    return (rounded > 0 ? '+$' : '-$') + abs;
+  };
+
+  const rowsHtml = types.map(t => {
+    const d = map[t];
+    const avgA = d.nA > 0 ? d.sumA / d.nA : 0;
+    const avgB = d.nB > 0 ? d.sumB / d.nB : 0;
+    // Delta = B − A (how much Period B changed from the Period A baseline)
+    const delta = avgB - avgA;
+    const pct   = avgA > 0 ? (delta / avgA * 100) : (avgB > 0 ? 100 : 0);
+    let deltaCls = 'flat', arrow = '→';
+    if (Math.abs(delta) >= 1) {
+      arrow = delta > 0 ? '▲' : '▼';
+      deltaCls = delta > 0 ? 'up' : 'down';
+    }
+    return `<tr>
+      <td>${t}</td>
+      <td class="compare-rent-val-a">${fmtRent(avgA)}<span class="compare-rent-count">${d.nA} occ</span></td>
+      <td class="compare-rent-val-b">${fmtRent(avgB)}<span class="compare-rent-count">${d.nB} occ</span></td>
+      <td><span class="compare-kpi-delta ${deltaCls}">${arrow} ${fmtRentDelta(delta)} · ${(pct >= 0 ? '+' : '')}${pct.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+
+  // Portfolio footer — weighted by occupied rows (sum/n across all types)
+  let totSumA = 0, totNA = 0, totSumB = 0, totNB = 0;
+  types.forEach(t => {
+    const d = map[t];
+    totSumA += d.sumA; totNA += d.nA;
+    totSumB += d.sumB; totNB += d.nB;
+  });
+  const portA = totNA > 0 ? totSumA / totNA : 0;
+  const portB = totNB > 0 ? totSumB / totNB : 0;
+  const portDelta = portB - portA;
+  const portPct   = portA > 0 ? (portDelta / portA * 100) : (portB > 0 ? 100 : 0);
+  let portCls = 'flat', portArrow = '→';
+  if (Math.abs(portDelta) >= 1) {
+    portArrow = portDelta > 0 ? '▲' : '▼';
+    portCls = portDelta > 0 ? 'up' : 'down';
+  }
+
+  container.innerHTML = `
+    <div class="compare-rent-wrap">
+      <table class="compare-rent-table">
+        <thead>
+          <tr>
+            <th>Unit Type</th>
+            <th>Period A Avg Rent</th>
+            <th>Period B Avg Rent</th>
+            <th>Change (B vs A)</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot>
+          <tr class="compare-rent-foot">
+            <td>Portfolio Avg</td>
+            <td class="compare-rent-val-a">${fmtRent(portA)}</td>
+            <td class="compare-rent-val-b">${fmtRent(portB)}</td>
+            <td><span class="compare-kpi-delta ${portCls}">${portArrow} ${fmtRentDelta(portDelta)} · ${(portPct >= 0 ? '+' : '')}${portPct.toFixed(1)}%</span></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
 }
 
 
@@ -3111,6 +3552,43 @@ async function loadDashboardData() {
         if (cfg) { r.bedrooms = cfg.bedrooms; r.bathrooms = cfg.bathrooms; r.unit_type = cfg.unit_type; }
       }
     });
+
+    // ── THIRD PASS: For "live" months, override snapshot rent with live rent roll values. ──
+    // The daily-snapshot-sync Cloud Function runs at 6am PST and can lag Buildium by up to a
+    // day for very recent lease changes, causing small discrepancies (e.g. $1,097 vs $1,135)
+    // between the dashboard and Buildium. `v_rent_roll` (DATA.rentRoll) is live/current state
+    // and matches Buildium exactly. So for any snapshot row in a live (unlocked) month, we
+    // replace active_rent / market_rent with the live values.
+    if (DATA.rentRollSnapshot && DATA.rentRoll && DATA.snapshotMeta) {
+      const liveMonths = new Set();
+      DATA.snapshotMeta.forEach(sm => {
+        if (sm.is_locked === 'false' || sm.is_locked === false) {
+          liveMonths.add((sm.snapshot_month || '').substring(0, 7));
+        }
+      });
+      if (liveMonths.size > 0) {
+        // Build lookup: "propertyId|unitNumber" → { rent, market_rent, status }
+        const liveLookup = {};
+        DATA.rentRoll.forEach(r => {
+          const key = `${r.property_id}|${r.unit_number}`;
+          liveLookup[key] = {
+            rent: parseFloat(r.rent) || 0,
+            market_rent: parseFloat(r.market_rent) || 0,
+            status: (r.status || '').toLowerCase(),
+          };
+        });
+        DATA.rentRollSnapshot.forEach(r => {
+          if (!liveMonths.has(r.snapshot_month)) return;
+          const live = liveLookup[`${r.property_id}|${r.unit_number}`];
+          if (!live) return;
+          // Override active_rent from live lease (only if live unit is currently occupied);
+          // vacant units should stay at 0. Market rent we can always refresh.
+          const isOccupiedLive = live.status === 'current' || live.status === 'active' || live.status === 'notice';
+          if (isOccupiedLive && live.rent > 0) r.active_rent = live.rent;
+          if (live.market_rent > 0) r.market_rent = live.market_rent;
+        });
+      }
+    }
 
     // ── COERCE EXPIRATIONS DATA ──
     if (DATA.expirations) DATA.expirations.forEach(r => {

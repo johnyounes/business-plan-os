@@ -1111,6 +1111,7 @@ function getGroupPropertyIds() {
 
 // ── FILTER CHANGE HANDLER ──
 function onFiltersChanged() {
+  _filterCacheDirty = true; // force filter cache rebuild on next matchesSelectedProps call
   renderCurrentView();
 }
 
@@ -1124,36 +1125,53 @@ function getFilteredProps() {
   return props;
 }
 
-// Universal row filter — matches by property_id OR property_name (api_name or t12_name)
-// ALWAYS scoped to allProperties (which may already be restricted by user access)
-function matchesSelectedProps(r) {
+// ── Cached property filter for hot-loop performance ──
+// _allowedIdCache / _allowedNameCache are rebuilt only when filters actually change
+// (triggered by onFiltersChanged / renderCurrentView). Zero overhead per-row.
+let _allowedIdCache = null;    // Set<number> — property IDs that pass all filters
+let _allowedNameCache = null;  // Set<string> — all name variants for those properties
+let _filterCacheDirty = true;  // flag — set true when filters change
+
+function rebuildFilterCache() {
+  if (!_filterCacheDirty && _allowedIdCache) return;
+  _filterCacheDirty = false;
+
   const groupIds = getGroupPropertyIds();
   const hasGroupFilter = groupIds !== null;
   const hasPropFilter = selectedProps.length > 0;
-
-  // Build effective property set — always start from allProperties IDs
-  // so that user-level property access restrictions are always enforced
   const baseIds = new Set(allProperties.map(p => p.id));
-  let allowedIds;
 
   if (hasGroupFilter && hasPropFilter) {
-    allowedIds = new Set(selectedProps.filter(id => groupIds.includes(id) && baseIds.has(id)));
+    _allowedIdCache = new Set(selectedProps.filter(id => groupIds.includes(id) && baseIds.has(id)));
   } else if (hasGroupFilter) {
-    allowedIds = new Set(groupIds.filter(id => baseIds.has(id)));
+    _allowedIdCache = new Set(groupIds.filter(id => baseIds.has(id)));
   } else if (hasPropFilter) {
-    allowedIds = new Set(selectedProps.filter(id => baseIds.has(id)));
+    _allowedIdCache = new Set(selectedProps.filter(id => baseIds.has(id)));
   } else {
-    // No user-applied filters — still enforce base access restriction
-    allowedIds = baseIds;
+    _allowedIdCache = baseIds;
   }
 
-  if (r.property_id && allowedIds.has(parseInt(r.property_id))) return true;
-  if (r.property_name) {
-    const fp = getFilteredProps();
-    for (const p of fp) {
-      if (p.name === r.property_name || p.apiName === r.property_name || p.t12Name === r.property_name) return true;
+  // Pre-build name set for the name-fallback path (rare but must be fast)
+  _allowedNameCache = new Set();
+  allProperties.forEach(p => {
+    if (_allowedIdCache.has(p.id)) {
+      if (p.name)    _allowedNameCache.add(p.name);
+      if (p.apiName) _allowedNameCache.add(p.apiName);
+      if (p.t12Name) _allowedNameCache.add(p.t12Name);
     }
-  }
+  });
+}
+
+// Universal row filter — matches by property_id OR property_name (api_name or t12_name)
+// ALWAYS scoped to allProperties (which may already be restricted by user access).
+// Uses a cached Set that's rebuilt only when filters change — O(1) per call.
+function matchesSelectedProps(r) {
+  if (_filterCacheDirty || !_allowedIdCache) rebuildFilterCache();
+  // property_id is pre-coerced to int during data load; avoid parseInt in hot loop.
+  // Fallback parseInt only for rows that weren't coerced (e.g. raw API data).
+  const pid = r.property_id;
+  if (pid && _allowedIdCache.has(typeof pid === 'number' ? pid : parseInt(pid))) return true;
+  if (r.property_name && _allowedNameCache.has(r.property_name)) return true;
   return false;
 }
 
@@ -1919,6 +1937,36 @@ let periodAFrom = '', periodATo = '';
 let periodBFrom = '', periodBTo = '';
 let periodCompWired = false;
 
+// ── Performance: pre-indexed data for O(1) month lookups ──
+// Built once on first render; invalidated when DATA changes (set to null).
+let _snapByMonth = null;   // { "2026-04": [row, …], … }
+let _finByMonth  = null;   // { "2026-04": [row, …], … }
+
+function getSnapByMonth() {
+  if (_snapByMonth) return _snapByMonth;
+  _snapByMonth = {};
+  (DATA.rentRollSnapshot || []).forEach(r => {
+    const m = r.snapshot_month;
+    if (!_snapByMonth[m]) _snapByMonth[m] = [];
+    _snapByMonth[m].push(r);
+  });
+  return _snapByMonth;
+}
+function getFinByMonth() {
+  if (_finByMonth) return _finByMonth;
+  const useSnapshot = DATA.incomeStatement && DATA.incomeStatement.length > 0;
+  const src = useSnapshot ? DATA.incomeStatement : (DATA.noiSummary || []);
+  _finByMonth = {};
+  src.forEach(r => {
+    const m = r.month || r.snapshot_month;
+    if (!_finByMonth[m]) _finByMonth[m] = [];
+    _finByMonth[m].push(r);
+  });
+  return _finByMonth;
+}
+// Invalidate caches when data reloads (called from loadData)
+function invalidatePeriodCaches() { _snapByMonth = null; _finByMonth = null; }
+
 // Populate the four period selectors from DATA.months, setting sensible defaults.
 // Convention: Period A = baseline (older), Period B = current (newer/most recent).
 // Delta is always computed B − A ("how much did things change vs the baseline").
@@ -1965,6 +2013,7 @@ function initializePeriodComparison() {
 
   // Wire up change handlers + swap button ONCE
   if (!periodCompWired) {
+    let _compDebounce = null;
     const onChange = () => {
       periodAFrom = document.getElementById('periodAFrom').value;
       periodATo   = document.getElementById('periodATo').value;
@@ -1981,7 +2030,9 @@ function initializePeriodComparison() {
         document.getElementById('periodBFrom').value = periodBFrom;
         document.getElementById('periodBTo').value   = periodBTo;
       }
-      renderPeriodComparison();
+      // Debounce: wait 80ms for rapid consecutive dropdown changes
+      clearTimeout(_compDebounce);
+      _compDebounce = setTimeout(() => renderPeriodComparison(), 80);
     };
     ['periodAFrom','periodATo','periodBFrom','periodBTo'].forEach(id => {
       document.getElementById(id).addEventListener('change', onChange);
@@ -2028,6 +2079,7 @@ function renderDeltaChip(current, baseline) {
 }
 
 function renderPeriodComparison() {
+  const _t0 = performance.now();
   // First-time setup: populate selectors and wire handlers
   if (!document.getElementById('periodAFrom').options.length) {
     initializePeriodComparison();
@@ -2057,18 +2109,22 @@ function renderPeriodComparison() {
   // For a 1-month period, the avg equals that month's actuals.
   // For a 4-month period, it's total ÷ 4 — so periods of different lengths
   // are directly comparable.
+  // Uses pre-indexed month lookup for O(selected_months) instead of O(all_rows).
+  const finIdx = getFinByMonth();
   const aggregate = (months) => {
     if (!months.length) return { income: 0, expense: 0, noi: 0, capex: 0, monthCount: 0 };
-    const inSet = new Set(months);
-    const rows = financialRows.filter(r =>
-      inSet.has(r.month || r.snapshot_month) && matchesSelectedProps(r));
-    const incomeTotal  = rows.reduce((s, r) => s + (r.total_income || r.revenue || 0), 0);
-    const expenseTotal = rows.reduce((s, r) => s + Math.abs(r.total_expenses || r.expenses || 0), 0);
-    const noiTotal     = rows.reduce((s, r) => s + (r.noi || 0), 0);
-    let capexTotal = 0;
-    if (useSnapshot) {
-      capexTotal = rows.reduce((s, r) => s + (parseFloat(r.capital_improvements) || 0), 0);
-    }
+    let incomeTotal = 0, expenseTotal = 0, noiTotal = 0, capexTotal = 0;
+    months.forEach(m => {
+      const bucket = finIdx[m];
+      if (!bucket) return;
+      bucket.forEach(r => {
+        if (!matchesSelectedProps(r)) return;
+        incomeTotal  += (r.total_income || r.revenue || 0);
+        expenseTotal += Math.abs(r.total_expenses || r.expenses || 0);
+        noiTotal     += (r.noi || 0);
+        if (useSnapshot) capexTotal += (parseFloat(r.capital_improvements) || 0);
+      });
+    });
     const n = months.length;
     return {
       income:  incomeTotal  / n,
@@ -2104,6 +2160,7 @@ function renderPeriodComparison() {
 
   // ── Average rent by unit type (from rent_roll_snapshots) ──
   renderCompareRentTable(monthsA, monthsB);
+  console.log(`[perf] renderPeriodComparison: ${(performance.now() - _t0).toFixed(1)}ms`);
 }
 
 // Build the side-by-side unit-type rent comparison table.
@@ -2119,29 +2176,33 @@ function renderCompareRentTable(monthsA, monthsB) {
     return;
   }
 
-  const setA = new Set(monthsA);
-  const setB = new Set(monthsB);
-
   // Aggregate: per unit_type → {sumA, nA (occupied rows only), totalA; sumB, nB, totalB}
   // We count "occupied" rows (active_rent > 0) in the avg, but include vacant rows in the
   // unit count (same convention as renderRentByType).
+  // Uses pre-indexed month lookup for O(selected_months × units) instead of O(58K).
+  const snapIdx = getSnapByMonth();
+  const allMonths = [...new Set([...monthsA, ...monthsB])];
+  const setA = new Set(monthsA);
+  const setB = new Set(monthsB);
   const map = {};
-  snap.forEach(r => {
-    if (!r.unit_type || !matchesSelectedProps(r)) return;
-    const m = r.snapshot_month;
-    const inA = setA.has(m);
-    const inB = setB.has(m);
-    if (!inA && !inB) return;
-    if (!map[r.unit_type]) map[r.unit_type] = { sumA:0, nA:0, totalA:0, sumB:0, nB:0, totalB:0 };
-    const rent = parseFloat(r.active_rent) || 0;
-    if (inA) {
-      map[r.unit_type].totalA += 1;
-      if (rent > 0) { map[r.unit_type].sumA += rent; map[r.unit_type].nA += 1; }
-    }
-    if (inB) {
-      map[r.unit_type].totalB += 1;
-      if (rent > 0) { map[r.unit_type].sumB += rent; map[r.unit_type].nB += 1; }
-    }
+  allMonths.forEach(m => {
+    const bucket = snapIdx[m];
+    if (!bucket) return;
+    bucket.forEach(r => {
+      if (!r.unit_type || !matchesSelectedProps(r)) return;
+      const inA = setA.has(m);
+      const inB = setB.has(m);
+      if (!map[r.unit_type]) map[r.unit_type] = { sumA:0, nA:0, totalA:0, sumB:0, nB:0, totalB:0 };
+      const rent = r.active_rent; // already coerced to number during data load
+      if (inA) {
+        map[r.unit_type].totalA += 1;
+        if (rent > 0) { map[r.unit_type].sumA += rent; map[r.unit_type].nA += 1; }
+      }
+      if (inB) {
+        map[r.unit_type].totalB += 1;
+        if (rent > 0) { map[r.unit_type].sumB += rent; map[r.unit_type].nB += 1; }
+      }
+    });
   });
 
   const types = Object.keys(map);
@@ -3310,6 +3371,9 @@ async function loadDashboardData() {
     DATA.incomeStatement = incStmtRes.data || [];
     DATA.groupSummary = groupSummaryRes.data || [];
     DATA.rentRollSnapshot = rentSnapRes.data || [];
+
+    // Invalidate period-comparison caches (data just reloaded)
+    invalidatePeriodCaches();
 
     // ── BUILD PROPERTY LIST ──
     // IMPORTANT: Use api_name as primary name — it matches property_name in all BigQuery views

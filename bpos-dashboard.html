@@ -781,7 +781,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 // ── CONFIG ──
 const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
-const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhwc3ZoZmZqZWJldXF1dHdwa2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNjg5MjAsImV4cCI6MjA1Mzg0NDkyMH0.vAMm-c4URNsLgbnQ6jzASt_7c6C71EV35wA0Mu2i0S8';
+// Publishable API key (sb_publishable_...) replaces the legacy anon JWT as of 2026-04-22.
+// Legacy anon JWT was being rejected by Kong with 401 "Invalid API key" on /rest/v1/ paths
+// (dashboard_historical_cache cache reads) even though it still worked for /auth/v1/ login
+// and for /functions/v1/ calls deployed with --no-verify-jwt. The publishable key is the
+// client-safe key for this Supabase project's new API-key model.
+const SUPA_KEY  = 'sb_publishable_UwEgtEhRSVQXsX3RzyeR4g_0Vr6o72_';
 const FN_NAME   = 'bq-dashboard';
 
 // ── STATE ──

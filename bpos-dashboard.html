@@ -3468,6 +3468,111 @@ function setApiStatus(state, label) {
 // ════════════════════════════════════════
 //  DATA LOADING
 // ════════════════════════════════════════
+
+// Coerce rent_roll_snapshot rows: parse numeric fields, map Buildium bed/bath strings
+// to numbers, build unit_type labels, and merge live rent_roll overrides for unlocked
+// months. Called both from the initial data load and the deferred background load.
+function coerceRentRollSnapshot(nameToId) {
+  if (!DATA.rentRollSnapshot || !DATA.rentRollSnapshot.length) return;
+
+  // Buildium stores bedrooms/bathrooms as PascalCase strings ("TwoBed", "OneBath", etc.)
+  const BEDROOM_MAP  = { Studio:0, OneBed:1, TwoBed:2, ThreeBed:3, FourBed:4, FiveBed:5, SixBed:6 };
+  const BATHROOM_MAP = { OneBath:1, OnePointFiveBath:1.5, TwoBath:2, TwoPointFiveBath:2.5, ThreeBath:3, ThreePointFiveBath:3.5, FourBath:4 };
+  const parseBed  = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BEDROOM_MAP[v] ?? 0; };
+  const parseBath = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BATHROOM_MAP[v] ?? 0; };
+  const fmtBath   = n => (n % 1 === 0.5) ? n.toFixed(1) : String(Math.floor(n));
+
+  // First pass: parse bedrooms/bathrooms and build unit_type; track known unit configs
+  const unitConfigLookup = {}; // key: "propertyId|unitNumber" → { bedrooms, bathrooms, unit_type }
+  DATA.rentRollSnapshot.forEach(r => {
+    r.property_id = parseInt(r.property_id) || 0;
+    r.active_rent = parseFloat(r.active_rent_amount || r.active_rent || r.rent_amount || r.rent) || 0;
+    r.future_rent = parseFloat(r.future_rent_amount || r.future_rent) || 0;
+    r.market_rent = parseFloat(r.market_rent || r.market_rent_amount) || 0;
+    const rawBed = r.bedrooms; // preserve original string before numeric conversion
+    r.bedrooms = parseBed(r.bedrooms);
+    r.bathrooms = parseBath(r.bathrooms);
+    r.unit_type = (rawBed === 'Studio') ? 'Studio'
+                 : r.bedrooms ? `${r.bedrooms}BR/${fmtBath(r.bathrooms)}BA` : '';
+    r.snapshot_month = (r.snapshot_month || r.month || '').substring(0, 7);
+    if (!r.property_id && r.property_name && nameToId && nameToId[r.property_name]) {
+      r.property_id = nameToId[r.property_name];
+    }
+    // Remember unit config from months that have bedroom data (backfilled months)
+    if (r.unit_type) {
+      const key = `${r.property_id}|${r.unit_number}`;
+      unitConfigLookup[key] = { bedrooms: r.bedrooms, bathrooms: r.bathrooms, unit_type: r.unit_type };
+    }
+  });
+  // Second pass: fill in missing unit_type from known configs (for live-sync months that lack bedroom data)
+  DATA.rentRollSnapshot.forEach(r => {
+    if (!r.unit_type) {
+      const cfg = unitConfigLookup[`${r.property_id}|${r.unit_number}`];
+      if (cfg) { r.bedrooms = cfg.bedrooms; r.bathrooms = cfg.bathrooms; r.unit_type = cfg.unit_type; }
+    }
+  });
+
+  // Third pass: For "live" months, override snapshot rent with live rent roll values.
+  // The daily-snapshot-sync Cloud Function runs at 6am PST and can lag Buildium by up to a
+  // day for very recent lease changes, causing small discrepancies (e.g. $1,097 vs $1,135)
+  // between the dashboard and Buildium. `v_rent_roll` (DATA.rentRoll) is live/current state
+  // and matches Buildium exactly. So for any snapshot row in a live (unlocked) month, we
+  // replace active_rent / market_rent with the live values.
+  if (DATA.rentRoll && DATA.snapshotMeta) {
+    const liveMonths = new Set();
+    DATA.snapshotMeta.forEach(sm => {
+      if (sm.is_locked === 'false' || sm.is_locked === false) {
+        liveMonths.add((sm.snapshot_month || '').substring(0, 7));
+      }
+    });
+    if (liveMonths.size > 0) {
+      // Build lookup: "propertyId|unitNumber" → { rent, market_rent, status }
+      const liveLookup = {};
+      DATA.rentRoll.forEach(r => {
+        const key = `${r.property_id}|${r.unit_number}`;
+        liveLookup[key] = {
+          rent: parseFloat(r.rent) || 0,
+          market_rent: parseFloat(r.market_rent) || 0,
+          status: (r.status || '').toLowerCase(),
+        };
+      });
+      DATA.rentRollSnapshot.forEach(r => {
+        if (!liveMonths.has(r.snapshot_month)) return;
+        const live = liveLookup[`${r.property_id}|${r.unit_number}`];
+        if (!live) return;
+        // Override active_rent from live lease (only if live unit is currently occupied);
+        // vacant units should stay at 0. Market rent we can always refresh.
+        const isOccupiedLive = live.status === 'current' || live.status === 'active' || live.status === 'notice';
+        if (isOccupiedLive && live.rent > 0) r.active_rent = live.rent;
+        if (live.market_rent > 0) r.market_rent = live.market_rent;
+      });
+    }
+  }
+}
+
+// Background loader for rent_roll_snapshot (~15s query). Called after initial dashboard
+// render so the Overview loads fast; fills in DATA.rentRollSnapshot for Occupancy /
+// Unit Tracker / Period Comparison views.
+async function loadRentRollSnapshotBackground() {
+  try {
+    console.log('[BPOS] Loading rent_roll_snapshot in background…');
+    const t0 = performance.now();
+    let res;
+    try { res = await callEdgeFn('rent_roll_snapshot'); }
+    catch (e) { console.warn('Background rent_roll_snapshot load failed:', e.message); return; }
+    DATA.rentRollSnapshot = res.data || [];
+    coerceRentRollSnapshot(DATA._nameToId);
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    console.log(`[BPOS] rent_roll_snapshot loaded: ${DATA.rentRollSnapshot.length} rows in ${dt}s`);
+    // Re-render only if the user is on a view that uses this data
+    if (currentView === 'occupancy' || currentView === 'units' || currentView === 'analytics') {
+      renderCurrentView();
+    }
+  } catch (e) {
+    console.warn('[BPOS] loadRentRollSnapshotBackground error:', e);
+  }
+}
+
 async function loadDashboardData() {
   setApiStatus('pending', 'Loading data…');
   try {
@@ -3489,6 +3594,10 @@ async function loadDashboardData() {
       catch (e) { console.warn(`Query "${type}" failed:`, e.message); return { data: [] }; }
     };
 
+    // NOTE: rent_roll_snapshot is intentionally NOT in this initial fetch.
+    // It's the slowest query (~15s for 58K rows) and only needed by the
+    // Occupancy / Unit Tracker / Period Comparison views. We load it in the
+    // background after initial render completes (see bottom of this function).
     const [
       financialRes,
       noiRes,
@@ -3506,7 +3615,6 @@ async function loadDashboardData() {
       metaRes,
       incStmtRes,
       groupSummaryRes,
-      rentSnapRes,
     ] = await Promise.all([
       safeCall('financial_summary'),
       safeCall('noi_summary'),
@@ -3524,7 +3632,6 @@ async function loadDashboardData() {
       safeCall('snapshot_metadata'),
       safeCall('income_statement_snapshot'),
       safeCall('group_summary'),
-      safeCall('rent_roll_snapshot'),
     ]);
 
     DATA.financial   = financialRes.data || [];
@@ -3543,7 +3650,7 @@ async function loadDashboardData() {
     DATA.snapshotMeta = metaRes.data || [];
     DATA.incomeStatement = incStmtRes.data || [];
     DATA.groupSummary = groupSummaryRes.data || [];
-    DATA.rentRollSnapshot = rentSnapRes.data || [];
+    DATA.rentRollSnapshot = [];  // lazy-loaded in background; see below
 
     // Invalidate period-comparison caches (data just reloaded)
     invalidatePeriodCaches();
@@ -3755,77 +3862,13 @@ async function loadDashboardData() {
     });
 
     // ── COERCE RENT ROLL SNAPSHOT DATA ──
-    // Historical rent per unit per month from v_rent_roll_snapshot (backfilled Jan 2025+)
-    // Buildium stores bedrooms/bathrooms as PascalCase strings ("TwoBed", "OneBath", etc.)
-    const BEDROOM_MAP = { Studio:0, OneBed:1, TwoBed:2, ThreeBed:3, FourBed:4, FiveBed:5, SixBed:6 };
-    const BATHROOM_MAP = { OneBath:1, OnePointFiveBath:1.5, TwoBath:2, TwoPointFiveBath:2.5, ThreeBath:3, ThreePointFiveBath:3.5, FourBath:4 };
-    const parseBed = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BEDROOM_MAP[v] ?? 0; };
-    const parseBath = v => { if (v == null || v === '') return 0; const n = Number(v); if (!isNaN(n)) return n; return BATHROOM_MAP[v] ?? 0; };
-    const fmtBath = n => (n % 1 === 0.5) ? n.toFixed(1) : String(Math.floor(n));
-    // First pass: parse bedrooms/bathrooms and build unit_type; track known unit configs
-    const unitConfigLookup = {}; // key: "propertyId|unitNumber" → { bedrooms, bathrooms, unit_type }
-    if (DATA.rentRollSnapshot) DATA.rentRollSnapshot.forEach(r => {
-      r.property_id = parseInt(r.property_id) || 0;
-      r.active_rent = parseFloat(r.active_rent_amount || r.active_rent || r.rent_amount || r.rent) || 0;
-      r.future_rent = parseFloat(r.future_rent_amount || r.future_rent) || 0;
-      r.market_rent = parseFloat(r.market_rent || r.market_rent_amount) || 0;
-      const rawBed = r.bedrooms; // preserve original string before numeric conversion
-      r.bedrooms = parseBed(r.bedrooms);
-      r.bathrooms = parseBath(r.bathrooms);
-      r.unit_type = (rawBed === 'Studio') ? 'Studio'
-                   : r.bedrooms ? `${r.bedrooms}BR/${fmtBath(r.bathrooms)}BA` : '';
-      r.snapshot_month = (r.snapshot_month || r.month || '').substring(0, 7);
-      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
-      // Remember unit config from months that have bedroom data (backfilled months)
-      if (r.unit_type) {
-        const key = `${r.property_id}|${r.unit_number}`;
-        unitConfigLookup[key] = { bedrooms: r.bedrooms, bathrooms: r.bathrooms, unit_type: r.unit_type };
-      }
-    });
-    // Second pass: fill in missing unit_type from known configs (for live-sync months that lack bedroom data)
-    if (DATA.rentRollSnapshot) DATA.rentRollSnapshot.forEach(r => {
-      if (!r.unit_type) {
-        const cfg = unitConfigLookup[`${r.property_id}|${r.unit_number}`];
-        if (cfg) { r.bedrooms = cfg.bedrooms; r.bathrooms = cfg.bathrooms; r.unit_type = cfg.unit_type; }
-      }
-    });
-
-    // ── THIRD PASS: For "live" months, override snapshot rent with live rent roll values. ──
-    // The daily-snapshot-sync Cloud Function runs at 6am PST and can lag Buildium by up to a
-    // day for very recent lease changes, causing small discrepancies (e.g. $1,097 vs $1,135)
-    // between the dashboard and Buildium. `v_rent_roll` (DATA.rentRoll) is live/current state
-    // and matches Buildium exactly. So for any snapshot row in a live (unlocked) month, we
-    // replace active_rent / market_rent with the live values.
-    if (DATA.rentRollSnapshot && DATA.rentRoll && DATA.snapshotMeta) {
-      const liveMonths = new Set();
-      DATA.snapshotMeta.forEach(sm => {
-        if (sm.is_locked === 'false' || sm.is_locked === false) {
-          liveMonths.add((sm.snapshot_month || '').substring(0, 7));
-        }
-      });
-      if (liveMonths.size > 0) {
-        // Build lookup: "propertyId|unitNumber" → { rent, market_rent, status }
-        const liveLookup = {};
-        DATA.rentRoll.forEach(r => {
-          const key = `${r.property_id}|${r.unit_number}`;
-          liveLookup[key] = {
-            rent: parseFloat(r.rent) || 0,
-            market_rent: parseFloat(r.market_rent) || 0,
-            status: (r.status || '').toLowerCase(),
-          };
-        });
-        DATA.rentRollSnapshot.forEach(r => {
-          if (!liveMonths.has(r.snapshot_month)) return;
-          const live = liveLookup[`${r.property_id}|${r.unit_number}`];
-          if (!live) return;
-          // Override active_rent from live lease (only if live unit is currently occupied);
-          // vacant units should stay at 0. Market rent we can always refresh.
-          const isOccupiedLive = live.status === 'current' || live.status === 'active' || live.status === 'notice';
-          if (isOccupiedLive && live.rent > 0) r.active_rent = live.rent;
-          if (live.market_rent > 0) r.market_rent = live.market_rent;
-        });
-      }
-    }
+    // Extracted into a reusable helper (coerceRentRollSnapshot) so it can also run
+    // after the background rent_roll_snapshot fetch completes (see end of function).
+    // On initial load DATA.rentRollSnapshot is [], so this is a no-op until the
+    // background fetch populates it.
+    // Stash nameToId so the deferred loader can use it for property_id matching.
+    DATA._nameToId = nameToId;
+    coerceRentRollSnapshot(nameToId);
 
     // ── COERCE EXPIRATIONS DATA ──
     if (DATA.expirations) DATA.expirations.forEach(r => {
@@ -4003,6 +4046,11 @@ async function loadDashboardData() {
       setApiStatus('ok', `${allProperties.length} properties loaded${warnMsg}`);
       showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data${warnMsg}`);
       renderCurrentView();
+
+      // Kick off the slow rent_roll_snapshot fetch in the background.
+      // Overview is now interactive; Occupancy / Unit Tracker / Period Comparison
+      // will re-render once this finishes.
+      setTimeout(loadRentRollSnapshotBackground, 100);
     } else {
       throw new Error('No properties returned — check edge function');
     }

@@ -36,6 +36,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .refresh-btn:disabled{opacity:.5;cursor:not-allowed;}
 .refresh-btn .refresh-icon{transition:transform .3s;}
 .refresh-btn.spinning .refresh-icon{animation:spin 1s linear infinite;}
+/* Superadmin-only variant for Refresh Historic Data */
+.refresh-btn.refresh-btn-admin{background:rgba(155,122,255,.08);border-color:rgba(155,122,255,.25);color:#b9a3ff;}
+.refresh-btn.refresh-btn-admin:hover{background:rgba(155,122,255,.18);border-color:rgba(155,122,255,.4);}
+
+/* ── HISTORIC REFRESH MODAL ── */
+.hr-backdrop{position:fixed;inset:0;background:rgba(8,10,14,.72);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;}
+.hr-backdrop.open{display:flex;}
+.hr-modal{width:480px;max-width:calc(100vw - 32px);background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px 30px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.hr-title{font-family:var(--display);font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.hr-sub{font-size:12px;color:var(--text3);margin-bottom:22px;line-height:1.5;}
+.hr-progress{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:12px;}
+.hr-progress-bar{height:100%;background:linear-gradient(90deg,#3d7fff,#9b7aff);width:0%;transition:width .3s ease;}
+.hr-status{font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:18px;min-height:18px;}
+.hr-type-list{font-size:11px;color:var(--text3);font-family:var(--mono);max-height:160px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:20px;}
+.hr-type-list .hr-type{display:flex;justify-content:space-between;padding:3px 0;}
+.hr-type-list .hr-type.done{color:var(--green);}
+.hr-type-list .hr-type.running{color:var(--amber);}
+.hr-type-list .hr-type.err{color:var(--red);}
+.hr-actions{display:flex;gap:10px;justify-content:flex-end;}
+.hr-btn{padding:8px 18px;border-radius:7px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text);transition:all .15s;}
+.hr-btn:hover{background:var(--bg);border-color:var(--text3);}
+.hr-btn.primary{background:linear-gradient(135deg,#3d7fff,#9b7aff);border-color:transparent;color:#fff;}
+.hr-btn.primary:hover{opacity:.9;}
+.hr-btn:disabled{opacity:.5;cursor:not-allowed;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── LAYOUT ── */
@@ -140,7 +164,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .fin-table .row-header td{background:var(--bg3);font-family:var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-size:10px;font-weight:600;padding:14px 14px 8px;}
 .fin-table .row-total td{font-weight:600;color:var(--text);border-top:1px solid var(--border2);font-family:var(--mono);}
 .fin-table .row-total td:first-child{font-family:var(--font);}
-.fin-table .row-noi td{font-weight:700;color:var(--green);border-top:2px solid var(--border2);}
+.fin-table .row-noi td{font-weight:700;border-top:2px solid var(--border2);color:var(--text);}
+.fin-table .row-noi td.num-pos{color:var(--green);}
+.fin-table .row-noi td.num-neg{color:var(--red);}
 .fin-table .good{color:var(--green);}
 .fin-table .bad{color:var(--red);}
 .fin-table .warn{color:var(--amber);}
@@ -336,6 +362,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <svg class="refresh-icon" id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
     <span id="refreshLabel">Refresh</span>
   </button>
+  <!-- Superadmin-only: rebuild Supabase historical cache from BigQuery -->
+  <button class="refresh-btn refresh-btn-admin" id="refreshHistoricBtn" onclick="openHistoricRefreshModal()" title="Rebuild Supabase historical cache (superadmin only)" style="display:none;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 12h4"/><path d="M12 3v4"/><circle cx="12" cy="12" r="1.5"/></svg>
+    <span>Refresh Historic Data</span>
+  </button>
   <div class="api-status" id="apiStatus">
     <div class="api-dot pending" id="apiDot"></div>
     <span id="apiLabel">Connecting…</span>
@@ -481,7 +512,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
               <th class="r">Occupied</th>
               <th class="r">Vacant</th>
               <th class="r">Physical Occ.</th>
-              <th class="r">Preleased</th>
               <th class="r">Econ Occ.</th>
             </tr>
           </thead>
@@ -786,8 +816,120 @@ let DATA = {
 };
 
 // ── SUPABASE HELPER ──
-// Matches existing bq-dashboard edge function: sends { type }, receives { rows }
+// Matches existing bq-dashboard edge function: sends { type }, receives { rows }.
+//
+// Hybrid cache mode (see CACHEABLE_TYPES below): for month-keyed historical queries,
+// we split the fetch into (a) Supabase cached rows for months older than prior-month,
+// and (b) a BigQuery call for just current + prior month. This avoids scanning years
+// of history on every page load.
+
+// Month-keyed queries that benefit from historical caching. Must match MONTH_COLUMN
+// in the bq-dashboard edge function. For other types, callEdgeFn behaves as before.
+const CACHEABLE_TYPES = new Set([
+  'financial_summary',
+  'noi_summary',
+  'occupancy_snapshot_summary',
+  'economic_occupancy',
+  'utility_summary',
+  'utility_reimbursement',
+  'income_statement_snapshot',
+  'group_summary',
+  'rent_roll_snapshot',
+]);
+
+// Compute live window: current month + prior month (YYYY-MM strings).
+// Anything older is served from Supabase cache.
+function computeLiveWindow(now = new Date()) {
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth() + 1;
+  const currentMonth = `${y}-${String(m).padStart(2, '0')}`;
+  const prev = new Date(Date.UTC(y, m - 2, 1));
+  const priorMonth = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}`;
+  return { currentMonth, priorMonth, liveMonths: [priorMonth, currentMonth] };
+}
+
+// Pull cached historical rows from Supabase (one row per (type, month); rows in .payload).
+async function fetchHistoricCache(type, cutoffMonth) {
+  const url = `${SUPA_URL}/rest/v1/dashboard_historical_cache`
+    + `?query_type=eq.${encodeURIComponent(type)}`
+    + `&snapshot_month=lt.${encodeURIComponent(cutoffMonth)}`
+    + `&select=snapshot_month,payload,row_count`
+    + `&order=snapshot_month.asc`;
+  const res = await fetch(url, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Cache read ${res.status}: ${txt}`);
+  }
+  const rows = await res.json();
+  // Flatten: each row has payload = [row, row, ...]
+  const out = [];
+  for (const r of rows) {
+    if (Array.isArray(r.payload)) out.push(...r.payload);
+  }
+  return out;
+}
+
 async function callEdgeFn(type, params = {}) {
+  // ── Fast path: hybrid cache for month-keyed queries ──
+  if (CACHEABLE_TYPES.has(type) && !params.skipCache) {
+    const { priorMonth, liveMonths } = computeLiveWindow();
+    try {
+      // Read cache + live window in parallel
+      const [historicRows, liveRes] = await Promise.all([
+        fetchHistoricCache(type, priorMonth).catch(err => {
+          console.warn(`[cache] ${type} read failed, falling back to BQ-only:`, err.message);
+          return null; // null signals to fall through to full BQ fetch
+        }),
+        fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPA_KEY}`,
+            'apikey': SUPA_KEY,
+          },
+          body: JSON.stringify({ type, months: liveMonths, ...params }),
+        }),
+      ]);
+
+      if (!liveRes.ok) {
+        const txt = await liveRes.text();
+        throw new Error(`Edge fn error ${liveRes.status}: ${txt}`);
+      }
+      const liveJson = await liveRes.json();
+      const liveRows = liveJson.rows || liveJson.data || [];
+
+      // If cache miss entirely, fall back to a full BQ call so nothing breaks
+      // on first load before superadmin has populated the cache.
+      if (historicRows === null || historicRows.length === 0) {
+        console.log(`[cache] ${type}: cache empty, full BQ fetch`);
+        const full = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPA_KEY}`,
+            'apikey': SUPA_KEY,
+          },
+          body: JSON.stringify({ type, ...params }),
+        });
+        if (!full.ok) {
+          const txt = await full.text();
+          throw new Error(`Edge fn error ${full.status}: ${txt}`);
+        }
+        const fullJson = await full.json();
+        return { data: fullJson.rows || fullJson.data || [] };
+      }
+
+      console.log(`[cache] ${type}: ${historicRows.length} cached + ${liveRows.length} live`);
+      return { data: [...historicRows, ...liveRows] };
+    } catch (e) {
+      console.warn(`[cache] ${type} hybrid fetch failed, retrying without cache:`, e.message);
+      // Fall through to legacy path below
+    }
+  }
+
+  // ── Legacy path: direct edge fn call (unchanged) ──
   const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
     method: 'POST',
     headers: {
@@ -802,8 +944,32 @@ async function callEdgeFn(type, params = {}) {
     throw new Error(`Edge fn error ${res.status}: ${txt}`);
   }
   const json = await res.json();
-  // Normalize: existing function returns { rows }, wrap for internal use
   return { data: json.rows || json.data || [] };
+}
+
+// Get the current user's Supabase JWT (stored by index.html on login).
+// Needed for superadmin-authenticated actions like cache_type.
+function getAuthToken() {
+  try { return sessionStorage.getItem('bpos_token') || ''; } catch(e) { return ''; }
+}
+
+// Trigger a rebuild of the historical cache for one query type.
+// Must be called with a superadmin JWT in sessionStorage (getAuthToken).
+async function refreshHistoricCacheForType(type) {
+  const token = getAuthToken();
+  if (!token) throw new Error('Not signed in — cannot refresh cache');
+  const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,   // user JWT, not anon key
+      'apikey': SUPA_KEY,
+    },
+    body: JSON.stringify({ action: 'cache_type', type }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Cache refresh failed (${res.status})`);
+  return json;
 }
 
 // ── FORMAT HELPERS ──
@@ -2380,15 +2546,20 @@ function renderPnL() {
   const incTotals = renderSection('Income', sections.income || {}, 1);
   const expTotals = renderSection('Operating Expenses', sections.expense || {}, -1);
 
-  // NOI row
-  html += `<tr class="row-noi"><td>Net Operating Income</td>`;
+  // NOI row — compute grand total first so row color reflects sign
+  const noiByMonth = {};
   let noiGrand = 0;
   months.forEach(m => {
     const noi = (incTotals[m] || 0) - (expTotals[m] || 0);
+    noiByMonth[m] = noi;
     noiGrand += noi;
-    html += `<td>${fmtFull$(noi)}</td>`;
   });
-  html += `<td>${fmtFull$(noiGrand)}</td><td>${fmtFull$(noiGrand / mc)}</td></tr>`;
+  const noiSignCls = v => v >= 0 ? 'num-pos' : 'num-neg';
+  html += `<tr class="row-noi"><td class="${noiSignCls(noiGrand)}">Net Operating Income</td>`;
+  months.forEach(m => {
+    html += `<td class="${noiSignCls(noiByMonth[m])}">${fmtFull$(noiByMonth[m])}</td>`;
+  });
+  html += `<td class="${noiSignCls(noiGrand)}">${fmtFull$(noiGrand)}</td><td class="${noiSignCls(noiGrand / mc)}">${fmtFull$(noiGrand / mc)}</td></tr>`;
 
   // Occupancy row — use historical snapshot data (per month) when available,
   // falling back to live occupancy summary only for months without snapshot data
@@ -2550,14 +2721,20 @@ function renderPnL() {
     html += `<td>${fmtFull$(nonOpGrand)}</td><td>${fmtFull$(nonOpGrand / mc)}</td></tr>`;
 
     // Net Income row = NOI - Total Non-Operating Expenses
-    html += `<tr class="row-noi"><td>Net Income</td>`;
+    // Compute grand total first so row color reflects sign
+    const niByMonth = {};
     let niGrand = 0;
     months.forEach(m => {
       const ni = ((incTotals[m] || 0) - (expTotals[m] || 0)) - (nonOpGrandTotals[m] || 0);
+      niByMonth[m] = ni;
       niGrand += ni;
-      html += `<td>${fmtFull$(ni)}</td>`;
     });
-    html += `<td>${fmtFull$(niGrand)}</td><td>${fmtFull$(niGrand / mc)}</td></tr>`;
+    const niSignCls = v => v >= 0 ? 'num-pos' : 'num-neg';
+    html += `<tr class="row-noi"><td class="${niSignCls(niGrand)}">Net Income</td>`;
+    months.forEach(m => {
+      html += `<td class="${niSignCls(niByMonth[m])}">${fmtFull$(niByMonth[m])}</td>`;
+    });
+    html += `<td class="${niSignCls(niGrand)}">${fmtFull$(niGrand)}</td><td class="${niSignCls(niGrand / mc)}">${fmtFull$(niGrand / mc)}</td></tr>`;
   }
 
   html += '</tbody></table></div>';
@@ -2673,11 +2850,6 @@ function renderOccupancy() {
       <div class="kpi-sub">${totalUnits > 0 ? fmtPct(totalVacant / totalUnits * 100) : '0%'} vacancy rate</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Preleased</div>
-      <div class="kpi-value" style="color:var(--teal);">${totalPreleased}</div>
-      <div class="kpi-sub">Future leases signed</div>
-    </div>
-    <div class="kpi">
       <div class="kpi-label">Economic Occupancy</div>
       <div class="kpi-value ${occPageEconOcc >= 90 ? 'good' : occPageEconOcc >= 80 ? 'warn' : 'bad'}">${fmtPct1(occPageEconOcc)}</div>
       <div class="kpi-sub">Cash collected vs. potential</div>
@@ -2705,7 +2877,6 @@ function renderOccupancy() {
       <td class="r">${r.occupied_units || 0}</td>
       <td class="r ${(r.vacant_units || 0) > 0 ? 'bad' : ''}">${r.vacant_units || 0}</td>
       <td class="r ${occPct >= 90 ? 'good' : occPct >= 80 ? 'warn' : 'bad'}">${fmtPct(occPct)}</td>
-      <td class="r" style="color:var(--teal);">${r.preleased_units || 0}</td>
       <td class="r ${econPct != null ? (econPct >= 90 ? 'good' : econPct >= 80 ? 'warn' : 'bad') : ''}">${econPct != null ? fmtPct1(econPct) : '—'}</td>
     </tr>`;
   }).join('');
@@ -3064,7 +3235,9 @@ function renderUtPropertiesTable(occSummary, turns) {
     const units = p.total_units || (occ + vac);
     const pl = p.preleased_units || 0;
     const occPct = units > 0 ? (occ / units * 100) : 0;
-    const plPct = vac > 0 ? (pl / vac * 100) : 0;
+    // Preleased occupancy = (occupied + preleased) / total units
+    // e.g., Park Place: 262 units, 250 occupied, 6 preleased → (250+6)/262 = 97.7%
+    const plPct = units > 0 ? ((occ + pl) / units * 100) : 0;
     grand.units += units; grand.vac += vac; grand.occ += occ; grand.pl += pl;
     grand.av += pt.av; grand.mr += pt.mr;
     const occCls = occPct >= 95 ? 'good' : occPct >= 90 ? 'warn' : 'bad';
@@ -3077,7 +3250,7 @@ function renderUtPropertiesTable(occSummary, turns) {
       <td class="r">${occ}</td>
       <td class="r ${occCls}">${fmtPct1(occPct)}</td>
       <td class="r">${pl || '—'}</td>
-      <td class="r">${vac > 0 ? fmtPct1(plPct) : '—'}</td>
+      <td class="r">${units > 0 ? fmtPct1(plPct) : '—'}</td>
     </tr>`;
   }).join('');
   // Render TOTAL row in <tfoot> so it always stays at the bottom
@@ -3093,7 +3266,7 @@ function renderUtPropertiesTable(occSummary, turns) {
         <td class="r">${grand.occ}</td>
         <td class="r">${grand.units > 0 ? fmtPct1(grand.occ / grand.units * 100) : '—'}</td>
         <td class="r">${grand.pl}</td>
-        <td class="r">${grand.vac > 0 ? fmtPct1(grand.pl / grand.vac * 100) : '—'}</td>
+        <td class="r">${grand.units > 0 ? fmtPct1((grand.occ + grand.pl) / grand.units * 100) : '—'}</td>
       </tr>`;
   }
   document.getElementById('utPropCount').textContent = `${rows.length} properties`;
@@ -4026,6 +4199,102 @@ async function refreshDashboard() {
   label.textContent = 'Refresh';
 }
 
+// ════════════════════════════════════════════════════════════════
+//  HISTORIC CACHE REFRESH (superadmin only)
+//  Rebuilds the Supabase dashboard_historical_cache from BigQuery,
+//  one cacheable query type at a time, with a progress modal.
+// ════════════════════════════════════════════════════════════════
+
+// Show the admin button if current user is a superadmin.
+function maybeShowAdminControls() {
+  try {
+    const bposUser = JSON.parse(sessionStorage.getItem('bpos_user') || 'null');
+    if (bposUser && bposUser.role === 'superadmin') {
+      const btn = document.getElementById('refreshHistoricBtn');
+      if (btn) btn.style.display = 'flex';
+    }
+  } catch(e) { /* no-op */ }
+}
+
+// List must mirror CACHEABLE_TYPES in callEdgeFn above.
+const REFRESH_CACHE_TYPES = [
+  'financial_summary',
+  'noi_summary',
+  'occupancy_snapshot_summary',
+  'economic_occupancy',
+  'utility_summary',
+  'utility_reimbursement',
+  'income_statement_snapshot',
+  'group_summary',
+  'rent_roll_snapshot',
+];
+
+function openHistoricRefreshModal() {
+  const bd = document.getElementById('hrBackdrop');
+  if (!bd) return;
+  // Reset modal state
+  document.getElementById('hrStatus').textContent = 'Ready to rebuild historical cache. This may take a few minutes.';
+  document.getElementById('hrBar').style.width = '0%';
+  const list = document.getElementById('hrTypeList');
+  list.innerHTML = REFRESH_CACHE_TYPES.map(t =>
+    `<div class="hr-type" id="hr-type-${t}"><span>${t}</span><span class="hr-type-status">queued</span></div>`
+  ).join('');
+  document.getElementById('hrStartBtn').disabled = false;
+  document.getElementById('hrCloseBtn').textContent = 'Cancel';
+  bd.classList.add('open');
+}
+
+function closeHistoricRefreshModal() {
+  const bd = document.getElementById('hrBackdrop');
+  if (bd) bd.classList.remove('open');
+}
+
+async function runHistoricRefresh() {
+  const startBtn = document.getElementById('hrStartBtn');
+  const closeBtn = document.getElementById('hrCloseBtn');
+  const bar = document.getElementById('hrBar');
+  const statusEl = document.getElementById('hrStatus');
+
+  startBtn.disabled = true;
+  closeBtn.disabled = true;
+
+  const total = REFRESH_CACHE_TYPES.length;
+  let done = 0, totalMonths = 0, totalRows = 0;
+  let anyFailed = false;
+
+  for (const type of REFRESH_CACHE_TYPES) {
+    const row = document.getElementById(`hr-type-${type}`);
+    const statusSpan = row?.querySelector('.hr-type-status');
+    if (row) row.classList.add('running');
+    if (statusSpan) statusSpan.textContent = 'running…';
+    statusEl.textContent = `Rebuilding ${type} (${done + 1} of ${total})…`;
+
+    try {
+      const r = await refreshHistoricCacheForType(type);
+      totalMonths += (r.monthsCached || 0);
+      totalRows   += (r.rowsCached   || 0);
+      if (row) { row.classList.remove('running'); row.classList.add('done'); }
+      if (statusSpan) statusSpan.textContent = `${r.monthsCached} mo · ${r.rowsCached.toLocaleString()} rows`;
+    } catch (e) {
+      anyFailed = true;
+      if (row) { row.classList.remove('running'); row.classList.add('err'); }
+      if (statusSpan) statusSpan.textContent = `error: ${e.message.slice(0, 40)}`;
+      console.error(`[cache refresh] ${type} failed:`, e);
+    }
+
+    done += 1;
+    bar.style.width = `${Math.round((done / total) * 100)}%`;
+  }
+
+  closeBtn.disabled = false;
+  closeBtn.textContent = 'Close';
+  if (anyFailed) {
+    statusEl.textContent = `Finished with errors — ${totalMonths} months, ${totalRows.toLocaleString()} rows cached. See list for details.`;
+  } else {
+    statusEl.textContent = `Done! Cached ${totalMonths} months, ${totalRows.toLocaleString()} rows. Reload the dashboard to use the new cache.`;
+  }
+}
+
 // ════════════════════════════════════════
 //  CLICK-TO-SORT TABLE HEADERS (all .data-table)
 //  Cycle: unsorted → asc → desc → unsorted
@@ -4155,8 +4424,28 @@ async function refreshDashboard() {
 
 // ── BOOT ──
 document.addEventListener('DOMContentLoaded', () => {
+  maybeShowAdminControls();
   loadDashboardData();
 });
 </script>
+
+<!-- ── HISTORIC CACHE REFRESH MODAL (superadmin) ── -->
+<div class="hr-backdrop" id="hrBackdrop" onclick="if(event.target===this)closeHistoricRefreshModal()">
+  <div class="hr-modal" role="dialog" aria-modal="true" aria-labelledby="hrTitle">
+    <div class="hr-title" id="hrTitle">Refresh Historic Data</div>
+    <div class="hr-sub">
+      Rebuilds the Supabase cache from BigQuery for all closed months (older than prior month).
+      Run this after a quarterly reconciliation. Current + prior month always stay live from BigQuery.
+    </div>
+    <div class="hr-progress"><div class="hr-progress-bar" id="hrBar"></div></div>
+    <div class="hr-status" id="hrStatus">Ready.</div>
+    <div class="hr-type-list" id="hrTypeList"></div>
+    <div class="hr-actions">
+      <button class="hr-btn" id="hrCloseBtn" onclick="closeHistoricRefreshModal()">Cancel</button>
+      <button class="hr-btn primary" id="hrStartBtn" onclick="runHistoricRefresh()">Start Rebuild</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

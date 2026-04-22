@@ -477,6 +477,13 @@ sb.auth.onAuthStateChange(function(event, session) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('change-pw-screen').style.display = 'flex';
   }
+  // Keep sessionStorage in sync so iframe modules always have a fresh token
+  // (Supabase auto-refreshes ~every hour; TOKEN_REFRESHED fires on renewal).
+  if (session && session.access_token) {
+    try { sessionStorage.setItem('bpos_token', session.access_token); } catch(e){}
+  } else if (event === 'SIGNED_OUT') {
+    try { sessionStorage.removeItem('bpos_token'); } catch(e){}
+  }
 });
 
 async function loadUserProfile(userId) {
@@ -698,6 +705,17 @@ function goTo(module, el) {
   document.getElementById('loading-text').textContent = 'Loading '+mod.label+'...';
   // Store user profile so iframes can enforce property access
   try { sessionStorage.setItem('bpos_user', JSON.stringify(currentUser)); } catch(e){}
+  // Store access token so iframes can make authenticated edge fn calls
+  // (needed for superadmin actions like refreshing the dashboard cache).
+  // Fire-and-forget: session is typically cached in memory so this resolves fast;
+  // if it races with the iframe load, the refresh button just shows a "not signed in"
+  // error and the user can re-click once authentication settles.
+  try {
+    sb.auth.getSession().then(function(sess){
+      var tok = sess && sess.data && sess.data.session ? sess.data.session.access_token : '';
+      if (tok) { try { sessionStorage.setItem('bpos_token', tok); } catch(e){} }
+    });
+  } catch(e){}
   fr.src = mod.file;
 }
 

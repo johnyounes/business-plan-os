@@ -853,6 +853,19 @@ function computeLiveWindow(now = new Date()) {
   return { currentMonth, priorMonth, liveMonths: [priorMonth, currentMonth] };
 }
 
+// Extract a row's month as "YYYY-MM" regardless of source column or storage type.
+// Different BigQuery views expose the month under different names / types:
+//   - `snapshot_month` STRING "YYYY-MM"  (most views)
+//   - `snapshot_month` DATE   "YYYY-MM-DD"
+//   - `month`          TIMESTAMP "YYYY-MM-DD HH:MM:SS..." (v_noi_summary)
+// Slicing the first 7 chars of the string form normalizes all of them.
+function rowMonthKey(row) {
+  const v = (row && (row.snapshot_month ?? row.month));
+  if (v == null || v === '') return null;
+  const s = String(v);
+  return s.length >= 7 ? s.slice(0, 7) : s;
+}
+
 // Pull cached historical rows from Supabase (one row per (type, month); rows in .payload).
 async function fetchHistoricCache(type, cutoffMonth) {
   const url = `${SUPA_URL}/rest/v1/dashboard_historical_cache`
@@ -926,8 +939,19 @@ async function callEdgeFn(type, params = {}) {
         return { data: fullJson.rows || fullJson.data || [] };
       }
 
-      console.log(`[cache] ${type}: ${historicRows.length} cached + ${liveRows.length} live`);
-      return { data: [...historicRows, ...liveRows] };
+      // ── Dedupe live window vs cache ──
+      // The edge function currently ignores the `months` parameter and returns the full
+      // view (all months). Historic cache holds months < priorMonth. If we merge
+      // naively we double-count every row for months < priorMonth. Filter liveRows
+      // to only the live window before merging.
+      const liveMonthSet = new Set(liveMonths);
+      const filteredLive = liveRows.filter(r => {
+        const m = rowMonthKey(r);
+        return m && liveMonthSet.has(m);
+      });
+      const dropped = liveRows.length - filteredLive.length;
+      console.log(`[cache] ${type}: ${historicRows.length} cached + ${filteredLive.length} live${dropped ? ` (dropped ${dropped} duplicate pre-${priorMonth} rows)` : ''}`);
+      return { data: [...historicRows, ...filteredLive] };
     } catch (e) {
       console.warn(`[cache] ${type} hybrid fetch failed, retrying without cache:`, e.message);
       // Fall through to legacy path below
@@ -968,7 +992,8 @@ async function callEdgeFn(type, params = {}) {
 // so one bad view can't take the whole dashboard down.
 async function batchEdgeFn(types, { skipCache = false } = {}) {
   const cacheableTypes = types.filter(t => CACHEABLE_TYPES.has(t) && !skipCache);
-  const { priorMonth } = computeLiveWindow();
+  const { priorMonth, liveMonths } = computeLiveWindow();
+  const liveMonthSet = new Set(liveMonths);
 
   const cachePromise = Promise.all(
     cacheableTypes.map(t =>
@@ -1017,11 +1042,22 @@ async function batchEdgeFn(types, { skipCache = false } = {}) {
       const idx = cacheableTypes.indexOf(t);
       const historic = cacheArr[idx];
       if (historic === null || !historic.length) {
+        // No cache → keep full live dataset (no duplicates possible)
         out[t] = { data: liveRows };
         if (liveRows.length) console.log(`[cache] ${t}: miss, live=${liveRows.length}`);
       } else {
-        out[t] = { data: [...historic, ...liveRows] };
-        console.log(`[cache] ${t}: ${historic.length} cached + ${liveRows.length} live`);
+        // ── Dedupe live vs cache ──
+        // The edge function currently returns the full view (all months). The historic
+        // cache holds months < priorMonth. If we concat naively, every month < priorMonth
+        // is counted twice. Filter liveRows to only the live window (priorMonth +
+        // currentMonth) so historic+live = exactly one copy of each month.
+        const filteredLive = liveRows.filter(r => {
+          const m = rowMonthKey(r);
+          return m && liveMonthSet.has(m);
+        });
+        const dropped = liveRows.length - filteredLive.length;
+        out[t] = { data: [...historic, ...filteredLive] };
+        console.log(`[cache] ${t}: ${historic.length} cached + ${filteredLive.length} live${dropped ? ` (dropped ${dropped} dup pre-${priorMonth} rows)` : ''}`);
       }
     } else {
       out[t] = { data: liveRows };

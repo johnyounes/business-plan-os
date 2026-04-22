@@ -947,6 +947,84 @@ async function callEdgeFn(type, params = {}) {
   return { data: json.rows || json.data || [] };
 }
 
+// ── BATCH EDGE FUNCTION WRAPPER ─────────────────────────────────
+// Fires ONE HTTP round-trip to bq-dashboard carrying a list of query types.
+// The edge function shares a single OAuth token across all queries and runs them
+// in parallel server-side (see supabase/functions/bq-dashboard/index.ts batch
+// branch). This replaces 15+ serial-ish edge-function invocations with a single
+// request for the Overview page load.
+//
+// Hybrid cache: cacheable types still read their historical rows from the
+// dashboard_historical_cache table (fast Supabase REST) in parallel with the
+// batched BQ call, and the results are merged per-type.
+//
+// Partial failures: per-type errors are caught server-side (the result will have
+// `{ error: "..." }` for that type); the client degrades that to an empty dataset
+// so one bad view can't take the whole dashboard down.
+async function batchEdgeFn(types, { skipCache = false } = {}) {
+  const cacheableTypes = types.filter(t => CACHEABLE_TYPES.has(t) && !skipCache);
+  const { priorMonth } = computeLiveWindow();
+
+  const cachePromise = Promise.all(
+    cacheableTypes.map(t =>
+      fetchHistoricCache(t, priorMonth).catch(err => {
+        console.warn(`[cache] ${t} read failed, falling back to BQ-only:`, err.message);
+        return null;
+      })
+    )
+  );
+
+  const bqPromise = (async () => {
+    const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'apikey': SUPA_KEY,
+      },
+      body: JSON.stringify({ batch: types.map(t => ({ type: t })) }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Batch edge fn ${res.status}: ${txt}`);
+    }
+    return res.json();
+  })();
+
+  let cacheArr, bqJson;
+  try {
+    [cacheArr, bqJson] = await Promise.all([cachePromise, bqPromise]);
+  } catch (e) {
+    console.error('[batch] BQ batch failed, returning empty datasets:', e.message);
+    const empty = {};
+    for (const t of types) empty[t] = { data: [] };
+    return empty;
+  }
+
+  const results = (bqJson && bqJson.results) || {};
+  const out = {};
+  for (const t of types) {
+    const liveEntry = results[t];
+    if (liveEntry && liveEntry.error) console.warn(`[batch] ${t} failed:`, liveEntry.error);
+    const liveRows = (liveEntry && !liveEntry.error && liveEntry.rows) ? liveEntry.rows : [];
+
+    if (cacheableTypes.includes(t)) {
+      const idx = cacheableTypes.indexOf(t);
+      const historic = cacheArr[idx];
+      if (historic === null || !historic.length) {
+        out[t] = { data: liveRows };
+        if (liveRows.length) console.log(`[cache] ${t}: miss, live=${liveRows.length}`);
+      } else {
+        out[t] = { data: [...historic, ...liveRows] };
+        console.log(`[cache] ${t}: ${historic.length} cached + ${liveRows.length} live`);
+      }
+    } else {
+      out[t] = { data: liveRows };
+    }
+  }
+  return out;
+}
+
 // Get the current user's Supabase JWT (stored by index.html on login).
 // Needed for superadmin-authenticated actions like cache_type.
 function getAuthToken() {
@@ -3588,68 +3666,53 @@ async function loadDashboardData() {
       return s.length >= 7 ? s.slice(0, 7) : s;
     };
 
-    // Load all data in parallel — each query is independent so one failure won't block others
-    const safeCall = async (type) => {
-      try { return await callEdgeFn(type); }
-      catch (e) { console.warn(`Query "${type}" failed:`, e.message); return { data: [] }; }
-    };
-
-    // NOTE: rent_roll_snapshot is intentionally NOT in this initial fetch.
+    // NOTE: rent_roll_snapshot is intentionally NOT in this batch.
     // It's the slowest query (~15s for 58K rows) and only needed by the
     // Occupancy / Unit Tracker / Period Comparison views. We load it in the
     // background after initial render completes (see bottom of this function).
-    const [
-      financialRes,
-      noiRes,
-      occRes,
-      occSnapRes,
-      rentRollRes,
-      vacancyRes,
-      expRes,
-      turnsRes,
-      propsRes,
-      econOccRes,
-      groupsRes,
-      utilityRes,
-      utilReimbRes,
-      metaRes,
-      incStmtRes,
-      groupSummaryRes,
-    ] = await Promise.all([
-      safeCall('financial_summary'),
-      safeCall('noi_summary'),
-      safeCall('occupancy_summary'),
-      safeCall('occupancy_snapshot_summary'),
-      safeCall('rent_roll'),
-      safeCall('vacancy'),
-      safeCall('lease_expirations'),
-      safeCall('turns'),
-      safeCall('properties'),
-      safeCall('economic_occupancy'),
-      safeCall('property_groups'),
-      safeCall('utility_summary'),
-      safeCall('utility_reimbursement'),
-      safeCall('snapshot_metadata'),
-      safeCall('income_statement_snapshot'),
-      safeCall('group_summary'),
-    ]);
+    //
+    // All remaining types ship in a single batched edge-fn request that shares
+    // one Google OAuth token server-side and runs the BigQuery queries in
+    // parallel. See batchEdgeFn() above + the `batch` branch in
+    // supabase/functions/bq-dashboard/index.ts.
+    const BATCH_TYPES = [
+      'financial_summary',
+      'noi_summary',
+      'occupancy_summary',
+      'occupancy_snapshot_summary',
+      'rent_roll',
+      'vacancy',
+      'lease_expirations',
+      'turns',
+      'properties',
+      'economic_occupancy',
+      'property_groups',
+      'utility_summary',
+      'utility_reimbursement',
+      'snapshot_metadata',
+      'income_statement_snapshot',
+      'group_summary',
+    ];
+    const _batchT0 = performance.now();
+    const batched = await batchEdgeFn(BATCH_TYPES);
+    console.log(`[BPOS] Batch load (${BATCH_TYPES.length} queries) in ${Math.round(performance.now() - _batchT0)}ms`);
 
-    DATA.financial   = financialRes.data || [];
-    DATA.noiSummary  = noiRes.data || [];
-    DATA.occupancy   = occRes.data || [];
-    DATA.occupancySnapshot = occSnapRes.data || [];
-    DATA.rentRoll    = rentRollRes.data || [];
-    DATA.vacancy     = vacancyRes.data || [];
-    DATA.expirations = expRes.data || [];
-    DATA.turns       = turnsRes.data || [];
-    DATA.properties  = propsRes.data || [];
-    DATA.economicOccupancy = econOccRes.data || [];
-    DATA.propertyGroups = groupsRes.data || [];
-    DATA.utilitySummary = utilityRes.data || [];
-    DATA.utilityReimbursement = utilReimbRes.data || [];
-    DATA.snapshotMeta = metaRes.data || [];
-    DATA.incomeStatement = incStmtRes.data || [];
-    DATA.groupSummary = groupSummaryRes.data || [];
+    DATA.financial   = batched.financial_summary?.data || [];
+    DATA.noiSummary  = batched.noi_summary?.data || [];
+    DATA.occupancy   = batched.occupancy_summary?.data || [];
+    DATA.occupancySnapshot = batched.occupancy_snapshot_summary?.data || [];
+    DATA.rentRoll    = batched.rent_roll?.data || [];
+    DATA.vacancy     = batched.vacancy?.data || [];
+    DATA.expirations = batched.lease_expirations?.data || [];
+    DATA.turns       = batched.turns?.data || [];
+    DATA.properties  = batched.properties?.data || [];
+    DATA.economicOccupancy = batched.economic_occupancy?.data || [];
+    DATA.propertyGroups = batched.property_groups?.data || [];
+    DATA.utilitySummary = batched.utility_summary?.data || [];
+    DATA.utilityReimbursement = batched.utility_reimbursement?.data || [];
+    DATA.snapshotMeta = batched.snapshot_metadata?.data || [];
+    DATA.incomeStatement = batched.income_statement_snapshot?.data || [];
+    DATA.groupSummary = batched.group_summary?.data || [];
     DATA.rentRollSnapshot = [];  // lazy-loaded in background; see below
 
     // Invalidate period-comparison caches (data just reloaded)

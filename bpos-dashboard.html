@@ -211,11 +211,133 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .eb-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
 .eb-label{font-size:11px;color:var(--text3);font-weight:500;}
 
-/* ── TURN PIPELINE ── */
+/* ── TURN PIPELINE (legacy, kept for reference) ── */
 .turn-pipeline{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
 .turn-stage{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .ts-count{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:3px;}
 .ts-label{font-size:11px;color:var(--text3);font-weight:500;}
+
+/* ── UNIT TURN BOARD ── */
+/* KPI grid dual-HVAC layout */
+.utb-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.utb-toolbar .spacer{flex:1;}
+.utb-threshold-group{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 10px 5px 14px;}
+.utb-threshold-group label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+.utb-threshold-group input{background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:13px;width:80px;text-align:right;outline:none;}
+.utb-threshold-group .hint{font-size:10px;color:var(--text3);margin-left:4px;}
+
+/* Tab navigation (Excel-style pages) */
+.utb-tabs{display:flex;gap:0;border-bottom:1px solid var(--border2);margin-bottom:20px;}
+.utb-tab{padding:10px 18px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;}
+.utb-tab:hover{color:var(--text2);}
+.utb-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Summary hero card (portfolio-level totals, one-row style like Excel Summary page) */
+.utb-hero{background:linear-gradient(135deg,rgba(61,127,255,.05),rgba(155,122,255,.05));border:1px solid var(--border2);border-radius:12px;padding:20px 22px;margin-bottom:20px;}
+.utb-hero-title{font-family:var(--display);font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.utb-hero-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;}
+.utb-hero-stat{min-width:0;}
+.utb-hero-stat .hs-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.utb-hero-stat .hs-val{font-size:20px;font-weight:500;font-family:var(--mono);color:var(--text);}
+.utb-hero-stat .hs-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.utb-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#3d7fff,#9b7aff);border:none;color:#fff;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:500;font-family:var(--font);cursor:pointer;transition:opacity .15s;}
+.utb-btn:hover{opacity:.9;}
+.utb-btn.secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2);}
+.utb-btn.secondary:hover{background:var(--bg4);}
+.utb-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Category breakdown bar chart */
+.utb-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:24px;}
+.utb-cat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.utb-cat-name{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline;}
+.utb-cat-name .pct{color:var(--text3);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0;}
+.utb-cat-val{font-size:18px;font-weight:500;font-family:var(--mono);color:var(--text);margin-bottom:8px;}
+.utb-cat-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.utb-cat-bar > div{height:100%;background:linear-gradient(90deg,#3d7fff,#9b7aff);border-radius:3px;transition:width .3s ease;}
+.utb-cat-meta{font-size:10px;color:var(--text3);margin-top:6px;font-family:var(--mono);}
+
+/* Cost tier pills in property summary table */
+.cost-tier{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;letter-spacing:.03em;}
+.tier-low{background:rgba(34,201,122,.1);color:var(--green);border:1px solid rgba(34,201,122,.2);}
+.tier-mid{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2);}
+.tier-high{background:rgba(232,80,74,.1);color:var(--red);border:1px solid rgba(232,80,74,.2);}
+
+/* Variance coloring (approved vs actual) */
+.utb-variance-over{color:var(--red);font-family:var(--mono);}
+.utb-variance-under{color:var(--green);font-family:var(--mono);}
+.utb-variance-zero{color:var(--text3);font-family:var(--mono);}
+
+/* Inline approval badge */
+.utb-appr-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--mono);}
+.utb-appr-badge.open{background:rgba(61,127,255,.1);border-color:rgba(61,127,255,.25);color:var(--accent);}
+.utb-appr-badge.closed{background:rgba(155,122,255,.1);border-color:rgba(155,122,255,.25);color:var(--purple);}
+.utb-appr-badge.none{opacity:.5;}
+
+/* Action buttons in tables */
+.utb-row-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:var(--font);transition:background .15s;}
+.utb-row-btn:hover{background:var(--bg4);}
+.utb-row-btn.primary{background:rgba(61,127,255,.15);color:var(--accent);border-color:rgba(61,127,255,.3);}
+.utb-row-btn.primary:hover{background:rgba(61,127,255,.25);}
+
+/* Property drill-in link */
+.utb-prop-link{color:var(--accent);cursor:pointer;text-decoration:none;font-weight:500;}
+.utb-prop-link:hover{text-decoration:underline;}
+
+/* Modal (reused for approval entry + unit drill-in) */
+.utb-backdrop{position:fixed;inset:0;background:rgba(8,10,14,.72);backdrop-filter:blur(4px);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+.utb-backdrop.open{display:flex;}
+.utb-modal{width:680px;max-width:100%;max-height:calc(100vh - 40px);overflow-y:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:26px 30px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.utb-modal.wide{width:920px;}
+.utb-modal-title{font-family:var(--display);font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.utb-modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px;}
+.utb-form-row{margin-bottom:14px;}
+.utb-form-row label{display:block;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.utb-form-row input[type="text"],
+.utb-form-row input[type="number"],
+.utb-form-row input[type="date"],
+.utb-form-row textarea,
+.utb-form-row select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;}
+.utb-form-row textarea{resize:vertical;min-height:68px;font-family:var(--font);}
+.utb-form-row input:focus,.utb-form-row textarea:focus,.utb-form-row select:focus{border-color:var(--accent);}
+.utb-form-row .hint{font-size:11px;color:var(--text3);margin-top:4px;}
+.utb-form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.utb-checkbox{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--text2);}
+.utb-checkbox input{width:auto;margin:0;}
+.utb-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.utb-error{color:var(--red);font-size:12px;margin-top:6px;min-height:14px;}
+
+/* Unit drill-in: compact KPI strip inside modal */
+.utb-drill-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+.utb-drill-kpi{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.utb-drill-kpi .k-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.utb-drill-kpi .k-val{font-size:15px;font-weight:500;font-family:var(--mono);}
+
+/* Category mini-bar inside drill-in */
+.utb-drill-cats{margin-bottom:16px;}
+.utb-drill-cat{display:grid;grid-template-columns:140px 1fr 80px;gap:10px;align-items:center;padding:4px 0;font-size:11px;}
+.utb-drill-cat .c-name{color:var(--text2);font-weight:500;}
+.utb-drill-cat .c-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.utb-drill-cat .c-bar > div{height:100%;background:var(--accent);}
+.utb-drill-cat .c-val{font-family:var(--mono);text-align:right;color:var(--text);}
+.utb-drill-cat.empty{opacity:.35;}
+
+/* Approval summary box inside drill-in */
+.utb-appr-box{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;margin-bottom:16px;}
+.utb-appr-box .ab-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.utb-appr-box .ab-title{font-size:12px;font-weight:600;color:var(--text);}
+.utb-appr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:11px;}
+.utb-appr-grid .ag-label{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.utb-appr-grid .ag-val{font-family:var(--mono);font-size:13px;color:var(--text);}
+
+/* Txn detail table inside drill-in */
+.utb-txn-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;}
+.utb-txn-table th{background:var(--bg3);padding:6px 10px;text-align:left;color:var(--text3);font-size:9px;text-transform:uppercase;font-weight:600;letter-spacing:.06em;border-bottom:1px solid var(--border2);}
+.utb-txn-table th.r{text-align:right;}
+.utb-txn-table td{padding:5px 10px;border-bottom:1px solid var(--border);color:var(--text2);}
+.utb-txn-table td.r{text-align:right;font-family:var(--mono);color:var(--text);}
+
+/* Utility: horizontally scrollable inner tables */
+.utb-scroll-x{overflow-x:auto;max-height:360px;overflow-y:auto;}
 
 /* ── UNIT TRACKER (4-panel layout) ── */
 .ut-layout{display:grid;grid-template-columns:minmax(420px,1fr) 1.4fr;gap:16px;margin-bottom:16px;}
@@ -388,7 +510,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="sb-section">Analytics</div>
   <div class="sb-item" data-view="analytics"><span class="icon">📈</span><span>Period Comparison</span></div>
   <div class="sb-section">Operations</div>
-  <div class="sb-item" data-view="turns"><span class="icon">🔧</span><span>Unit Turns</span></div>
+  <div class="sb-item" data-view="delinquency"><span class="icon">💸</span><span>Delinquency</span></div>
+  <div class="sb-item" data-view="turns"><span class="icon">🔧</span><span>Unit Turn Board</span></div>
 </div>
 
 <!-- MAIN CONTENT -->
@@ -407,6 +530,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <span class="filter-label">Group</span>
       <select class="filter-select group-filter" id="groupFilter" style="min-width:180px;">
         <option value="">All Groups</option>
+      </select>
+    </div>
+    <div class="filter-group" id="delinqDateGroup" style="display:none;">
+      <span class="filter-label">Snapshot</span>
+      <select class="filter-select" id="delinqDateFilter" style="min-width:140px;"></select>
+    </div>
+    <div class="filter-group" id="delinqGroupByGroup" style="display:none;">
+      <span class="filter-label">Group by</span>
+      <select class="filter-select" id="delinqGroupBy" style="min-width:120px;">
+        <option value="market">Market</option>
+        <option value="group">Group</option>
+        <option value="property">Property</option>
       </select>
     </div>
     <div class="filter-group prop-multi" id="propMulti">
@@ -736,34 +871,266 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div id="compareRentContainer"></div>
   </div>
 
-  <!-- VIEW: UNIT TURNS -->
-  <div class="view-panel" id="view-turns" style="display:none;">
-    <div class="kpi-grid cols-4" id="turnKpis"></div>
-    <div class="section-head"><h2>Turn Pipeline</h2></div>
-    <div class="turn-pipeline" id="turnPipeline"></div>
+  <!-- VIEW: DELINQUENCY -->
+  <div class="view-panel" id="view-delinquency" style="display:none;">
+    <div class="kpi-grid cols-4" id="delinqKpis"></div>
+    <div class="kpi-grid cols-4" id="delinqSubKpis"></div>
+    <div class="section-head">
+      <h2 id="delinqTableTitle">Weekly Delinquency Rollup</h2>
+      <span class="cc-subtitle" id="delinqSnapshotLabel"></span>
+    </div>
     <div class="data-table-wrap">
       <div class="dt-header">
-        <span class="dt-title">Active Turns</span>
-        <span class="dt-count" id="turnCount"></span>
-        <input class="dt-search" id="turnSearch" placeholder="Search…"/>
+        <span class="dt-title" id="delinqGrainLabel">By Market</span>
+        <span class="dt-count" id="delinqRowCount"></span>
+        <input class="dt-search" id="delinqSearch" placeholder="Search…"/>
       </div>
       <div style="overflow-x:auto;">
-        <table class="data-table" id="turnTable">
+        <table class="data-table" id="delinqTable">
           <thead>
             <tr>
-              <th>Property</th>
-              <th>Unit</th>
-              <th>Status</th>
-              <th>Board</th>
-              <th>Finish Level</th>
-              <th class="r">Est. Cost</th>
-              <th>Start Date</th>
-              <th class="r">Days in Turn</th>
-              <th>Current Step</th>
+              <th id="delinqGrainHeader">Market</th>
+              <th class="r">Income</th>
+              <th class="r">Delinquency</th>
+              <th class="r">% of Income</th>
+              <th class="r">WoW Δ Delinq</th>
+              <th class="r">0-30</th>
+              <th class="r">0-30 %</th>
+              <th class="r">WoW Δ 0-30</th>
+              <th class="r">Eviction Carry Over</th>
+              <th class="r">Prepaid</th>
             </tr>
           </thead>
-          <tbody id="turnBody"></tbody>
+          <tbody id="delinqBody"></tbody>
+          <tfoot id="delinqFoot"></tfoot>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: UNIT TURNS -->
+  <div class="view-panel" id="view-turns" style="display:none;">
+    <!-- Action toolbar (always visible) -->
+    <div class="utb-toolbar">
+      <div class="utb-threshold-group">
+        <label for="utbThreshold">Min Turn $</label>
+        <input type="number" id="utbThreshold" value="1500" min="0" step="100"/>
+        <span class="hint">Excel used $1,500 + 2 cats</span>
+      </div>
+      <div class="utb-threshold-group" style="gap:6px;">
+        <label style="cursor:pointer;"><input type="checkbox" id="utbThresholdMultiCat" checked style="vertical-align:middle;margin-right:4px;width:auto;"/>Require 2+ categories</label>
+      </div>
+      <div class="spacer"></div>
+      <button class="utb-btn" id="utbNewApprovalBtn">+ Approve Unit Turn</button>
+    </div>
+
+    <!-- Portfolio KPIs (always visible above tabs) -->
+    <div class="kpi-grid cols-6" id="utbKpis"></div>
+
+    <!-- Tab navigation (mirrors Excel page structure) -->
+    <div class="utb-tabs">
+      <div class="utb-tab active" data-tab="summary">Summary by Property</div>
+      <div class="utb-tab" data-tab="cost">Cost Analysis</div>
+      <div class="utb-tab" data-tab="catbreakdown">Category Breakdown</div>
+      <div class="utb-tab" data-tab="units">Unit Detail</div>
+    </div>
+
+    <!-- Tab 1: Summary by Property ─────────────────────────── -->
+    <div class="utb-tab-panel" data-panel="summary">
+      <div class="utb-hero" id="utbHero"></div>
+      <div class="data-table-wrap">
+        <div class="dt-header">
+          <span class="dt-title">Per-Property Turn Cost Summary</span>
+          <span class="dt-count" id="utbPropCount"></span>
+          <input class="dt-search" id="utbPropSearch" placeholder="Search properties…"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="utbPropTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th class="r"># Turns</th>
+                <th class="r">Total CAPEX</th>
+                <th class="r">Avg / Turn (excl HVAC)</th>
+                <th class="r">Avg / Turn (incl HVAC)</th>
+                <th class="r">Lowest</th>
+                <th class="r">Highest</th>
+                <th>Cost Tier</th>
+              </tr>
+            </thead>
+            <tbody id="utbPropBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Cost Analysis ────────────────────────────────── -->
+    <div class="utb-tab-panel" data-panel="cost" style="display:none;">
+      <div class="section-head"><h2>Section A — Spend by Category (All Turned Units)</h2></div>
+      <div class="data-table-wrap">
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="utbCostRankTable">
+            <thead>
+              <tr>
+                <th class="r">Rank</th>
+                <th>Category</th>
+                <th class="r">Total Spend</th>
+                <th class="r">% of Total</th>
+                <th class="r">Avg per Turn</th>
+                <th class="r"># Units</th>
+                <th>Insight</th>
+              </tr>
+            </thead>
+            <tbody id="utbCostRankBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-head" style="margin-top:24px;"><h2>Section B — Cost Detail per Turned Unit (Top 25)</h2></div>
+      <div class="data-table-wrap">
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="utbCostDetailTable">
+            <thead>
+              <tr>
+                <th>Unit</th>
+                <th>Property</th>
+                <th class="r">Total Cost</th>
+                <th class="r">vs Avg</th>
+                <th>#1 Category</th>
+                <th>#2 Category</th>
+                <th>#3 Category</th>
+                <th class="r"># Cats</th>
+              </tr>
+            </thead>
+            <tbody id="utbCostDetailBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Category Breakdown ───────────────────────────── -->
+    <div class="utb-tab-panel" data-panel="catbreakdown" style="display:none;">
+      <div class="section-head">
+        <h2>Spend by Category — Portfolio View</h2>
+        <span class="badge" id="utbCatRangeBadge"></span>
+      </div>
+      <div class="utb-cat-grid" id="utbCategoryGrid"></div>
+
+      <div class="section-head" style="margin-top:24px;"><h2>Property × Category Matrix</h2></div>
+      <div class="data-table-wrap">
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="utbCatMatrixTable">
+            <thead id="utbCatMatrixHead"></thead>
+            <tbody id="utbCatMatrixBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Unit Detail ──────────────────────────────────── -->
+    <div class="utb-tab-panel" data-panel="units" style="display:none;">
+      <div class="data-table-wrap">
+        <div class="dt-header">
+          <span class="dt-title">Unit Turn Cost — Approved vs Actual</span>
+          <span class="dt-count" id="utbUnitCount"></span>
+          <input class="dt-search" id="utbUnitSearch" placeholder="Search property, unit…"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="utbUnitTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Unit</th>
+                <th>Bed/Bath</th>
+                <th>Months Active</th>
+                <th class="r">Turn (excl HVAC)</th>
+                <th class="r">HVAC</th>
+                <th class="r">Total</th>
+                <th>Top 3 Categories</th>
+                <th class="r">Approved</th>
+                <th class="r">Variance</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="utbUnitBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPROVAL ENTRY MODAL ────────────────────────────── -->
+  <div class="utb-backdrop" id="utbApprovalBackdrop">
+    <div class="utb-modal" id="utbApprovalModal">
+      <div class="utb-modal-title" id="utbApprovalTitle">Approve Unit Turn Budget</div>
+      <div class="utb-modal-sub">Enter the approved budget. Once saved, the dashboard tracks actuals from the approval date onward and computes variance.</div>
+      <form id="utbApprovalForm">
+        <input type="hidden" id="utbApprovalId" value=""/>
+        <div class="utb-form-row-2">
+          <div class="utb-form-row">
+            <label>Property</label>
+            <select id="utbApprovalProperty" required></select>
+          </div>
+          <div class="utb-form-row">
+            <label>Unit</label>
+            <select id="utbApprovalUnit" required></select>
+          </div>
+        </div>
+        <div class="utb-form-row-2">
+          <div class="utb-form-row">
+            <label>Approved Amount ($)</label>
+            <input type="number" id="utbApprovalAmount" step="0.01" min="0" required placeholder="5000.00"/>
+          </div>
+          <div class="utb-form-row">
+            <label>Approved Date</label>
+            <input type="date" id="utbApprovalDate" required/>
+            <div class="hint">Actuals count from this date forward.</div>
+          </div>
+        </div>
+        <div class="utb-form-row">
+          <label>Scope / Notes</label>
+          <textarea id="utbApprovalNotes" placeholder="e.g. flooring, paint, appliances, full remodel…"></textarea>
+        </div>
+        <div class="utb-checkbox">
+          <input type="checkbox" id="utbApprovalHvac" checked/>
+          <label for="utbApprovalHvac">Include HVAC in the approved scope</label>
+        </div>
+        <div class="utb-error" id="utbApprovalError"></div>
+        <div class="utb-modal-actions">
+          <button type="button" class="utb-btn secondary" id="utbApprovalCancel">Cancel</button>
+          <button type="submit" class="utb-btn" id="utbApprovalSave">Save Approval</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── UNIT DRILL-IN MODAL ─────────────────────────────── -->
+  <div class="utb-backdrop" id="utbDrillBackdrop">
+    <div class="utb-modal wide" id="utbDrillModal">
+      <div class="utb-modal-title" id="utbDrillTitle">Unit Detail</div>
+      <div class="utb-modal-sub" id="utbDrillSub">—</div>
+      <div class="utb-drill-kpis" id="utbDrillKpis"></div>
+      <div id="utbDrillApproval"></div>
+      <div class="section-head" style="margin-top:4px;"><h2 style="font-size:13px;">Spend by Category</h2></div>
+      <div class="utb-drill-cats" id="utbDrillCats"></div>
+      <div class="section-head" style="margin-top:12px;"><h2 style="font-size:13px;">Transactions</h2><span class="badge" id="utbDrillTxnCount"></span></div>
+      <div class="utb-scroll-x">
+        <table class="utb-txn-table" id="utbDrillTxns">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Vendor</th>
+              <th>Account</th>
+              <th>Memo</th>
+              <th class="r">Amount</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="utb-modal-actions">
+        <button type="button" class="utb-btn secondary" id="utbDrillClose">Close</button>
       </div>
     </div>
   </div>
@@ -789,6 +1156,33 @@ const SUPA_URL  = 'https://hpsvhffjebeuqutwpkaa.supabase.co';
 const SUPA_KEY  = 'sb_publishable_UwEgtEhRSVQXsX3RzyeR4g_0Vr6o72_';
 const FN_NAME   = 'bq-dashboard';
 
+// ── MARKET MAPPING ──
+// Maps John's 7 market labels (as used in his weekly delinquency workbook) to the
+// Buildium `property_groups.group_name` values whose members belong to that market.
+// Source: queried 2026-04-22 against property_groups regex-filtered for market keywords.
+//   - Omaha → "Omaha" (43 props)
+//   - Texas → "Dallas" (2 props — validate income total; if off, add "PGO - Texas" or "Dallas Properties")
+//   - Sioux Falls → "Sioux Falls" (12 props)
+//   - Wichita/Oklahoma → "Wichita/OK" (194 props)
+// Market → Buildium property_group mapping (per John's weekly rollup).
+// A property that appears in MULTIPLE mapped groups is assigned to the FIRST market
+// it matches (markets are evaluated in the order they appear here).
+// `extraPropertyIds` pins specific properties into a market by property_id (immune
+// to name drift — safer than matching on t12_name, which can include suffixes).
+// Properties that don't match any market are EXCLUDED from the Delinquency view.
+const MARKET_MAPPING = [
+  // Omaha: PGO - Omaha group + Brent Village (property_id 180254, 180 units)
+  { market: 'Omaha',            groups: ['PGO - Omaha'], extraPropertyIds: [180254] },
+  { market: 'Texas',            groups: ['PGO - Texas'] },
+  { market: 'Sioux Falls',      groups: ['PGO - Sioux Falls'] },
+  { market: 'Wichita/Oklahoma', groups: ['Wichita Properties'] },
+  { market: 'Kansas City',      groups: ['Kansas City'] },
+  { market: 'Tulsa',            groups: ['PGO - Tulsa'] },
+  // Manhattan: group is literally misspelled as "MANHATTEN" in Buildium source data.
+  { market: 'Manhattan',        groups: ['PGO ONLY - MANHATTEN'] },
+];
+const MARKET_ORDER = MARKET_MAPPING.map(m => m.market);
+
 // ── STATE ──
 let allProperties = [];
 let selectedProps  = []; // empty = "all"
@@ -796,6 +1190,8 @@ let selectedMonth  = '';      // "to" end of the range — also the single-month
 let selectedMonthFrom = '';   // "from" end of the range — only used on Overview
 let selectedGroup  = '';
 let currentView    = 'overview';
+let selectedDelinqDate = '';   // YYYY-MM-DD — which snapshot_date the Delinquency view is showing
+let delinqGroupBy      = 'market'; // 'market' | 'group' | 'property'
 
 // Cached data from BigQuery
 let DATA = {
@@ -818,6 +1214,8 @@ let DATA = {
   incomeStatement: null,    // v_income_statement_snapshot — operating-only income/expenses/NOI
   groupSummary: null,       // v_group_summary — pre-aggregated KPIs by property group × month
   rentRollSnapshot: null,   // v_rent_roll_snapshot — per-unit rent by month (backfilled Jan 2025+)
+  delinquencyDates: null,   // list of available snapshot_dates for the Delinquency picker
+  delinquencyRollup: null,  // per-property × per-snapshot aggregates with income + aging buckets
 };
 
 // ── SUPABASE HELPER ──
@@ -1145,9 +1543,9 @@ const fmtBedBath = (v) => {
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
     let view = el.dataset.view;
-    // Unit Turns now redirects to Unit Tracker — turns data is merged into
-    // the vacancy board (see unit-tracker-redesign memory).
-    if (view === 'turns') view = 'units';
+    // Note: Unit Turns sidebar used to redirect to Unit Tracker; that redirect was
+    // removed when the Unit Turn Board was introduced (Apr 2026). Unit Turn Board
+    // now owns `view-turns` and renders capex + approval data.
     if (view === currentView) return;
     document.querySelector('.sb-item.active')?.classList.remove('active');
     const target = document.querySelector(`.sb-item[data-view="${view}"]`) || el;
@@ -1155,7 +1553,7 @@ document.querySelectorAll('.sb-item').forEach(el => {
     currentView = view;
     document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
     document.getElementById('view-' + view).style.display = '';
-    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Tracker', analytics: 'Period Comparison' };
+    const titles = { overview: 'Financial Overview', pnl: 'P&L Detail', occupancy: 'Occupancy', units: 'Unit Tracker', turns: 'Unit Turn Board', analytics: 'Period Comparison', delinquency: 'Delinquency' };
     document.getElementById('viewTitle').textContent = titles[view] || '';
     updateMonthRangeVisibility();
     renderCurrentView();
@@ -1359,13 +1757,20 @@ function updateMonthRangeVisibility() {
   const toLabel   = document.getElementById('monthToLabel');
   const monthSel  = document.getElementById('monthFilter');
   const group     = document.getElementById('monthRangeGroup');
-  const show = (currentView === 'overview');
+  // Unit Turn Board uses a From/To range like Overview — "which turns happened in this range".
+  const show = (currentView === 'overview' || currentView === 'turns');
   const isAnalytics = (currentView === 'analytics');
-  if (group) group.style.display = isAnalytics ? 'none' : '';
+  const isDelinquency = (currentView === 'delinquency');
+  // Delinquency uses its own snapshot-date picker and Group-by selector instead of the month range.
+  if (group) group.style.display = (isAnalytics || isDelinquency) ? 'none' : '';
   if (fromLabel) fromLabel.style.display = show ? '' : 'none';
   if (fromSel)   fromSel.style.display   = show ? '' : 'none';
   if (toLabel)   toLabel.textContent     = show ? 'To' : 'Month';
   if (monthSel)  monthSel.style.display  = isAnalytics ? 'none' : '';
+  const delinqDateGrp = document.getElementById('delinqDateGroup');
+  const delinqGbGrp   = document.getElementById('delinqGroupByGroup');
+  if (delinqDateGrp) delinqDateGrp.style.display = isDelinquency ? '' : 'none';
+  if (delinqGbGrp)   delinqGbGrp.style.display   = isDelinquency ? '' : 'none';
 }
 
 // ── GROUP FILTER ──
@@ -1392,6 +1797,23 @@ function getGroupPropertyIds() {
     .filter(g => g.group_name === selectedGroup)
     .map(g => parseInt(g.property_id))
     .filter(Boolean);
+}
+
+// ── DELINQUENCY FILTERS ──
+// Snapshot date + Group-by selectors. Only visible on the Delinquency view.
+const delinqDateFilter = document.getElementById('delinqDateFilter');
+if (delinqDateFilter) {
+  delinqDateFilter.addEventListener('change', () => {
+    selectedDelinqDate = delinqDateFilter.value;
+    renderCurrentView();
+  });
+}
+const delinqGroupBySel = document.getElementById('delinqGroupBy');
+if (delinqGroupBySel) {
+  delinqGroupBySel.addEventListener('change', () => {
+    delinqGroupBy = delinqGroupBySel.value;
+    renderCurrentView();
+  });
 }
 
 // ── FILTER CHANGE HANDLER ──
@@ -1469,6 +1891,7 @@ function renderCurrentView() {
     case 'units': renderUnits(); break;
     case 'turns': renderTurns(); break;
     case 'analytics': renderPeriodComparison(); break;
+    case 'delinquency': renderDelinquency(); break;
   }
 }
 
@@ -3466,89 +3889,1283 @@ function renderUtTable(key) {
 
 
 // ════════════════════════════════════════
-//  VIEW: UNIT TURNS
+//  VIEW: UNIT TURN BOARD
+// ────────────────────────────────────────
+// Replaces the old PropUp Unit Turns pipeline view.
+// Sources:
+//   DATA.unitTurnCosts             — per-unit-per-month CAPEX rollup (v_unit_turn_costs)
+//   DATA.unitTurnCostsByCategory   — same grain with 13 categories pivoted
+//   DATA.turnApprovals             — Supabase unit_turn_approvals table
+// Definition of "a turn" (per John, 2026-04-24):
+//   A unit with any turn cost (excl HVAC > 0 OR incl HVAC > 0) in the selected range.
+//   Averages use unique-units-with-cost as the denominator, matching the
+//   Brent Village Excel's "17 turns for 17 units" convention.
 // ════════════════════════════════════════
+
+// ── 13 turn categories + HVAC ──────────────────────────────────
+const UTB_TURN_CATEGORIES = [
+  { key: 'labor_general_cash',     label: 'Labor (General)' },
+  { key: 'materials_general_cash', label: 'Materials (General)' },
+  { key: 'flooring_cash',          label: 'Flooring' },
+  { key: 'paint_cash',             label: 'Paint' },
+  { key: 'appliance_cash',         label: 'Appliance' },
+  { key: 'cabinets_cash',          label: 'Cabinets & Millwork' },
+  { key: 'countertops_cash',       label: 'Countertops' },
+  { key: 'drywall_cash',           label: 'Drywall' },
+  { key: 'plumbing_cash',          label: 'Plumbing' },
+  { key: 'electrical_cash',        label: 'Electrical' },
+  { key: 'doors_hardware_cash',    label: 'Doors & Hardware' },
+  { key: 'windows_blinds_cash',    label: 'Windows & Blinds' },
+  { key: 'cleaning_cash',          label: 'Cleaning' },
+];
+const UTB_HVAC_KEY = 'hvac_cash';
+
+// Stable per-unit key: prefer unit_id (deterministic Buildium integer), fall back to
+// "propId|unitNumber" for legacy rows.
+function utbUnitKey(row) {
+  if (row.unit_id != null) return `u${row.unit_id}`;
+  return `p${row.property_id || 0}|n${row.unit_number || ''}`;
+}
+
+// Find the active (open) approval for a unit, if any. When an approval is closed we
+// keep it so the row can show the locked-in actual at close.
+function utbFindApproval(propId, unitId, unitNumber, approvals) {
+  if (!approvals || !approvals.length) return null;
+  // Prefer unit_id match, fall back to property + unit_number
+  let matches = approvals.filter(a => {
+    if (unitId != null && a.unit_id != null) return a.unit_id === unitId;
+    return parseInt(a.buildium_property_id) === propId && String(a.unit_number) === String(unitNumber);
+  });
+  if (!matches.length) return null;
+  // Open approvals take precedence; otherwise newest closed
+  const open = matches.filter(a => a.status === 'open').sort((a, b) => (b.approved_date || '').localeCompare(a.approved_date || ''));
+  if (open.length) return open[0];
+  return matches.sort((a, b) => (b.approved_date || '').localeCompare(a.approved_date || ''))[0];
+}
+
+// Sum actuals for a unit since the approval's approved_date (month grain).
+// When approval is closed, use the stored actual_at_close instead.
+function utbComputeActualForApproval(approval, unitCostRows) {
+  if (approval.status === 'closed') {
+    return {
+      actual: parseFloat(approval.actual_at_close) || 0,
+      actualHvac: parseFloat(approval.actual_at_close_hvac) || 0,
+    };
+  }
+  // Sum from approved_date's month onward (same unit rows only)
+  const fromMonth = (approval.approved_date || '').slice(0, 7); // YYYY-MM
+  let actual = 0, actualHvac = 0;
+  for (const r of unitCostRows) {
+    if ((r.snapshot_month || '').slice(0, 7) >= fromMonth) {
+      actual += (r.turn_cost_excl_hvac_cash || 0);
+      actualHvac += (r.hvac_cost_cash || 0);
+    }
+  }
+  return { actual, actualHvac };
+}
+
+// Month-range filter: returns true if row's snapshot_month is between selectedMonthFrom and selectedMonth.
+// When both are unset, returns true (show everything).
+function utbInRange(row) {
+  const m = (row.snapshot_month || '').slice(0, 7);
+  if (!m) return false;
+  const from = selectedMonthFrom || DATA.months[0] || m;
+  const to   = selectedMonth     || DATA.months[DATA.months.length - 1] || m;
+  return m >= from && m <= to;
+}
+
+// Property-id-or-name matcher that works on unit turn cost rows.
+// Delegates to the shared matchesSelectedProps() which already handles
+// Group + Property multi-select + per-user property access correctly.
+// (Previous version shortcut to "return true" when selectedProps was empty,
+// which broke group-only filtering — the group still narrows via the filter cache.)
+function utbMatchesProps(r) {
+  return matchesSelectedProps(r);
+}
+
+// Read threshold + multi-cat toggle from toolbar (defaults match Excel's "full turn")
+function utbReadThreshold() {
+  const tEl = document.getElementById('utbThreshold');
+  const mEl = document.getElementById('utbThresholdMultiCat');
+  const threshold = tEl ? (parseFloat(tEl.value) || 0) : 1500;
+  const requireMultiCat = mEl ? mEl.checked : true;
+  return { threshold, requireMultiCat };
+}
+
+// Insight text for the Cost Analysis ranked category table (Excel Section A style)
+const UTB_CATEGORY_INSIGHTS = {
+  labor_general_cash:     'General contractor labor draws across turned units',
+  materials_general_cash: 'Broad supply purchases across many turns',
+  flooring_cash:          'LVP and carpet installs — consistent across most turned units',
+  paint_cash:             'Paint material + painting labor',
+  appliance_cash:         'Appliance replacements on select turns',
+  cabinets_cash:          'Cabinets, cabinet install, millwork',
+  countertops_cash:       'Countertop upgrades on higher-level turns',
+  drywall_cash:           'Drywall material + labor',
+  plumbing_cash:          'Remodel-related plumbing (maintenance-only excluded upstream)',
+  electrical_cash:        'Fixture packages and electrical work in remodels',
+  doors_hardware_cash:    'Doors, lock sets, hardware kits',
+  windows_blinds_cash:    'Blinds, shutters, mirrors',
+  cleaning_cash:          'Construction cleaning — standard make-ready inclusion',
+  hvac_cash:              'HVAC repairs and replacements on select units',
+};
+
 function renderTurns() {
-  if (!DATA.turns) {
-    document.getElementById('turnKpis').innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+  const kpiEl      = document.getElementById('utbKpis');
+  const catGridEl  = document.getElementById('utbCategoryGrid');
+  const propBodyEl = document.getElementById('utbPropBody');
+  const unitBodyEl = document.getElementById('utbUnitBody');
+
+  if (!DATA.unitTurnCosts) {
+    kpiEl.innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading turn cost data…</div>';
     return;
   }
-  const turns = DATA.turns.filter(r => {
-    if (selectedProps.length === 0) return true;
-    const propNames = new Set(getFilteredProps().map(p => p.name));
-    return (r.buildium_property_id && new Set(selectedProps).has(parseInt(r.buildium_property_id)))
-        || (r.property_name && propNames.has(r.property_name));
+
+  const { threshold, requireMultiCat } = utbReadThreshold();
+
+  // 1. Filter to selected properties + month range
+  const costRows = DATA.unitTurnCosts.filter(r => utbMatchesProps(r) && utbInRange(r));
+  const catRows  = DATA.unitTurnCostsByCategory.filter(r => utbMatchesProps(r) && utbInRange(r));
+
+  // 2. Aggregate by unit (across months in range)
+  const byUnit = {};   // key → { propId, propName, unitId, unitNumber, bedrooms, bathrooms, months, turn, hvac, total, txns, vendors }
+  for (const r of costRows) {
+    const k = utbUnitKey(r);
+    if (!byUnit[k]) {
+      byUnit[k] = {
+        key: k,
+        property_id: parseInt(r.property_id) || 0,
+        property_name: r.property_name || '—',
+        unit_id: r.unit_id ?? null,
+        unit_number: r.unit_number || '—',
+        bedrooms: r.bedrooms || '',
+        bathrooms: r.bathrooms || '',
+        months: [],
+        turn_excl_hvac: 0,
+        hvac: 0,
+        total_capex: 0,
+        transactions: 0,
+        vendors: 0,
+        source_rows: [],
+      };
+    }
+    const u = byUnit[k];
+    if (r.snapshot_month) u.months.push(r.snapshot_month);
+    u.turn_excl_hvac += (r.turn_cost_excl_hvac_cash || 0);
+    u.hvac           += (r.hvac_cost_cash || 0);
+    u.total_capex    += (r.total_capex_cash || 0);
+    u.transactions   += (r.transactions || 0);
+    u.vendors         = Math.max(u.vendors, (r.vendors || 0));
+    u.source_rows.push(r);
+  }
+
+  // 3. Aggregate categories by unit (for Top 3 display + drill-in)
+  const byUnitCat = {}; // key → { flooring_cash:.., paint_cash:.., ... }
+  for (const r of catRows) {
+    const k = utbUnitKey(r);
+    if (!byUnitCat[k]) {
+      byUnitCat[k] = {};
+      UTB_TURN_CATEGORIES.forEach(c => { byUnitCat[k][c.key] = 0; });
+      byUnitCat[k][UTB_HVAC_KEY] = 0;
+    }
+    UTB_TURN_CATEGORIES.forEach(c => { byUnitCat[k][c.key] += (r[c.key] || 0); });
+    byUnitCat[k][UTB_HVAC_KEY] += (r[UTB_HVAC_KEY] || 0);
+  }
+
+  // 4. Qualify units against the threshold (matches Excel's "full turn" definition).
+  // Units below threshold stay in allUnits (shown in Unit Detail with a subtle badge)
+  // but are EXCLUDED from KPI counts, averages, and the Cost Analysis ranked tables.
+  const allUnits = Object.values(byUnit);
+  allUnits.forEach(u => {
+    const cats = byUnitCat[u.key] || {};
+    const nonZeroCats = UTB_TURN_CATEGORIES.reduce((n, c) => n + ((cats[c.key] || 0) > 0 ? 1 : 0), 0);
+    u.category_count = nonZeroCats;
+    const thresholdMet = (u.turn_excl_hvac >= threshold);
+    const catsMet = !requireMultiCat || nonZeroCats >= 2;
+    u.qualified = thresholdMet && catsMet;
   });
+  const qualifiedUnits = allUnits.filter(u => u.qualified);
 
-  const active   = turns.filter(r => r.status !== 'Complete' && r.status !== 'Archived');
-  const complete = turns.filter(r => r.status === 'Complete');
-  const makeReady = turns.filter(r => r.board === 'Make Ready');
-  const leaseUp   = turns.filter(r => r.board === 'Lease Up');
+  // KPI math uses the qualified set so avgs match the Excel's $5K-ish Brent Village number.
+  const totalCapex    = qualifiedUnits.reduce((s, u) => s + u.turn_excl_hvac + u.hvac, 0);
+  const totalTurnExcl = qualifiedUnits.reduce((s, u) => s + u.turn_excl_hvac, 0);
+  const totalTurnIncl = qualifiedUnits.reduce((s, u) => s + u.turn_excl_hvac + u.hvac, 0);
+  const avgExcl = qualifiedUnits.length ? totalTurnExcl / qualifiedUnits.length : 0;
+  const avgIncl = qualifiedUnits.length ? totalTurnIncl / qualifiedUnits.length : 0;
+  const uniqueProps = new Set(qualifiedUnits.map(u => u.property_name)).size;
+  const subThresholdCount = allUnits.length - qualifiedUnits.length;
 
-  // Average turn time (completed)
-  const turnDays = complete.filter(r => r.days_in_turn > 0).map(r => r.days_in_turn);
-  const avgTurnTime = turnDays.length > 0 ? turnDays.reduce((a, b) => a + b, 0) / turnDays.length : 0;
+  const openApprovals = (DATA.turnApprovals || []).filter(a => a.status === 'open').length;
+  let approvedSum = 0, actualSum = 0, closedCount = 0;
+  for (const a of (DATA.turnApprovals || [])) {
+    if (a.status !== 'closed') continue;
+    approvedSum += parseFloat(a.approved_amount) || 0;
+    const actHvac = a.include_hvac ? (parseFloat(a.actual_at_close_hvac) || 0) : 0;
+    actualSum   += (parseFloat(a.actual_at_close) || 0) + actHvac;
+    closedCount++;
+  }
+  const closedVariance = actualSum - approvedSum;
+  const thresholdLabel = `≥${fmt$(threshold)}${requireMultiCat ? ' · 2+ cats' : ''}`;
 
-  // Average cost
-  const costs = turns.filter(r => r.estimated_cost > 0).map(r => r.estimated_cost);
-  const avgCost = costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 0;
-
-  document.getElementById('turnKpis').innerHTML = `
+  kpiEl.innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Active Turns</div>
-      <div class="kpi-value ${active.length > 0 ? 'warn' : 'good'}">${active.length}</div>
-      <div class="kpi-sub">${turns.length} total tracked</div>
+      <div class="kpi-label">Total Turns</div>
+      <div class="kpi-value">${qualifiedUnits.length}</div>
+      <div class="kpi-sub">${thresholdLabel}${subThresholdCount ? ` · ${subThresholdCount} below threshold` : ''}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Avg Turn Time</div>
-      <div class="kpi-value">${avgTurnTime > 0 ? Math.round(avgTurnTime) + ' days' : '—'}</div>
-      <div class="kpi-sub">Completed turns</div>
+      <div class="kpi-label">Total CAPEX</div>
+      <div class="kpi-value">${fmt$(totalCapex)}</div>
+      <div class="kpi-sub">${uniqueProps} propert${uniqueProps === 1 ? 'y' : 'ies'}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Avg Est. Cost</div>
-      <div class="kpi-value">${avgCost > 0 ? fmt$(avgCost) : '—'}</div>
-      <div class="kpi-sub">Per turn</div>
+      <div class="kpi-label">Avg Turn (excl HVAC)</div>
+      <div class="kpi-value">${fmt$(avgExcl)}</div>
+      <div class="kpi-sub">per qualified turn</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Completed</div>
-      <div class="kpi-value good">${complete.length}</div>
-      <div class="kpi-sub">${turns.length > 0 ? fmtPct(complete.length / turns.length * 100) : '0%'} completion</div>
+      <div class="kpi-label">Avg Turn (incl HVAC)</div>
+      <div class="kpi-value">${fmt$(avgIncl)}</div>
+      <div class="kpi-sub">per qualified turn</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Open Approvals</div>
+      <div class="kpi-value ${openApprovals > 0 ? 'warn' : ''}">${openApprovals}</div>
+      <div class="kpi-sub">turns with active budget</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Closed Variance</div>
+      <div class="kpi-value ${closedVariance > 0 ? 'bad' : closedVariance < 0 ? 'good' : ''}">${closedCount > 0 ? (closedVariance >= 0 ? '+' : '') + fmt$(closedVariance) : '—'}</div>
+      <div class="kpi-sub">${closedCount} closed · ${closedCount ? fmt$(approvedSum) + ' appr vs ' + fmt$(actualSum) + ' act' : 'no data yet'}</div>
     </div>
   `;
 
-  // Pipeline stages
-  const stages = {};
-  turns.forEach(r => {
-    const key = r.status || 'Unknown';
-    stages[key] = (stages[key] || 0) + 1;
-  });
-  document.getElementById('turnPipeline').innerHTML = Object.entries(stages)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, count]) => `
-      <div class="turn-stage">
-        <div class="ts-count">${count}</div>
-        <div class="ts-label">${label}</div>
+  // Portfolio hero card on Summary by Property tab — Excel Summary page style
+  const heroEl = document.getElementById('utbHero');
+  if (heroEl) {
+    const turnsArr = qualifiedUnits.map(u => u.turn_excl_hvac);
+    const lowest = turnsArr.length ? Math.min(...turnsArr) : 0;
+    const highest = turnsArr.length ? Math.max(...turnsArr) : 0;
+    const portfolioTier = avgExcl < 4000 ? 'low' : avgExcl < 7000 ? 'mid' : 'high';
+    const tierLabel = avgExcl < 4000 ? '🟢 Low ($0–$4K)' : avgExcl < 7000 ? '🟡 Mid ($4–$7K)' : '🔴 High ($7K+)';
+    heroEl.innerHTML = `
+      <div class="utb-hero-title">Portfolio Unit Turn Cost Summary  ·  ${fmtMonthRangeLabel()}  ·  ${thresholdLabel}</div>
+      <div class="utb-hero-grid">
+        <div class="utb-hero-stat"><div class="hs-label"># Units Turned</div><div class="hs-val">${qualifiedUnits.length}</div><div class="hs-sub">across ${uniqueProps} properties</div></div>
+        <div class="utb-hero-stat"><div class="hs-label">Total CAPEX</div><div class="hs-val">${fmt$(totalCapex)}</div><div class="hs-sub">qualified turns only</div></div>
+        <div class="utb-hero-stat"><div class="hs-label">Avg / Turn</div><div class="hs-val">${fmt$(avgExcl)}</div><div class="hs-sub">excl HVAC</div></div>
+        <div class="utb-hero-stat"><div class="hs-label">Lowest Turn</div><div class="hs-val">${lowest > 0 ? fmt$(lowest) : '—'}</div></div>
+        <div class="utb-hero-stat"><div class="hs-label">Highest Turn</div><div class="hs-val">${highest > 0 ? fmt$(highest) : '—'}</div></div>
+        <div class="utb-hero-stat"><div class="hs-label">Cost Tier</div><div class="hs-val" style="font-size:15px;">${tierLabel}</div></div>
       </div>
-    `).join('');
+    `;
+  }
 
-  document.getElementById('turnCount').textContent = `${turns.length} turns`;
-  const tbody = document.getElementById('turnBody');
-  tbody.innerHTML = turns.map(r => {
-    const daysInTurn = r.days_in_turn || (r.start_date ? Math.round((Date.now() - new Date(r.start_date)) / 86400000) : 0);
-    return `<tr>
-      <td>${r.property_name || '—'}</td>
-      <td>${r.unit_number || '—'}</td>
-      <td><span class="status-badge ${r.status === 'Complete' ? 'sb-current' : 'sb-mtm'}">${r.status || '—'}</span></td>
-      <td>${r.board || '—'}</td>
-      <td>${r.finish_level || '—'}</td>
-      <td class="r">${r.estimated_cost ? fmtFull$(r.estimated_cost) : '—'}</td>
-      <td>${fmtDate(r.start_date)}</td>
-      <td class="r ${daysInTurn > 21 ? 'bad' : daysInTurn > 14 ? 'warn' : ''}">${daysInTurn > 0 ? daysInTurn : '—'}</td>
-      <td>${r.current_step || '—'}</td>
+  // 5. Category breakdown (13 cards)
+  const catTotals = {};
+  UTB_TURN_CATEGORIES.forEach(c => { catTotals[c.key] = 0; });
+  catTotals[UTB_HVAC_KEY] = 0;
+  for (const r of catRows) {
+    UTB_TURN_CATEGORIES.forEach(c => { catTotals[c.key] += (r[c.key] || 0); });
+    catTotals[UTB_HVAC_KEY] += (r[UTB_HVAC_KEY] || 0);
+  }
+  const catDisplay = [...UTB_TURN_CATEGORIES, { key: UTB_HVAC_KEY, label: 'HVAC' }];
+  const catGrandTotal = catDisplay.reduce((s, c) => s + catTotals[c.key], 0);
+  const maxCatVal = Math.max(...catDisplay.map(c => catTotals[c.key]), 1);
+  catGridEl.innerHTML = catDisplay
+    .sort((a, b) => catTotals[b.key] - catTotals[a.key])
+    .map(c => {
+      const val = catTotals[c.key];
+      const pct = catGrandTotal > 0 ? (val / catGrandTotal * 100) : 0;
+      const widthPct = maxCatVal > 0 ? (val / maxCatVal * 100) : 0;
+      // Count unique units touching this category
+      const nUnits = Object.keys(byUnitCat).filter(k => byUnitCat[k][c.key] > 0).length;
+      const avg = nUnits > 0 ? val / nUnits : 0;
+      return `
+        <div class="utb-cat-card">
+          <div class="utb-cat-name">${c.label}<span class="pct">${pct.toFixed(1)}%</span></div>
+          <div class="utb-cat-val">${fmt$(val)}</div>
+          <div class="utb-cat-bar"><div style="width:${widthPct.toFixed(1)}%"></div></div>
+          <div class="utb-cat-meta">${nUnits} units · avg ${fmt$(avg)}</div>
+        </div>
+      `;
+    }).join('');
+  const badge = document.getElementById('utbCatRangeBadge');
+  if (badge) badge.textContent = fmtMonthRangeLabel() + ' · ' + catDisplay.length + ' categories';
+
+  // 6. Summary by Property table — use qualified turns only for counts/avgs
+  const byProp = {};
+  for (const u of qualifiedUnits) {
+    const pid = u.property_id;
+    if (!byProp[pid]) {
+      byProp[pid] = { property_id: pid, property_name: u.property_name, turns: [], turnsIncl: [], capex: 0 };
+    }
+    byProp[pid].turns.push(u.turn_excl_hvac);
+    byProp[pid].turnsIncl.push(u.turn_excl_hvac + u.hvac);
+    byProp[pid].capex += (u.turn_excl_hvac + u.hvac);
+  }
+  const propRows = Object.values(byProp).map(p => {
+    const min = p.turns.length ? Math.min(...p.turns) : 0;
+    const max = p.turns.length ? Math.max(...p.turns) : 0;
+    const avgExcl = p.turns.length ? p.turns.reduce((a, b) => a + b, 0) / p.turns.length : 0;
+    const avgIncl = p.turnsIncl.length ? p.turnsIncl.reduce((a, b) => a + b, 0) / p.turnsIncl.length : 0;
+    return {
+      property_id: p.property_id,
+      property_name: p.property_name,
+      num_turns: p.turns.length,
+      total_capex: p.capex,
+      avg_excl: avgExcl,
+      avg_incl: avgIncl,
+      min, max,
+      tier: avgExcl < 4000 ? 'low' : avgExcl < 7000 ? 'mid' : 'high',
+      tier_label: avgExcl < 4000 ? 'Low ($0–$4K)' : avgExcl < 7000 ? 'Mid ($4–$7K)' : 'High ($7K+)',
+    };
+  }).sort((a, b) => b.total_capex - a.total_capex);
+  document.getElementById('utbPropCount').textContent = `${propRows.length} properties`;
+  propBodyEl.innerHTML = propRows.map(p => `
+    <tr data-prop-id="${p.property_id}">
+      <td><span class="utb-prop-link" data-prop-id="${p.property_id}">${p.property_name}</span></td>
+      <td class="r">${p.num_turns}</td>
+      <td class="r">${fmt$(p.total_capex)}</td>
+      <td class="r">${p.avg_excl > 0 ? fmt$(p.avg_excl) : '—'}</td>
+      <td class="r">${p.avg_incl > 0 ? fmt$(p.avg_incl) : '—'}</td>
+      <td class="r">${p.min > 0 ? fmt$(p.min) : '—'}</td>
+      <td class="r">${p.max > 0 ? fmt$(p.max) : '—'}</td>
+      <td><span class="cost-tier tier-${p.tier}">${p.tier_label}</span></td>
+    </tr>
+  `).join('');
+  // Click a property name → filter the property multi-select to just that one
+  propBodyEl.querySelectorAll('.utb-prop-link').forEach(el => {
+    el.addEventListener('click', () => {
+      const pid = parseInt(el.dataset.propId);
+      if (!pid) return;
+      selectedProps = [pid];
+      _filterCacheDirty = true;
+      renderPropChips();
+      renderPropDropdown();
+      onFiltersChanged();
+    });
+  });
+
+  // 7a. Cost Analysis — Section A: ranked category spend table
+  const costRankBody = document.getElementById('utbCostRankBody');
+  if (costRankBody) {
+    const qualifiedKeys = new Set(qualifiedUnits.map(u => u.key));
+    const catStats = [...UTB_TURN_CATEGORIES, { key: UTB_HVAC_KEY, label: 'HVAC' }].map(c => {
+      let total = 0, nUnits = 0;
+      for (const [k, cats] of Object.entries(byUnitCat)) {
+        if (!qualifiedKeys.has(k)) continue;
+        const v = cats[c.key] || 0;
+        if (v > 0) { total += v; nUnits++; }
+      }
+      return { key: c.key, label: c.label, total, nUnits };
+    });
+    const grandTotal = catStats.reduce((s, c) => s + c.total, 0);
+    catStats.sort((a, b) => b.total - a.total);
+    costRankBody.innerHTML = catStats
+      .filter(c => c.total > 0)
+      .map((c, i) => {
+        const pct = grandTotal > 0 ? c.total / grandTotal * 100 : 0;
+        const avgPer = c.nUnits ? c.total / c.nUnits : 0;
+        const insight = UTB_CATEGORY_INSIGHTS[c.key] || '';
+        return `<tr>
+          <td class="r">${i + 1}</td>
+          <td><strong>${c.label}</strong></td>
+          <td class="r">${fmt$(c.total)}</td>
+          <td class="r">${pct.toFixed(1)}%</td>
+          <td class="r">${fmt$(avgPer)}</td>
+          <td class="r">${c.nUnits}</td>
+          <td style="font-size:11px;color:var(--text3);">${insight}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3);">No qualified turns in the current filter.</td></tr>';
+  }
+
+  // 7b. Cost Analysis — Section B: per-unit cost detail (top 25, Excel style)
+  const costDetailBody = document.getElementById('utbCostDetailBody');
+  if (costDetailBody) {
+    const sorted = qualifiedUnits.slice().sort((a, b) => b.turn_excl_hvac - a.turn_excl_hvac);
+    const top = sorted.slice(0, 25);
+    costDetailBody.innerHTML = top.map(u => {
+      const cats = byUnitCat[u.key] || {};
+      const top3 = UTB_TURN_CATEGORIES
+        .map(c => ({ label: c.label, val: cats[c.key] || 0, pct: u.turn_excl_hvac ? (cats[c.key] || 0) / u.turn_excl_hvac * 100 : 0 }))
+        .filter(c => c.val > 0)
+        .sort((a, b) => b.val - a.val);
+      const cat1 = top3[0] ? `${top3[0].label}: ${fmt$(top3[0].val)} (${top3[0].pct.toFixed(0)}%)` : '—';
+      const cat2 = top3[1] ? `${top3[1].label}: ${fmt$(top3[1].val)} (${top3[1].pct.toFixed(0)}%)` : '—';
+      const cat3 = top3[2] ? `${top3[2].label}: ${fmt$(top3[2].val)} (${top3[2].pct.toFixed(0)}%)` : '—';
+      const vsAvg = u.turn_excl_hvac - avgExcl;
+      const vsAvgLabel = vsAvg >= 0 ? `+${fmt$(vsAvg)}` : fmt$(vsAvg);
+      const vsClass = vsAvg > 0 ? 'utb-variance-over' : vsAvg < 0 ? 'utb-variance-under' : 'utb-variance-zero';
+      return `<tr>
+        <td><strong>${u.unit_number}</strong></td>
+        <td>${u.property_name}</td>
+        <td class="r">${fmt$(u.turn_excl_hvac)}</td>
+        <td class="r"><span class="${vsClass}">${vsAvgLabel}</span></td>
+        <td style="font-size:11px;">${cat1}</td>
+        <td style="font-size:11px;">${cat2}</td>
+        <td style="font-size:11px;">${cat3}</td>
+        <td class="r">${u.category_count}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3);">No qualified turns in the current filter.</td></tr>';
+  }
+
+  // 7c. Category Breakdown — property × category matrix
+  const matrixHead = document.getElementById('utbCatMatrixHead');
+  const matrixBody = document.getElementById('utbCatMatrixBody');
+  if (matrixHead && matrixBody) {
+    // Only show categories with any spend in view; HVAC shown separately
+    const activeCats = [...UTB_TURN_CATEGORIES, { key: UTB_HVAC_KEY, label: 'HVAC' }]
+      .filter(c => catTotals[c.key] > 0)
+      .sort((a, b) => catTotals[b.key] - catTotals[a.key]);
+    matrixHead.innerHTML = `
+      <tr>
+        <th>Property</th>
+        <th class="r"># Turns</th>
+        <th class="r">Total</th>
+        ${activeCats.map(c => `<th class="r" style="font-size:9px;">${c.label}</th>`).join('')}
+      </tr>
+    `;
+    // Sum per-property-per-category across qualified units
+    const matrixByProp = {};
+    for (const u of qualifiedUnits) {
+      const pid = u.property_id;
+      if (!matrixByProp[pid]) {
+        matrixByProp[pid] = { property_name: u.property_name, n: 0, total: 0, cats: {} };
+        activeCats.forEach(c => { matrixByProp[pid].cats[c.key] = 0; });
+      }
+      matrixByProp[pid].n += 1;
+      matrixByProp[pid].total += (u.turn_excl_hvac + u.hvac);
+      const cats = byUnitCat[u.key] || {};
+      activeCats.forEach(c => { matrixByProp[pid].cats[c.key] += (cats[c.key] || 0); });
+    }
+    const matrixRows = Object.values(matrixByProp).sort((a, b) => b.total - a.total);
+    matrixBody.innerHTML = matrixRows.map(row => {
+      return `<tr>
+        <td><strong>${row.property_name}</strong></td>
+        <td class="r">${row.n}</td>
+        <td class="r"><strong>${fmt$(row.total)}</strong></td>
+        ${activeCats.map(c => {
+          const v = row.cats[c.key] || 0;
+          const cls = v === 0 ? 'style="color:var(--text3);opacity:.4;"' : '';
+          return `<td class="r" ${cls}>${v > 0 ? fmt$(v) : '—'}</td>`;
+        }).join('')}
+      </tr>`;
+    }).join('') || '<tr><td colspan="100" style="text-align:center;padding:20px;color:var(--text3);">No qualified turns.</td></tr>';
+  }
+
+  // 7. Unit Detail table — one row per unit, sorted by total descending
+  const unitRows = allUnits
+    .filter(u => u.turn_excl_hvac > 0 || u.hvac > 0 || u.total_capex > 0)
+    .sort((a, b) => (b.turn_excl_hvac + b.hvac) - (a.turn_excl_hvac + a.hvac));
+  document.getElementById('utbUnitCount').textContent = `${unitRows.length} units · ${qualifiedUnits.length} qualified`;
+  unitBodyEl.innerHTML = unitRows.map(u => {
+    // Top 3 categories for this unit
+    const cats = byUnitCat[u.key] || {};
+    const top3 = UTB_TURN_CATEGORIES
+      .map(c => ({ label: c.label, val: cats[c.key] || 0 }))
+      .filter(c => c.val > 0)
+      .sort((a, b) => b.val - a.val)
+      .slice(0, 3)
+      .map(c => `${c.label}: ${fmt$(c.val)}`)
+      .join(', ') || '—';
+
+    // Approval lookup
+    const appr = utbFindApproval(u.property_id, u.unit_id, u.unit_number, DATA.turnApprovals);
+    let approvedCell = '—';
+    let varianceCell = '<span class="utb-variance-zero">—</span>';
+    let actionCell;
+    if (appr) {
+      const approved = parseFloat(appr.approved_amount) || 0;
+      approvedCell = fmt$(approved);
+      const { actual, actualHvac } = utbComputeActualForApproval(appr, u.source_rows);
+      const totalActual = actual + (appr.include_hvac ? actualHvac : 0);
+      const variance = totalActual - approved;
+      const varClass = variance > 0 ? 'utb-variance-over' : variance < 0 ? 'utb-variance-under' : 'utb-variance-zero';
+      varianceCell = `<span class="${varClass}">${(variance > 0 ? '+' : '')}${fmt$(variance)}</span>`;
+      const badgeClass = appr.status === 'closed' ? 'closed' : 'open';
+      const badgeLabel = appr.status === 'closed' ? 'Closed' : 'Open';
+      approvedCell = `${fmt$(approved)} <span class="utb-appr-badge ${badgeClass}">${badgeLabel}</span>`;
+      actionCell = `<button class="utb-row-btn primary" data-action="view-unit" data-key="${u.key}">View</button>`;
+    } else {
+      actionCell = `<button class="utb-row-btn" data-action="approve" data-key="${u.key}">Approve</button>
+                    <button class="utb-row-btn primary" data-action="view-unit" data-key="${u.key}" style="margin-left:4px;">View</button>`;
+    }
+
+    const monthsLabel = u.months.length
+      ? (u.months.length === 1 ? fmtMonth(u.months[0].slice(0, 7)) : `${u.months.length} mo`)
+      : '—';
+    const bb = `${u.bedrooms || ''}${u.bedrooms && u.bathrooms ? ' / ' : ''}${u.bathrooms || ''}`.trim() || '—';
+
+    const subThresholdBadge = u.qualified ? '' : `<span class="utb-appr-badge none" title="Below threshold (${fmt$(threshold)}${requireMultiCat ? ' or <2 categories' : ''})">Sub-threshold</span>`;
+    return `<tr${u.qualified ? '' : ' style="opacity:.55;"'}>
+      <td>${u.property_name}</td>
+      <td><strong>${u.unit_number}</strong> ${subThresholdBadge}</td>
+      <td>${bb}</td>
+      <td>${monthsLabel}</td>
+      <td class="r">${fmt$(u.turn_excl_hvac)}</td>
+      <td class="r">${u.hvac > 0 ? fmt$(u.hvac) : '—'}</td>
+      <td class="r"><strong>${fmt$(u.turn_excl_hvac + u.hvac)}</strong></td>
+      <td style="font-size:11px;color:var(--text3);">${top3}</td>
+      <td class="r">${approvedCell}</td>
+      <td class="r">${varianceCell}</td>
+      <td>${actionCell}</td>
     </tr>`;
   }).join('');
 
-  document.getElementById('turnSearch').oninput = function() {
+  // Build a lookup so the button handlers can retrieve unit + categories quickly
+  window._utbUnitLookup = {};
+  unitRows.forEach(u => { window._utbUnitLookup[u.key] = { unit: u, cats: byUnitCat[u.key] || {} }; });
+
+  // Wire row-level action buttons (approve / view)
+  unitBodyEl.querySelectorAll('[data-action="approve"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const entry = window._utbUnitLookup[btn.dataset.key];
+      if (!entry) return;
+      utbOpenApprovalModal({ prefillUnit: entry.unit });
+    });
+  });
+  unitBodyEl.querySelectorAll('[data-action="view-unit"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const entry = window._utbUnitLookup[btn.dataset.key];
+      if (!entry) return;
+      utbOpenDrillIn(entry.unit, entry.cats);
+    });
+  });
+
+  // Search wiring for both tables
+  const propSearch = document.getElementById('utbPropSearch');
+  propSearch.oninput = function() {
+    const q = this.value.toLowerCase();
+    propBodyEl.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  };
+  const unitSearch = document.getElementById('utbUnitSearch');
+  unitSearch.oninput = function() {
+    const q = this.value.toLowerCase();
+    unitBodyEl.querySelectorAll('tr').forEach(tr => {
+      tr.style.display = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  };
+}
+
+// ── APPROVAL MODAL ──────────────────────────────────────────────
+function utbOpenApprovalModal({ prefillUnit = null, editingApproval = null } = {}) {
+  const backdrop = document.getElementById('utbApprovalBackdrop');
+  const titleEl = document.getElementById('utbApprovalTitle');
+  const propSel = document.getElementById('utbApprovalProperty');
+  const unitSel = document.getElementById('utbApprovalUnit');
+  const amountIn = document.getElementById('utbApprovalAmount');
+  const dateIn = document.getElementById('utbApprovalDate');
+  const notesIn = document.getElementById('utbApprovalNotes');
+  const hvacIn = document.getElementById('utbApprovalHvac');
+  const idIn = document.getElementById('utbApprovalId');
+  const errEl = document.getElementById('utbApprovalError');
+
+  errEl.textContent = '';
+  idIn.value = editingApproval ? editingApproval.id : '';
+  titleEl.textContent = editingApproval ? 'Edit Unit Turn Approval' : 'Approve Unit Turn Budget';
+
+  // Populate properties dropdown from allProperties (respects user access)
+  const props = allProperties.slice().sort((a, b) => a.name.localeCompare(b.name));
+  propSel.innerHTML = '<option value="">Select property…</option>' + props.map(p => {
+    const selected = (prefillUnit && prefillUnit.property_id === p.id) || (editingApproval && parseInt(editingApproval.buildium_property_id) === p.id) ? ' selected' : '';
+    return `<option value="${p.id}"${selected}>${p.name}</option>`;
+  }).join('');
+
+  function rebuildUnitOptions(propId) {
+    const units = {};
+    (DATA.unitTurnCosts || []).forEach(r => {
+      if (parseInt(r.property_id) !== propId) return;
+      const n = r.unit_number;
+      if (!units[n]) units[n] = { unit_number: n, unit_id: r.unit_id };
+    });
+    const arr = Object.values(units).sort((a, b) => String(a.unit_number).localeCompare(String(b.unit_number), undefined, { numeric: true }));
+    unitSel.innerHTML = '<option value="">Select unit…</option>' + arr.map(u => {
+      const sel = (prefillUnit && prefillUnit.unit_number === u.unit_number) || (editingApproval && editingApproval.unit_number === u.unit_number) ? ' selected' : '';
+      return `<option value="${u.unit_number}" data-unit-id="${u.unit_id || ''}"${sel}>${u.unit_number}</option>`;
+    }).join('');
+  }
+  propSel.onchange = () => rebuildUnitOptions(parseInt(propSel.value));
+  if (prefillUnit) rebuildUnitOptions(prefillUnit.property_id);
+  else if (editingApproval) rebuildUnitOptions(parseInt(editingApproval.buildium_property_id));
+  else unitSel.innerHTML = '<option value="">Select a property first</option>';
+
+  // Defaults
+  amountIn.value = editingApproval ? editingApproval.approved_amount : '';
+  dateIn.value = editingApproval ? (editingApproval.approved_date || '').slice(0, 10) : new Date().toISOString().slice(0, 10);
+  notesIn.value = editingApproval ? (editingApproval.scope_notes || '') : '';
+  hvacIn.checked = editingApproval ? !!editingApproval.include_hvac : true;
+
+  backdrop.classList.add('open');
+  setTimeout(() => amountIn.focus(), 50);
+}
+
+function utbCloseApprovalModal() {
+  document.getElementById('utbApprovalBackdrop').classList.remove('open');
+}
+
+async function utbSubmitApproval(ev) {
+  ev.preventDefault();
+  const errEl = document.getElementById('utbApprovalError');
+  const saveBtn = document.getElementById('utbApprovalSave');
+  errEl.textContent = '';
+
+  const propSel = document.getElementById('utbApprovalProperty');
+  const unitSel = document.getElementById('utbApprovalUnit');
+  const propId = parseInt(propSel.value);
+  const unitNumber = unitSel.value;
+  const unitIdRaw = unitSel.selectedOptions[0] ? unitSel.selectedOptions[0].dataset.unitId : '';
+  const unitId = unitIdRaw ? parseInt(unitIdRaw) : null;
+  const amount = parseFloat(document.getElementById('utbApprovalAmount').value);
+  const date = document.getElementById('utbApprovalDate').value;
+  const notes = document.getElementById('utbApprovalNotes').value.trim();
+  const includeHvac = document.getElementById('utbApprovalHvac').checked;
+  const editingId = document.getElementById('utbApprovalId').value;
+
+  if (!propId) return errEl.textContent = 'Select a property.';
+  if (!unitNumber) return errEl.textContent = 'Select a unit.';
+  if (!(amount >= 0)) return errEl.textContent = 'Enter a valid approved amount.';
+  if (!date) return errEl.textContent = 'Select an approved date.';
+
+  const property_name = (allProperties.find(p => p.id === propId) || {}).name || '';
+  const payload = {
+    buildium_property_id: propId,
+    property_name,
+    unit_id: unitId,
+    unit_number: unitNumber,
+    approved_amount: amount,
+    approved_date: date,
+    scope_notes: notes || null,
+    include_hvac: includeHvac,
+    approved_by: null,  // set below if we have a JWT user
+  };
+
+  // If the user is signed in, set approved_by from the JWT
+  try {
+    const token = getAuthToken();
+    if (token) {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const claims = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (claims && claims.sub) payload.approved_by = claims.sub;
+      }
+    }
+  } catch (e) { /* non-fatal */ }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  try {
+    const url = editingId
+      ? `${SUPA_URL}/rest/v1/unit_turn_approvals?id=eq.${editingId}`
+      : `${SUPA_URL}/rest/v1/unit_turn_approvals`;
+    const method = editingId ? 'PATCH' : 'POST';
+    const token = getAuthToken();
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPA_KEY}`,
+        'apikey': SUPA_KEY,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`${res.status}: ${txt}`);
+    }
+    const result = await res.json();
+    // Update local DATA.turnApprovals
+    if (editingId) {
+      DATA.turnApprovals = DATA.turnApprovals.map(a => a.id === editingId ? (Array.isArray(result) ? result[0] : result) : a);
+    } else {
+      const newRow = Array.isArray(result) ? result[0] : result;
+      DATA.turnApprovals = [newRow, ...DATA.turnApprovals];
+    }
+    utbCloseApprovalModal();
+    renderTurns();
+    showToast('Approval saved');
+  } catch (e) {
+    console.error('[UnitTurnBoard] save approval failed:', e);
+    errEl.textContent = 'Save failed: ' + e.message + '. (If you are not signed in with a role that can write, you may need to log in as superadmin/admin/asset_manager/property_manager.)';
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Approval';
+  }
+}
+
+// Mark an approval closed — snapshots current actual as actual_at_close so later
+// BigQuery refreshes don't keep moving the "closed" variance.
+async function utbCloseApproval(approvalId) {
+  const appr = DATA.turnApprovals.find(a => a.id === approvalId);
+  if (!appr) return;
+  // Recompute actual at the moment of close
+  const unitRows = (DATA.unitTurnCosts || []).filter(r =>
+    (r.unit_id != null && appr.unit_id != null && r.unit_id === appr.unit_id) ||
+    (parseInt(r.property_id) === parseInt(appr.buildium_property_id) && String(r.unit_number) === String(appr.unit_number))
+  );
+  const { actual, actualHvac } = utbComputeActualForApproval({ ...appr, status: 'open' }, unitRows);
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${SUPA_URL}/rest/v1/unit_turn_approvals?id=eq.${approvalId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPA_KEY}`,
+        'apikey': SUPA_KEY,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({
+        status: 'closed',
+        closed_at: new Date().toISOString().slice(0, 10),
+        actual_at_close: actual,
+        actual_at_close_hvac: actualHvac,
+      }),
+    });
+    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    const rows = await res.json();
+    const updated = Array.isArray(rows) ? rows[0] : rows;
+    DATA.turnApprovals = DATA.turnApprovals.map(a => a.id === approvalId ? updated : a);
+    renderTurns();
+    showToast('Approval closed');
+  } catch (e) {
+    console.error('[UnitTurnBoard] close approval failed:', e);
+    alert('Close failed: ' + e.message);
+  }
+}
+
+// ── UNIT DRILL-IN MODAL ─────────────────────────────────────────
+async function utbOpenDrillIn(unit, cats) {
+  const backdrop = document.getElementById('utbDrillBackdrop');
+  const titleEl = document.getElementById('utbDrillTitle');
+  const subEl = document.getElementById('utbDrillSub');
+  const kpiEl = document.getElementById('utbDrillKpis');
+  const apprEl = document.getElementById('utbDrillApproval');
+  const catEl = document.getElementById('utbDrillCats');
+  const txnTable = document.getElementById('utbDrillTxns').querySelector('tbody');
+  const txnCount = document.getElementById('utbDrillTxnCount');
+
+  titleEl.textContent = `${unit.property_name} — Unit ${unit.unit_number}`;
+  const months = unit.months.sort();
+  const mRange = months.length > 1 ? `${fmtMonth(months[0].slice(0,7))} – ${fmtMonth(months[months.length-1].slice(0,7))}` : (months[0] ? fmtMonth(months[0].slice(0,7)) : '—');
+  subEl.textContent = `${unit.bedrooms || ''} ${unit.bathrooms || ''}  ·  ${mRange}  ·  ${unit.transactions} transactions  ·  ${unit.vendors} vendors`;
+
+  // KPI strip
+  kpiEl.innerHTML = `
+    <div class="utb-drill-kpi"><div class="k-label">Turn (excl HVAC)</div><div class="k-val">${fmt$(unit.turn_excl_hvac)}</div></div>
+    <div class="utb-drill-kpi"><div class="k-label">HVAC</div><div class="k-val">${fmt$(unit.hvac)}</div></div>
+    <div class="utb-drill-kpi"><div class="k-label">Turn (incl HVAC)</div><div class="k-val">${fmt$(unit.turn_excl_hvac + unit.hvac)}</div></div>
+    <div class="utb-drill-kpi"><div class="k-label">Total CAPEX</div><div class="k-val">${fmt$(unit.total_capex)}</div></div>
+  `;
+
+  // Approval summary (if any)
+  const appr = utbFindApproval(unit.property_id, unit.unit_id, unit.unit_number, DATA.turnApprovals);
+  if (appr) {
+    const { actual, actualHvac } = utbComputeActualForApproval(appr, unit.source_rows);
+    const totalActual = actual + (appr.include_hvac ? actualHvac : 0);
+    const approved = parseFloat(appr.approved_amount) || 0;
+    const variance = totalActual - approved;
+    const varClass = variance > 0 ? 'utb-variance-over' : variance < 0 ? 'utb-variance-under' : 'utb-variance-zero';
+    const badge = appr.status === 'closed' ? '<span class="utb-appr-badge closed">Closed</span>' : '<span class="utb-appr-badge open">Open</span>';
+    apprEl.innerHTML = `
+      <div class="utb-appr-box">
+        <div class="ab-head">
+          <div class="ab-title">Approval  ${badge}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="utb-row-btn" id="utbDrillEditAppr">Edit</button>
+            ${appr.status === 'open' ? `<button class="utb-row-btn primary" id="utbDrillCloseAppr">Mark Closed</button>` : ''}
+          </div>
+        </div>
+        <div class="utb-appr-grid">
+          <div>
+            <div class="ag-label">Approved</div>
+            <div class="ag-val">${fmt$(approved)}</div>
+          </div>
+          <div>
+            <div class="ag-label">Actual ${appr.include_hvac ? '(incl HVAC)' : '(excl HVAC)'}</div>
+            <div class="ag-val">${fmt$(totalActual)}</div>
+          </div>
+          <div>
+            <div class="ag-label">Variance</div>
+            <div class="ag-val ${varClass}">${variance >= 0 ? '+' : ''}${fmt$(variance)}</div>
+          </div>
+          <div>
+            <div class="ag-label">Approved Date</div>
+            <div class="ag-val">${fmtDate(appr.approved_date)}</div>
+          </div>
+          <div>
+            <div class="ag-label">Scope Notes</div>
+            <div class="ag-val" style="font-size:11px;font-family:var(--font);color:var(--text2);">${appr.scope_notes || '—'}</div>
+          </div>
+          <div>
+            <div class="ag-label">Status</div>
+            <div class="ag-val">${appr.status}${appr.closed_at ? ' · ' + fmtDate(appr.closed_at) : ''}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    const editBtn = document.getElementById('utbDrillEditAppr');
+    if (editBtn) editBtn.onclick = () => { utbCloseDrillIn(); utbOpenApprovalModal({ editingApproval: appr }); };
+    const closeApprBtn = document.getElementById('utbDrillCloseAppr');
+    if (closeApprBtn) closeApprBtn.onclick = () => {
+      if (confirm('Mark this approval as closed? The current actual will be locked in for variance comparison.')) {
+        utbCloseApproval(appr.id);
+        utbCloseDrillIn();
+      }
+    };
+  } else {
+    apprEl.innerHTML = `
+      <div class="utb-appr-box">
+        <div class="ab-head">
+          <div class="ab-title">No approval on record</div>
+          <button class="utb-row-btn primary" id="utbDrillCreateAppr">+ Add Approval</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);">Approve a budget for this turn to start tracking variance vs actuals.</div>
+      </div>
+    `;
+    document.getElementById('utbDrillCreateAppr').onclick = () => { utbCloseDrillIn(); utbOpenApprovalModal({ prefillUnit: unit }); };
+  }
+
+  // Category breakdown
+  const catSorted = [...UTB_TURN_CATEGORIES, { key: UTB_HVAC_KEY, label: 'HVAC' }]
+    .map(c => ({ ...c, val: cats[c.key] || 0 }))
+    .sort((a, b) => b.val - a.val);
+  const maxCatVal = Math.max(...catSorted.map(c => c.val), 1);
+  const catGrand = catSorted.reduce((s, c) => s + c.val, 0);
+  catEl.innerHTML = catSorted.map(c => {
+    const pct = catGrand > 0 ? (c.val / catGrand * 100) : 0;
+    const width = maxCatVal > 0 ? (c.val / maxCatVal * 100) : 0;
+    return `<div class="utb-drill-cat ${c.val === 0 ? 'empty' : ''}">
+      <div class="c-name">${c.label}</div>
+      <div class="c-bar"><div style="width:${width.toFixed(1)}%"></div></div>
+      <div class="c-val">${fmt$(c.val)}${c.val > 0 ? ` (${pct.toFixed(0)}%)` : ''}</div>
+    </div>`;
+  }).join('');
+
+  // Transactions — on-demand fetch via edge function
+  txnTable.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3);">Loading transactions…</td></tr>`;
+  txnCount.textContent = '';
+  backdrop.classList.add('open');
+
+  try {
+    const res = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'apikey': SUPA_KEY,
+      },
+      body: JSON.stringify({ type: 'capex_transactions_cash', unit_id: unit.unit_id }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const j = await res.json();
+    const txns = (j.rows || []).sort((a, b) => String(b.transaction_date).localeCompare(String(a.transaction_date)));
+    txnCount.textContent = `${txns.length} lines`;
+    if (!txns.length) {
+      txnTable.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3);">No transactions for this unit in BigQuery.</td></tr>`;
+    } else {
+      txnTable.innerHTML = txns.map(t => `<tr>
+        <td>${fmtDate(t.transaction_date)}</td>
+        <td style="color:var(--text3);">${t.transaction_type || '—'}</td>
+        <td>${t.payee_name || '—'}</td>
+        <td style="color:var(--text3);">${t.gl_account_name || '—'}</td>
+        <td style="color:var(--text3);">${t.line_memo || ''}</td>
+        <td class="r">${fmtFull$(parseFloat(t.amount) || 0)}</td>
+      </tr>`).join('');
+    }
+  } catch (e) {
+    console.error('[UnitTurnBoard] txn drill-in failed:', e);
+    txnTable.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red);">Error loading transactions: ${e.message}</td></tr>`;
+  }
+}
+
+function utbCloseDrillIn() {
+  document.getElementById('utbDrillBackdrop').classList.remove('open');
+}
+
+// ── Wire up modals + tabs on DOMContentLoaded ──
+function utbInitUI() {
+  const newBtn = document.getElementById('utbNewApprovalBtn');
+  if (newBtn) newBtn.addEventListener('click', () => utbOpenApprovalModal({}));
+  const cancelBtn = document.getElementById('utbApprovalCancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', utbCloseApprovalModal);
+  const form = document.getElementById('utbApprovalForm');
+  if (form) form.addEventListener('submit', utbSubmitApproval);
+  const drillClose = document.getElementById('utbDrillClose');
+  if (drillClose) drillClose.addEventListener('click', utbCloseDrillIn);
+  // Close modals when clicking the backdrop
+  document.getElementById('utbApprovalBackdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'utbApprovalBackdrop') utbCloseApprovalModal();
+  });
+  document.getElementById('utbDrillBackdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'utbDrillBackdrop') utbCloseDrillIn();
+  });
+
+  // Tab switching
+  document.querySelectorAll('.utb-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.utb-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
+      document.querySelectorAll('.utb-tab-panel').forEach(p => {
+        p.style.display = (p.dataset.panel === target) ? '' : 'none';
+      });
+    });
+  });
+
+  // Threshold input changes — re-render on blur/enter so numbers settle
+  const tInput = document.getElementById('utbThreshold');
+  if (tInput) {
+    let tTimer;
+    const trigger = () => { if (currentView === 'turns') renderTurns(); };
+    tInput.addEventListener('input', () => { clearTimeout(tTimer); tTimer = setTimeout(trigger, 350); });
+    tInput.addEventListener('change', trigger);
+  }
+  const mCat = document.getElementById('utbThresholdMultiCat');
+  if (mCat) mCat.addEventListener('change', () => { if (currentView === 'turns') renderTurns(); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', utbInitUI);
+else utbInitUI();
+
+
+// ════════════════════════════════════════
+//  VIEW: DELINQUENCY
+// ════════════════════════════════════════
+// Mirrors John's weekly delinquency workbook. Data flow:
+//   delinquency_property_rollup  → per (snapshot_date × property_id) aggregates
+//   delinquency_snapshot_dates   → list of available weekly snapshots (picker)
+//   property_groups              → property ↔ group_name (for Group grain + Market mapping)
+//   MARKET_MAPPING               → group_name ↔ market label (top-of-file constant)
+//
+// Grain is user-selectable via the "Group by" filter: market / group / property.
+// The existing Group and Property multi-select filters narrow *which properties contribute*
+// to each row (e.g. pick Group="Tim's Properties" + Group by Market → only Tim's
+// properties are summed into each market row).
+//
+// WoW Δ is computed CLIENT-SIDE by pairing the selected snapshot_date with the snapshot
+// exactly 7 days earlier, falling back to "most recent earlier snapshot" if 7-day doesn't
+// exist. When no prior snapshot is available (fresh pipeline), WoW renders as "—".
+
+// Build a property_id → market label index using MARKET_MAPPING + property_groups.
+// A property in multiple mapped groups is assigned to the FIRST market it matches.
+// `extraPropertyIds` (by property_id) pins specific properties into a market
+// regardless of their groups. Unmapped properties are OMITTED from the index.
+function buildMarketIndex() {
+  const pgs = DATA.propertyGroups || [];
+  const propToMarket = {};
+  const propToGroups = {};
+  for (const r of pgs) {
+    const pid = parseInt(r.property_id);
+    if (!pid) continue;
+    if (!propToGroups[pid]) propToGroups[pid] = [];
+    propToGroups[pid].push(r.group_name);
+  }
+  // Pass 1 — assign by group membership (first market in MARKET_MAPPING wins)
+  for (const pidStr of Object.keys(propToGroups)) {
+    const pid = parseInt(pidStr);
+    const groups = propToGroups[pid];
+    for (const { market, groups: mktGroups } of MARKET_MAPPING) {
+      if (mktGroups.some(g => groups.includes(g))) {
+        propToMarket[pid] = market;
+        break;
+      }
+    }
+  }
+  // Pass 2 — apply extraPropertyIds overrides (deterministic by property_id)
+  for (const { market, extraPropertyIds } of MARKET_MAPPING) {
+    if (!extraPropertyIds) continue;
+    for (const pid of extraPropertyIds) {
+      propToMarket[parseInt(pid)] = market;  // override wins regardless of group
+    }
+  }
+  return propToMarket;
+}
+
+// Populate the snapshot-date picker. Defaults to the most recent date available.
+function populateDelinquencyDates() {
+  const sel = document.getElementById('delinqDateFilter');
+  const dates = (DATA.delinquencyDates || []).map(r => r.snapshot_date).filter(Boolean);
+  if (!dates.length) {
+    sel.innerHTML = '<option value="">(no snapshots)</option>';
+    return;
+  }
+  // Default to most recent snapshot
+  if (!selectedDelinqDate || !dates.includes(selectedDelinqDate)) {
+    selectedDelinqDate = dates[0];
+  }
+  sel.innerHTML = dates.map(d =>
+    `<option value="${d}"${d === selectedDelinqDate ? ' selected' : ''}>${d}</option>`
+  ).join('');
+}
+
+// Given a target snapshot_date, return the "prior" snapshot_date — exactly 7 days before if
+// it exists, otherwise the most recent earlier snapshot. Returns null if nothing earlier.
+function findPriorSnapshotDate(target) {
+  if (!target) return null;
+  const all = (DATA.delinquencyDates || []).map(r => r.snapshot_date).filter(Boolean);
+  // Exact 7-day prior
+  const t = new Date(target + 'T00:00:00');
+  const seven = new Date(t.getTime() - 7 * 86400000);
+  const sevenStr = seven.toISOString().slice(0, 10);
+  if (all.includes(sevenStr)) return sevenStr;
+  // Fallback: most recent earlier snapshot
+  const earlier = all.filter(d => d < target).sort();
+  return earlier.length ? earlier[earlier.length - 1] : null;
+}
+
+// Per-property aggregator for a single snapshot_date, honoring Property + Group filters.
+// Returns rows grouped by the requested grain (market / group / property).
+function aggregateDelinquency(snapshotDate, grain, marketIdx, propNameIdx) {
+  const rollup = (DATA.delinquencyRollup || []).filter(r => r.snapshot_date === snapshotDate);
+  const pgs = DATA.propertyGroups || [];
+  // pid → [group_names]
+  const pidToGroups = {};
+  for (const r of pgs) {
+    const pid = parseInt(r.property_id);
+    if (!pid) continue;
+    if (!pidToGroups[pid]) pidToGroups[pid] = [];
+    pidToGroups[pid].push(r.group_name);
+  }
+  const buckets = {};
+  for (const row of rollup) {
+    const pid = parseInt(row.property_id);
+    if (!pid) continue;
+    // Exclude properties that don't belong to any configured market
+    // (keeps the Delinquency view scoped to the 7 markets John actually reports on).
+    if (!marketIdx[pid]) continue;
+    // Apply Property + Group filter (uses the existing universal filter, which already honors
+    // both the group-name dropdown and the property multi-select).
+    if (!matchesSelectedProps({ property_id: pid, property_name: row.property_name })) continue;
+
+    let key;
+    if (grain === 'market') {
+      key = marketIdx[pid];
+    } else if (grain === 'group') {
+      // Emit under the mapped market's groups (not every Buildium group the property is in)
+      // so the Group view reflects the same universe as the Market view.
+      const mappedGroups = (MARKET_MAPPING.find(m => m.market === marketIdx[pid])?.groups) || [];
+      const propertyOverrides = MARKET_MAPPING
+        .filter(m => (m.extraPropertyIds || []).includes(pid))
+        .map(m => `${m.market} (direct)`);
+      const keys = [...mappedGroups, ...propertyOverrides];
+      if (!keys.length) continue;
+      for (const g of keys) addToBucket(buckets, g, row);
+      continue;
+    } else {
+      key = propNameIdx[pid] || row.property_name || `Property ${pid}`;
+    }
+    addToBucket(buckets, key, row);
+  }
+  return buckets;
+}
+
+function addToBucket(buckets, key, row) {
+  if (!buckets[key]) {
+    buckets[key] = {
+      label: key,
+      expected_rent: 0,
+      total_delinquency: 0,
+      balance_0_30: 0,
+      balance_31_60: 0,
+      balance_61_90: 0,
+      balance_over_90: 0,
+      eviction_carry_over: 0,
+      prepaid_balance: 0,
+      property_count: 0,
+      properties: new Set(),
+    };
+  }
+  const b = buckets[key];
+  // expected_rent is per-property (same value across snapshots), so only add it once per property
+  const pid = row.property_id;
+  if (!b.properties.has(pid)) {
+    b.expected_rent += parseFloat(row.expected_rent) || 0;
+    b.properties.add(pid);
+    b.property_count++;
+  }
+  b.total_delinquency  += parseFloat(row.total_delinquency)  || 0;
+  b.balance_0_30       += parseFloat(row.balance_0_30)       || 0;
+  b.balance_31_60      += parseFloat(row.balance_31_60)      || 0;
+  b.balance_61_90      += parseFloat(row.balance_61_90)      || 0;
+  b.balance_over_90    += parseFloat(row.balance_over_90)    || 0;
+  b.eviction_carry_over += parseFloat(row.eviction_carry_over) || 0;
+  b.prepaid_balance    += parseFloat(row.prepaid_balance)    || 0;
+}
+
+function renderDelinquency() {
+  const kpiHost = document.getElementById('delinqKpis');
+  if (!DATA.delinquencyRollup) {
+    kpiHost.innerHTML = '<div class="loading-spinner"><div class="spinner"></div> Loading…</div>';
+    return;
+  }
+
+  // Populate date picker if not yet done (or if snapshots changed)
+  populateDelinquencyDates();
+
+  const snapshotDate = selectedDelinqDate;
+  const priorDate = findPriorSnapshotDate(snapshotDate);
+
+  // Indexes
+  const marketIdx = buildMarketIndex();
+  const propNameIdx = {};
+  for (const p of allProperties) propNameIdx[p.id] = p.name;
+
+  const grain = delinqGroupBy;
+  const curr  = aggregateDelinquency(snapshotDate, grain, marketIdx, propNameIdx);
+  const prev  = priorDate ? aggregateDelinquency(priorDate, grain, marketIdx, propNameIdx) : {};
+
+  // ── Row order: for market grain, use MARKET_ORDER; otherwise alphabetical (with Total at bottom via tfoot) ──
+  let orderedKeys;
+  if (grain === 'market') {
+    orderedKeys = MARKET_ORDER.filter(m => curr[m]);
+    // Any market we haven't pre-ordered (shouldn't happen) goes to the end
+    for (const k of Object.keys(curr)) if (!orderedKeys.includes(k)) orderedKeys.push(k);
+  } else {
+    orderedKeys = Object.keys(curr).sort();
+  }
+
+  // ── KPI totals — computed directly from the rollup (not from buckets) so they're
+  // accurate regardless of grain. When grain is "group", a property can appear in
+  // multiple groups; summing buckets would double-count. So we sum the filtered rollup
+  // rows once per property here.
+  const totalsFor = (snap) => {
+    const rows = (DATA.delinquencyRollup || []).filter(r =>
+      r.snapshot_date === snap &&
+      !!marketIdx[parseInt(r.property_id)] &&  // only properties in a mapped market
+      matchesSelectedProps({ property_id: parseInt(r.property_id), property_name: r.property_name })
+    );
+    return rows.reduce((acc, r) => ({
+      income: acc.income + (parseFloat(r.expected_rent) || 0),
+      delinq: acc.delinq + (parseFloat(r.total_delinquency) || 0),
+      b0_30:  acc.b0_30  + (parseFloat(r.balance_0_30) || 0),
+      eco:    acc.eco    + (parseFloat(r.eviction_carry_over) || 0),
+      prep:   acc.prep   + (parseFloat(r.prepaid_balance) || 0),
+    }), { income: 0, delinq: 0, b0_30: 0, eco: 0, prep: 0 });
+  };
+  const totals = totalsFor(snapshotDate);
+  const priorTotals = priorDate ? totalsFor(priorDate) : { delinq: 0, b0_30: 0 };
+
+  const delinqPct = totals.income > 0 ? (totals.delinq / totals.income * 100) : 0;
+  const b030Pct   = totals.income > 0 ? (totals.b0_30  / totals.income * 100) : 0;
+  const wowDelinq = priorDate && priorTotals.delinq > 0
+    ? ((totals.delinq - priorTotals.delinq) / priorTotals.delinq * 100) : null;
+  const wowB030   = priorDate && priorTotals.b0_30 > 0
+    ? ((totals.b0_30 - priorTotals.b0_30) / priorTotals.b0_30 * 100) : null;
+
+  const fmtWow = (v) => {
+    if (v == null) return '—';
+    const sign = v >= 0 ? '+' : '';
+    const cls = v <= 0 ? 'good' : 'bad'; // delinquency going DOWN is good
+    return `<span class="${cls}">${sign}${v.toFixed(2)}%</span>`;
+  };
+
+  const priorNote = priorDate ? `vs ${priorDate}` : 'no prior snapshot yet';
+  document.getElementById('delinqSnapshotLabel').textContent =
+    priorDate ? `Snapshot ${snapshotDate} · WoW vs ${priorDate}` : `Snapshot ${snapshotDate} · first snapshot (no WoW)`;
+
+  kpiHost.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Expected Monthly Income</div>
+      <div class="kpi-value">${fmt$(totals.income)}</div>
+      <div class="kpi-sub">${totals.income ? fmtFull$(totals.income) : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total Delinquency</div>
+      <div class="kpi-value ${delinqPct > 10 ? 'bad' : delinqPct > 5 ? 'warn' : 'good'}">${fmt$(totals.delinq)}</div>
+      <div class="kpi-sub">${fmtPct1(delinqPct)} of income · ${fmtWow(wowDelinq)} WoW</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">0-30 (Current Month)</div>
+      <div class="kpi-value">${fmt$(totals.b0_30)}</div>
+      <div class="kpi-sub">${fmtPct1(b030Pct)} of income · ${fmtWow(wowB030)} WoW</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Eviction Carry Over</div>
+      <div class="kpi-value ${totals.eco > totals.b0_30 ? 'bad' : ''}">${fmt$(totals.eco)}</div>
+      <div class="kpi-sub">31/60/90+ buckets · ${priorNote}</div>
+    </div>
+  `;
+
+  // Secondary KPIs: aging breakdown
+  const allBuckets = Object.values(curr);
+  const b31_60 = allBuckets.reduce((s, b) => s + b.balance_31_60, 0);
+  const b61_90 = allBuckets.reduce((s, b) => s + b.balance_61_90, 0);
+  const bOver90 = allBuckets.reduce((s, b) => s + b.balance_over_90, 0);
+  document.getElementById('delinqSubKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">31-60 Days</div>
+      <div class="kpi-value">${fmt$(b31_60)}</div>
+      <div class="kpi-sub">${totals.delinq ? fmtPct1(b31_60 / totals.delinq * 100) : '—'} of delinquency</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">61-90 Days</div>
+      <div class="kpi-value">${fmt$(b61_90)}</div>
+      <div class="kpi-sub">${totals.delinq ? fmtPct1(b61_90 / totals.delinq * 100) : '—'} of delinquency</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Over 90 Days</div>
+      <div class="kpi-value ${bOver90 > 0 ? 'bad' : ''}">${fmt$(bOver90)}</div>
+      <div class="kpi-sub">${totals.delinq ? fmtPct1(bOver90 / totals.delinq * 100) : '—'} of delinquency</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Prepaid (Negative Balances)</div>
+      <div class="kpi-value good">${fmt$(totals.prep)}</div>
+      <div class="kpi-sub">Tenants paid ahead</div>
+    </div>
+  `;
+
+  // ── Table header relabel based on grain ──
+  const grainLabels = { market: 'Market', group: 'Group', property: 'Property' };
+  document.getElementById('delinqGrainHeader').textContent = grainLabels[grain];
+  document.getElementById('delinqGrainLabel').textContent = `By ${grainLabels[grain]}`;
+  document.getElementById('delinqRowCount').textContent = `${orderedKeys.length} rows`;
+
+  // ── Table body rows ──
+  const tbody = document.getElementById('delinqBody');
+  tbody.innerHTML = orderedKeys.map(k => {
+    const b = curr[k];
+    const p = prev[k];
+    const pctIncome = b.expected_rent > 0 ? (b.total_delinquency / b.expected_rent * 100) : 0;
+    const pct030    = b.expected_rent > 0 ? (b.balance_0_30 / b.expected_rent * 100) : 0;
+    const wowDel = p && p.total_delinquency > 0
+      ? ((b.total_delinquency - p.total_delinquency) / p.total_delinquency * 100) : null;
+    const wow030 = p && p.balance_0_30 > 0
+      ? ((b.balance_0_30 - p.balance_0_30) / p.balance_0_30 * 100) : null;
+    return `<tr>
+      <td>${k}${b.property_count && grain !== 'property' ? ` <span class="cc-subtitle">(${b.property_count})</span>` : ''}</td>
+      <td class="r">${fmtFull$(b.expected_rent)}</td>
+      <td class="r">${fmtFull$(b.total_delinquency)}</td>
+      <td class="r ${pctIncome > 10 ? 'bad' : pctIncome > 5 ? 'warn' : ''}">${fmtPct1(pctIncome)}</td>
+      <td class="r">${fmtWow(wowDel)}</td>
+      <td class="r">${fmtFull$(b.balance_0_30)}</td>
+      <td class="r">${fmtPct1(pct030)}</td>
+      <td class="r">${fmtWow(wow030)}</td>
+      <td class="r">${fmtFull$(b.eviction_carry_over)}</td>
+      <td class="r ${b.prepaid_balance < 0 ? 'good' : ''}">${fmtFull$(b.prepaid_balance)}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Total row (tfoot) ──
+  const totDelPct = totals.income > 0 ? (totals.delinq / totals.income * 100) : 0;
+  const tot030Pct = totals.income > 0 ? (totals.b0_30 / totals.income * 100) : 0;
+  document.getElementById('delinqFoot').innerHTML = `
+    <tr style="font-weight:700; background:rgba(255,255,255,0.03);">
+      <td>Total</td>
+      <td class="r">${fmtFull$(totals.income)}</td>
+      <td class="r">${fmtFull$(totals.delinq)}</td>
+      <td class="r ${totDelPct > 10 ? 'bad' : totDelPct > 5 ? 'warn' : ''}">${fmtPct1(totDelPct)}</td>
+      <td class="r">${fmtWow(wowDelinq)}</td>
+      <td class="r">${fmtFull$(totals.b0_30)}</td>
+      <td class="r">${fmtPct1(tot030Pct)}</td>
+      <td class="r">${fmtWow(wowB030)}</td>
+      <td class="r">${fmtFull$(totals.eco)}</td>
+      <td class="r ${totals.prep < 0 ? 'good' : ''}">${fmtFull$(totals.prep)}</td>
+    </tr>
+  `;
+
+  // Search
+  document.getElementById('delinqSearch').oninput = function() {
     const q = this.value.toLowerCase();
     tbody.querySelectorAll('tr').forEach(tr => {
       const match = [...tr.querySelectorAll('td')].some(c => c.textContent.toLowerCase().includes(q));
@@ -3733,6 +5350,11 @@ async function loadDashboardData() {
       'snapshot_metadata',
       'income_statement_snapshot',
       'group_summary',
+      'delinquency_snapshot_dates',
+      'delinquency_property_rollup',
+      // Unit Turn Board — capex rollup views (per unit per month)
+      'unit_turn_costs',
+      'unit_turn_costs_by_category',
     ];
     const _batchT0 = performance.now();
     const batched = await batchEdgeFn(BATCH_TYPES);
@@ -3754,7 +5376,30 @@ async function loadDashboardData() {
     DATA.snapshotMeta = batched.snapshot_metadata?.data || [];
     DATA.incomeStatement = batched.income_statement_snapshot?.data || [];
     DATA.groupSummary = batched.group_summary?.data || [];
+    DATA.delinquencyDates  = batched.delinquency_snapshot_dates?.data || [];
+    DATA.delinquencyRollup = batched.delinquency_property_rollup?.data || [];
+    DATA.unitTurnCosts          = batched.unit_turn_costs?.data || [];
+    DATA.unitTurnCostsByCategory = batched.unit_turn_costs_by_category?.data || [];
     DATA.rentRollSnapshot = [];  // lazy-loaded in background; see below
+
+    // Unit Turn Board — load approvals from Supabase (separate from the BQ batch).
+    // Fire-and-forget on initial load; render() waits for it.
+    DATA.turnApprovals = [];
+    try {
+      const appRes = await fetch(
+        `${SUPA_URL}/rest/v1/unit_turn_approvals?select=*&order=created_at.desc`,
+        {
+          headers: {
+            'Authorization': `Bearer ${SUPA_KEY}`,
+            'apikey': SUPA_KEY,
+          }
+        }
+      );
+      if (appRes.ok) DATA.turnApprovals = await appRes.json();
+      else console.warn('[UnitTurnBoard] approvals fetch failed:', appRes.status);
+    } catch (e) {
+      console.warn('[UnitTurnBoard] approvals fetch error:', e.message);
+    }
 
     // Invalidate period-comparison caches (data just reloaded)
     invalidatePeriodCaches();
@@ -3844,8 +5489,30 @@ async function loadDashboardData() {
       if (r.buildium_property_id && !r.property_id) r.property_id = parseInt(r.buildium_property_id);
       if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
-    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations, DATA.turns].forEach(arr => {
+    [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations, DATA.turns,
+     DATA.unitTurnCosts, DATA.unitTurnCostsByCategory].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
+    });
+
+    // Coerce numeric dollar columns for the Unit Turn Board. BigQuery REST returns
+    // numerics as strings; pre-parsing once here keeps every sum/avg fast and correct.
+    const TURN_COST_NUM_COLS = [
+      'turn_cost_excl_hvac_cash', 'hvac_cost_cash', 'turn_cost_incl_hvac_cash',
+      'non_turn_cost_cash', 'total_capex_cash', 'transactions', 'vendors'
+    ];
+    const TURN_CAT_NUM_COLS = [
+      'flooring_cash','paint_cash','appliance_cash','cabinets_cash','countertops_cash',
+      'drywall_cash','plumbing_cash','electrical_cash','doors_hardware_cash',
+      'windows_blinds_cash','labor_general_cash','materials_general_cash','cleaning_cash',
+      'hvac_cash','non_turn_cash','total_capex_cash'
+    ];
+    DATA.unitTurnCosts.forEach(r => {
+      TURN_COST_NUM_COLS.forEach(c => { r[c] = parseFloat(r[c]) || 0; });
+      if (r.unit_id != null) r.unit_id = parseInt(r.unit_id);
+    });
+    DATA.unitTurnCostsByCategory.forEach(r => {
+      TURN_CAT_NUM_COLS.forEach(c => { r[c] = parseFloat(r[c]) || 0; });
+      if (r.unit_id != null) r.unit_id = parseInt(r.unit_id);
     });
 
     // ── COERCE FINANCIAL DATA ──

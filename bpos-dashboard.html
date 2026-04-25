@@ -105,9 +105,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .prop-dd-item .units{font-size:11px;color:var(--text3);margin-left:auto;}
 .prop-dd-empty{padding:20px;text-align:center;font-size:13px;color:var(--text3);}
 
-/* ── GROUP FILTER ── */
-.group-filter{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 32px 7px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;appearance:none;min-width:180px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555c66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;cursor:pointer;}
-.group-filter:focus{border-color:var(--accent);}
+/* ── GROUP FILTER (searchable single-select) ── */
+.group-multi{position:relative;}
+.group-multi-trigger{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;min-width:180px;cursor:pointer;transition:border-color .15s;font-size:13px;color:var(--text);font-family:var(--font);user-select:none;}
+.group-multi-trigger:hover,.group-multi.open .group-multi-trigger{border-color:var(--accent);}
+.group-current{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.group-caret{color:var(--text3);font-size:10px;line-height:1;}
+.group-dropdown{position:absolute;top:calc(100% + 4px);left:0;min-width:240px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;max-height:320px;overflow:hidden;z-index:50;display:none;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+.group-dropdown.open{display:flex;}
+.group-search-input{border:none;background:none;color:var(--text);font-size:13px;font-family:var(--font);outline:none;padding:10px 12px;border-bottom:1px solid var(--border);}
+.group-search-input::placeholder{color:var(--text3);}
+.group-dd-list{overflow-y:auto;flex:1;}
+.group-dd-item{padding:8px 14px;font-size:13px;color:var(--text2);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px;}
+.group-dd-item:hover{background:rgba(255,255,255,.03);}
+.group-dd-item.selected{background:rgba(61,127,255,.06);color:var(--text);}
+.group-dd-item .check{width:14px;color:var(--accent);font-size:10px;display:inline-flex;justify-content:center;}
+.group-dd-empty{padding:20px;text-align:center;font-size:13px;color:var(--text3);}
 
 /* ── KPI CARDS ── */
 /* ── Donut chart: Average Rent by Unit Type ── */
@@ -526,11 +539,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <span class="filter-label" id="monthToLabel">Month</span>
       <select class="filter-select" id="monthFilter"></select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group" id="groupFilterGroup">
       <span class="filter-label">Group</span>
-      <select class="filter-select group-filter" id="groupFilter" style="min-width:180px;">
-        <option value="">All Groups</option>
-      </select>
+      <div class="group-multi" id="groupFilter">
+        <div class="group-multi-trigger" id="groupTrigger" tabindex="0">
+          <span class="group-current" id="groupCurrent">All Groups</span>
+          <span class="group-caret">▾</span>
+        </div>
+        <div class="group-dropdown" id="groupDropdown">
+          <input type="text" class="group-search-input" id="groupSearch" placeholder="Search groups…"/>
+          <div class="group-dd-list" id="groupDropdownList"></div>
+        </div>
+      </div>
     </div>
     <div class="filter-group" id="delinqDateGroup" style="display:none;">
       <span class="filter-label">Snapshot</span>
@@ -873,6 +893,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   <!-- VIEW: DELINQUENCY -->
   <div class="view-panel" id="view-delinquency" style="display:none;">
+    <!-- Quality banner: only shown for backfilled (pre-April-2026) snapshots.
+         Populated by renderDelinquency(). -->
+    <div id="delinqHistoricalNote" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:8px; background:rgba(255,180,60,0.08); border:1px solid rgba(255,180,60,0.35); color:var(--text-1, #ddd); font-size:13px; line-height:1.45;"></div>
     <div class="kpi-grid cols-4" id="delinqKpis"></div>
     <div class="kpi-grid cols-4" id="delinqSubKpis"></div>
     <div class="section-head">
@@ -891,13 +914,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             <tr>
               <th id="delinqGrainHeader">Market</th>
               <th class="r">Income</th>
-              <th class="r">Delinquency</th>
+              <th class="r" id="delinqDelinqHeader">Delinquency</th>
               <th class="r">% of Income</th>
-              <th class="r">WoW Δ Delinq</th>
+              <th class="r" id="delinqWowDelinqHeader">WoW Δ Delinq</th>
               <th class="r">0-30</th>
               <th class="r">0-30 %</th>
-              <th class="r">WoW Δ 0-30</th>
-              <th class="r">Eviction Carry Over</th>
+              <th class="r" id="delinqWow030Header">WoW Δ 0-30</th>
+              <th class="r" id="delinqEcoHeader">Eviction Carry Over</th>
               <th class="r">Prepaid</th>
             </tr>
           </thead>
@@ -1192,6 +1215,21 @@ let selectedGroup  = '';
 let currentView    = 'overview';
 let selectedDelinqDate = '';   // YYYY-MM-DD — which snapshot_date the Delinquency view is showing
 let delinqGroupBy      = 'market'; // 'market' | 'group' | 'property'
+
+// Snapshots before this date were reconstructed from transaction history by the
+// 2026-04-25 backfill (`backfill_delinq_recurring_history.py`). They are reliable
+// for total balance and 0–30 / 31–60 / 61–90 buckets, but have known caveats:
+//   • balance_over_90_days is materially OVERSTATED — reconstruction can't see
+//     write-offs, security-deposit applications, or bad-debt adjustments, so
+//     move-out balances stay in 90+ indefinitely. (Apr 22 live ≈ $12k vs Mar 31
+//     reconstructed ≈ $2.25M.) Treat as "cumulative unresolved", not "currently owed."
+//   • Prepaids (negative balances) are dropped during reconstruction — the live
+//     `/leases/outstandingbalances` feed includes them, but history doesn't.
+//   • eviction_pending_date and is_notice_given are NULL on backfilled rows.
+//   • Backfill is monthly (month-end) while live is weekly, so prior-snapshot
+//     comparisons span ~30 days for backfilled dates. We label them MoM, not WoW.
+const DELINQ_BACKFILL_CUTOFF = '2026-04-01';
+const isBackfilledDelinqDate = (d) => !!d && d < DELINQ_BACKFILL_CUTOFF;
 
 // Cached data from BigQuery
 let DATA = {
@@ -1773,22 +1811,88 @@ function updateMonthRangeVisibility() {
   if (delinqGbGrp)   delinqGbGrp.style.display   = isDelinquency ? '' : 'none';
 }
 
-// ── GROUP FILTER ──
-const groupFilter = document.getElementById('groupFilter');
-groupFilter.addEventListener('change', () => {
-  selectedGroup = groupFilter.value;
-  // Re-scope property dropdown when group changes
-  renderPropDropdown();
-  renderPropChips();
-  // Clear property selection when group changes
-  selectedProps = [];
-  onFiltersChanged();
+// ── GROUP FILTER (searchable single-select) ──
+const groupFilter   = document.getElementById('groupFilter');
+const groupTrigger  = document.getElementById('groupTrigger');
+const groupDropdown = document.getElementById('groupDropdown');
+const groupSearch   = document.getElementById('groupSearch');
+const groupCurrent  = document.getElementById('groupCurrent');
+let _groupOptions = []; // cached list of unique group_name values, sorted
+
+function _escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+groupTrigger.addEventListener('click', () => {
+  const opening = !groupDropdown.classList.contains('open');
+  groupDropdown.classList.toggle('open', opening);
+  groupFilter.classList.toggle('open', opening);
+  if (opening) {
+    groupSearch.value = '';
+    renderGroupDropdown();
+    setTimeout(() => groupSearch.focus(), 10);
+  }
+});
+document.addEventListener('click', (e) => {
+  if (!groupFilter.contains(e.target)) {
+    groupDropdown.classList.remove('open');
+    groupFilter.classList.remove('open');
+  }
+});
+groupSearch.addEventListener('input', () => renderGroupDropdown());
+groupSearch.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    groupDropdown.classList.remove('open');
+    groupFilter.classList.remove('open');
+    groupTrigger.focus();
+  }
 });
 
 function populateGroupFilter(groups) {
-  const uniqueGroups = [...new Set(groups.map(g => g.group_name))].sort();
-  groupFilter.innerHTML = '<option value="">All Groups</option>' +
-    uniqueGroups.map(g => `<option value="${g}"${g === selectedGroup ? ' selected' : ''}>${g}</option>`).join('');
+  _groupOptions = [...new Set((groups || []).map(g => g.group_name).filter(Boolean))].sort();
+  groupCurrent.textContent = selectedGroup || 'All Groups';
+  renderGroupDropdown();
+}
+
+function renderGroupDropdown() {
+  const list = document.getElementById('groupDropdownList');
+  if (!list) return;
+  const q = (groupSearch.value || '').toLowerCase().trim();
+  const filteredGroups = _groupOptions.filter(g => !q || g.toLowerCase().includes(q));
+  // Always show "All Groups" sentinel at top, but only if search query also matches "all" or is empty.
+  const showAll = !q || 'all groups'.includes(q);
+  const items = [];
+  if (showAll) items.push({ value: '', label: 'All Groups' });
+  filteredGroups.forEach(g => items.push({ value: g, label: g }));
+  if (items.length === 0) {
+    list.innerHTML = '<div class="group-dd-empty">No matching groups</div>';
+    return;
+  }
+  list.innerHTML = items.map(it => {
+    const sel = it.value === selectedGroup;
+    return `<div class="group-dd-item${sel ? ' selected' : ''}" data-group="${_escHtml(it.value)}">
+      <span class="check">${sel ? '✓' : ''}</span>
+      <span>${_escHtml(it.label)}</span>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.group-dd-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const g = el.dataset.group || '';
+      selectedGroup = g;
+      groupCurrent.textContent = g || 'All Groups';
+      groupDropdown.classList.remove('open');
+      groupFilter.classList.remove('open');
+      // Re-scope property dropdown when group changes
+      renderPropDropdown();
+      renderPropChips();
+      // Clear property selection when group changes
+      selectedProps = [];
+      onFiltersChanged();
+    });
+  });
 }
 
 function getGroupPropertyIds() {
@@ -3983,6 +4087,17 @@ function utbMatchesProps(r) {
   return matchesSelectedProps(r);
 }
 
+// Approvals carry buildium_property_id rather than property_id, so wrap them
+// before delegating to the shared matchesSelectedProps() for consistent
+// Group + Properties + per-user access scoping.
+function utbMatchesApproval(a) {
+  if (!a) return false;
+  return matchesSelectedProps({
+    property_id: parseInt(a.buildium_property_id) || null,
+    property_name: a.property_name || null,
+  });
+}
+
 // Read threshold + multi-cat toggle from toolbar (defaults match Excel's "full turn")
 function utbReadThreshold() {
   const tEl = document.getElementById('utbThreshold');
@@ -4095,9 +4210,12 @@ function renderTurns() {
   const uniqueProps = new Set(qualifiedUnits.map(u => u.property_name)).size;
   const subThresholdCount = allUnits.length - qualifiedUnits.length;
 
-  const openApprovals = (DATA.turnApprovals || []).filter(a => a.status === 'open').length;
+  // Scope approval KPIs to the current Group + Properties filter so they
+  // line up with the cost rollups above (which use utbMatchesProps).
+  const scopedApprovals = (DATA.turnApprovals || []).filter(utbMatchesApproval);
+  const openApprovals = scopedApprovals.filter(a => a.status === 'open').length;
   let approvedSum = 0, actualSum = 0, closedCount = 0;
-  for (const a of (DATA.turnApprovals || [])) {
+  for (const a of scopedApprovals) {
     if (a.status !== 'closed') continue;
     approvedSum += parseFloat(a.approved_amount) || 0;
     const actHvac = a.include_hvac ? (parseFloat(a.actual_at_close_hvac) || 0) : 0;
@@ -4467,8 +4585,26 @@ function utbOpenApprovalModal({ prefillUnit = null, editingApproval = null } = {
   idIn.value = editingApproval ? editingApproval.id : '';
   titleEl.textContent = editingApproval ? 'Edit Unit Turn Approval' : 'Approve Unit Turn Budget';
 
-  // Populate properties dropdown from allProperties (respects user access)
-  const props = allProperties.slice().sort((a, b) => a.name.localeCompare(b.name));
+  // Populate properties dropdown from allProperties (respects user access).
+  // Also scope by the global Group + Properties filters so the Approve Unit Turn
+  // modal only offers properties the user has currently filtered down to.
+  // (When editing or prefilling, always include the target property even if it
+  //  falls outside the current filter — otherwise the dropdown would show no
+  //  selected value for that approval.)
+  const groupIds = getGroupPropertyIds();
+  const propFilterIds = (selectedProps && selectedProps.length) ? new Set(selectedProps) : null;
+  const forcedId = editingApproval
+    ? parseInt(editingApproval.buildium_property_id)
+    : (prefillUnit ? prefillUnit.property_id : null);
+  const props = allProperties
+    .filter(p => {
+      if (forcedId && p.id === forcedId) return true;
+      if (groupIds && !groupIds.includes(p.id)) return false;
+      if (propFilterIds && !propFilterIds.has(p.id)) return false;
+      return true;
+    })
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
   propSel.innerHTML = '<option value="">Select property…</option>' + props.map(p => {
     const selected = (prefillUnit && prefillUnit.property_id === p.id) || (editingApproval && parseInt(editingApproval.buildium_property_id) === p.id) ? ' selected' : '';
     return `<option value="${p.id}"${selected}>${p.name}</option>`;
@@ -4918,6 +5054,7 @@ function findPriorSnapshotDate(target) {
 // Returns rows grouped by the requested grain (market / group / property).
 function aggregateDelinquency(snapshotDate, grain, marketIdx, propNameIdx) {
   const rollup = (DATA.delinquencyRollup || []).filter(r => r.snapshot_date === snapshotDate);
+  const isBack = isBackfilledDelinqDate(snapshotDate);
   const pgs = DATA.propertyGroups || [];
   // pid → [group_names]
   const pidToGroups = {};
@@ -4950,17 +5087,23 @@ function aggregateDelinquency(snapshotDate, grain, marketIdx, propNameIdx) {
         .map(m => `${m.market} (direct)`);
       const keys = [...mappedGroups, ...propertyOverrides];
       if (!keys.length) continue;
-      for (const g of keys) addToBucket(buckets, g, row);
+      for (const g of keys) addToBucket(buckets, g, row, isBack);
       continue;
     } else {
       key = propNameIdx[pid] || row.property_name || `Property ${pid}`;
     }
-    addToBucket(buckets, key, row);
+    addToBucket(buckets, key, row, isBack);
   }
   return buckets;
 }
 
-function addToBucket(buckets, key, row) {
+// On backfilled snapshots the 90+ bucket is materially overstated (move-out
+// balances stay there indefinitely because reconstruction can't see write-offs
+// or SD applications). Headline `total_delinquency` and `eviction_carry_over`
+// therefore EXCLUDE the 90+ bucket on those dates so they're comparable to the
+// live weekly numbers. The raw 90+ bucket is still summed separately so the
+// "Over 90 Days" KPI can show the reconstructed figure with its caveat.
+function addToBucket(buckets, key, row, isBackfilled) {
   if (!buckets[key]) {
     buckets[key] = {
       label: key,
@@ -4984,13 +5127,19 @@ function addToBucket(buckets, key, row) {
     b.properties.add(pid);
     b.property_count++;
   }
-  b.total_delinquency  += parseFloat(row.total_delinquency)  || 0;
-  b.balance_0_30       += parseFloat(row.balance_0_30)       || 0;
-  b.balance_31_60      += parseFloat(row.balance_31_60)      || 0;
-  b.balance_61_90      += parseFloat(row.balance_61_90)      || 0;
-  b.balance_over_90    += parseFloat(row.balance_over_90)    || 0;
-  b.eviction_carry_over += parseFloat(row.eviction_carry_over) || 0;
-  b.prepaid_balance    += parseFloat(row.prepaid_balance)    || 0;
+  const r0_30  = parseFloat(row.balance_0_30)    || 0;
+  const r31_60 = parseFloat(row.balance_31_60)   || 0;
+  const r61_90 = parseFloat(row.balance_61_90)   || 0;
+  const r90    = parseFloat(row.balance_over_90) || 0;
+  const rTotal = parseFloat(row.total_delinquency)    || 0;
+  const rEco   = parseFloat(row.eviction_carry_over)  || 0;
+  b.total_delinquency  += isBackfilled ? (r0_30 + r31_60 + r61_90) : rTotal;
+  b.balance_0_30       += r0_30;
+  b.balance_31_60      += r31_60;
+  b.balance_61_90      += r61_90;
+  b.balance_over_90    += r90;
+  b.eviction_carry_over += isBackfilled ? (r31_60 + r61_90) : rEco;
+  b.prepaid_balance    += parseFloat(row.prepaid_balance) || 0;
 }
 
 function renderDelinquency() {
@@ -5030,18 +5179,30 @@ function renderDelinquency() {
   // multiple groups; summing buckets would double-count. So we sum the filtered rollup
   // rows once per property here.
   const totalsFor = (snap) => {
+    const isBack = isBackfilledDelinqDate(snap);
     const rows = (DATA.delinquencyRollup || []).filter(r =>
       r.snapshot_date === snap &&
       !!marketIdx[parseInt(r.property_id)] &&  // only properties in a mapped market
       matchesSelectedProps({ property_id: parseInt(r.property_id), property_name: r.property_name })
     );
-    return rows.reduce((acc, r) => ({
-      income: acc.income + (parseFloat(r.expected_rent) || 0),
-      delinq: acc.delinq + (parseFloat(r.total_delinquency) || 0),
-      b0_30:  acc.b0_30  + (parseFloat(r.balance_0_30) || 0),
-      eco:    acc.eco    + (parseFloat(r.eviction_carry_over) || 0),
-      prep:   acc.prep   + (parseFloat(r.prepaid_balance) || 0),
-    }), { income: 0, delinq: 0, b0_30: 0, eco: 0, prep: 0 });
+    return rows.reduce((acc, r) => {
+      const r0_30  = parseFloat(r.balance_0_30)   || 0;
+      const r31_60 = parseFloat(r.balance_31_60)  || 0;
+      const r61_90 = parseFloat(r.balance_61_90)  || 0;
+      const rTotal = parseFloat(r.total_delinquency)   || 0;
+      const rEco   = parseFloat(r.eviction_carry_over) || 0;
+      // Backfilled: drop the overstated 90+ from headline total + eviction-carry-over
+      // so KPIs and table totals are comparable to live weekly snapshots.
+      const total = isBack ? (r0_30 + r31_60 + r61_90) : rTotal;
+      const eco   = isBack ? (r31_60 + r61_90)        : rEco;
+      return {
+        income: acc.income + (parseFloat(r.expected_rent) || 0),
+        delinq: acc.delinq + total,
+        b0_30:  acc.b0_30  + r0_30,
+        eco:    acc.eco    + eco,
+        prep:   acc.prep   + (parseFloat(r.prepaid_balance) || 0),
+      };
+    }, { income: 0, delinq: 0, b0_30: 0, eco: 0, prep: 0 });
   };
   const totals = totalsFor(snapshotDate);
   const priorTotals = priorDate ? totalsFor(priorDate) : { delinq: 0, b0_30: 0 };
@@ -5060,25 +5221,72 @@ function renderDelinquency() {
     return `<span class="${cls}">${sign}${v.toFixed(2)}%</span>`;
   };
 
+  // ── Backfilled-snapshot quality treatment ──
+  // Snapshots before DELINQ_BACKFILL_CUTOFF (2026-04-01) were reconstructed from
+  // transaction history, with several documented caveats. We:
+  //   • show a banner explaining what's reliable vs not
+  //   • mute the 90+ aging KPI ($ value still shown, but greyed with a caveat)
+  //   • mute the Prepaid KPI (always 0 for backfilled — feed didn't capture negatives)
+  //   • change "WoW" labels to "MoM" since backfill is monthly while live is weekly
+  const isBackfilled = isBackfilledDelinqDate(snapshotDate);
+  const priorIsBackfilled = isBackfilledDelinqDate(priorDate);
+  const dayGapToPrior = (priorDate && snapshotDate)
+    ? Math.round((new Date(snapshotDate + 'T00:00:00') - new Date(priorDate + 'T00:00:00')) / 86400000)
+    : null;
+  const cmpLabel = (dayGapToPrior != null && dayGapToPrior > 14) ? 'MoM' : 'WoW';
+
+  const banner = document.getElementById('delinqHistoricalNote');
+  if (isBackfilled) {
+    banner.style.display = '';
+    banner.innerHTML = `
+      <strong>Historical (reconstructed) snapshot — ${snapshotDate}</strong><br>
+      0–30 / 31–60 / 61–90 buckets are reliable. To stay comparable to live weekly numbers,
+      <b>Total Delinquency on this date excludes the 90+ bucket</b> (shown separately, dimmed).
+      <ul style="margin:6px 0 0 18px; padding:0;">
+        <li><b>Why 90+ is excluded:</b> reconstruction can't see write-offs, security-deposit applications, or bad-debt adjustments, so move-out balances stay in 90+ indefinitely. The "Over 90 Days" KPI still shows the reconstructed figure as cumulative-unresolved, not currently-owed.</li>
+        <li><b>Prepaids</b> (negative balances) aren't captured in history — only the live weekly feed includes them.</li>
+        <li>Backfill is <b>monthly</b> (month-end) while live is weekly, so prior-period comparison is month-over-month for these dates.</li>
+      </ul>`;
+  } else {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+  }
+
   const priorNote = priorDate ? `vs ${priorDate}` : 'no prior snapshot yet';
   document.getElementById('delinqSnapshotLabel').textContent =
-    priorDate ? `Snapshot ${snapshotDate} · WoW vs ${priorDate}` : `Snapshot ${snapshotDate} · first snapshot (no WoW)`;
+    priorDate
+      ? `Snapshot ${snapshotDate}${isBackfilled ? ' (backfilled)' : ''} · ${cmpLabel} vs ${priorDate}`
+      : `Snapshot ${snapshotDate}${isBackfilled ? ' (backfilled)' : ''} · first snapshot (no ${cmpLabel})`;
+  // Adjust the table column headers in lockstep
+  const wowDelinqHdr = document.getElementById('delinqWowDelinqHeader');
+  const wow030Hdr    = document.getElementById('delinqWow030Header');
+  const delinqHdr    = document.getElementById('delinqDelinqHeader');
+  const ecoHdr       = document.getElementById('delinqEcoHeader');
+  if (wowDelinqHdr) wowDelinqHdr.textContent = `${cmpLabel} Δ Delinq`;
+  if (wow030Hdr)    wow030Hdr.textContent    = `${cmpLabel} Δ 0-30`;
+  // Headline columns reflect what's actually being summed in their cells:
+  // backfilled rows drop the 90+ bucket from Delinquency and Eviction Carry Over.
+  if (delinqHdr)    delinqHdr.textContent = isBackfilled ? 'Delinquency (0-90)'        : 'Delinquency';
+  if (ecoHdr)       ecoHdr.textContent    = isBackfilled ? 'Eviction Carry Over (0-90)' : 'Eviction Carry Over';
+  // Adjust the section title to reflect cadence
+  const titleEl = document.getElementById('delinqTableTitle');
+  if (titleEl) titleEl.textContent = isBackfilled ? 'Monthly Delinquency Rollup' : 'Weekly Delinquency Rollup';
 
   kpiHost.innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Expected Monthly Income</div>
       <div class="kpi-value">${fmt$(totals.income)}</div>
-      <div class="kpi-sub">${totals.income ? fmtFull$(totals.income) : '—'}</div>
+      <div class="kpi-sub">${totals.income ? fmtFull$(totals.income) : '—'}${isBackfilled ? ' · uses today\'s rent roll' : ''}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Total Delinquency</div>
+      <div class="kpi-label">Total Delinquency${isBackfilled ? ' (0-90)' : ''}</div>
       <div class="kpi-value ${delinqPct > 10 ? 'bad' : delinqPct > 5 ? 'warn' : 'good'}">${fmt$(totals.delinq)}</div>
-      <div class="kpi-sub">${fmtPct1(delinqPct)} of income · ${fmtWow(wowDelinq)} WoW</div>
+      <div class="kpi-sub">${fmtPct1(delinqPct)} of income · ${fmtWow(wowDelinq)} ${cmpLabel}${isBackfilled ? ' · excludes 90+' : ''}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">0-30 (Current Month)</div>
       <div class="kpi-value">${fmt$(totals.b0_30)}</div>
-      <div class="kpi-sub">${fmtPct1(b030Pct)} of income · ${fmtWow(wowB030)} WoW</div>
+      <div class="kpi-sub">${fmtPct1(b030Pct)} of income · ${fmtWow(wowB030)} ${cmpLabel}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Eviction Carry Over</div>
@@ -5092,6 +5300,31 @@ function renderDelinquency() {
   const b31_60 = allBuckets.reduce((s, b) => s + b.balance_31_60, 0);
   const b61_90 = allBuckets.reduce((s, b) => s + b.balance_61_90, 0);
   const bOver90 = allBuckets.reduce((s, b) => s + b.balance_over_90, 0);
+  // Backfilled snapshots: 90+ is overstated and prepaid is always 0. We dim those
+  // KPIs and label them clearly so they don't read as live numbers.
+  const dimStyle = 'opacity:0.55;';
+  const over90Card = isBackfilled
+    ? `<div class="kpi" style="${dimStyle}" title="Reconstructed from transaction history — write-offs, SD applications, and bad-debt adjustments are not visible, so move-out balances stay in 90+ indefinitely. Treat as 'cumulative unresolved', not 'currently owed'.">
+        <div class="kpi-label">Over 90 Days <span style="font-weight:400; font-size:11px;">(historical · ≈ overstated)</span></div>
+        <div class="kpi-value">${fmt$(bOver90)}</div>
+        <div class="kpi-sub">Reconstructed — see banner</div>
+      </div>`
+    : `<div class="kpi">
+        <div class="kpi-label">Over 90 Days</div>
+        <div class="kpi-value ${bOver90 > 0 ? 'bad' : ''}">${fmt$(bOver90)}</div>
+        <div class="kpi-sub">${totals.delinq ? fmtPct1(bOver90 / totals.delinq * 100) : '—'} of delinquency</div>
+      </div>`;
+  const prepaidCard = isBackfilled
+    ? `<div class="kpi" style="${dimStyle}" title="Backfill emits only positive balances; prepaids (negative balances) are not in historical reconstruction. Live weekly feed captures them.">
+        <div class="kpi-label">Prepaid (Negative Balances)</div>
+        <div class="kpi-value">—</div>
+        <div class="kpi-sub">Not captured in backfill</div>
+      </div>`
+    : `<div class="kpi">
+        <div class="kpi-label">Prepaid (Negative Balances)</div>
+        <div class="kpi-value good">${fmt$(totals.prep)}</div>
+        <div class="kpi-sub">Tenants paid ahead</div>
+      </div>`;
   document.getElementById('delinqSubKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">31-60 Days</div>
@@ -5103,16 +5336,8 @@ function renderDelinquency() {
       <div class="kpi-value">${fmt$(b61_90)}</div>
       <div class="kpi-sub">${totals.delinq ? fmtPct1(b61_90 / totals.delinq * 100) : '—'} of delinquency</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Over 90 Days</div>
-      <div class="kpi-value ${bOver90 > 0 ? 'bad' : ''}">${fmt$(bOver90)}</div>
-      <div class="kpi-sub">${totals.delinq ? fmtPct1(bOver90 / totals.delinq * 100) : '—'} of delinquency</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Prepaid (Negative Balances)</div>
-      <div class="kpi-value good">${fmt$(totals.prep)}</div>
-      <div class="kpi-sub">Tenants paid ahead</div>
-    </div>
+    ${over90Card}
+    ${prepaidCard}
   `;
 
   // ── Table header relabel based on grain ──
@@ -5556,7 +5781,8 @@ async function loadDashboardData() {
             } else {
               // User has specific-property access only — hide group filter entirely
               visibleGroups = [];
-              document.getElementById('groupFilter').style.display = 'none';
+              const gfg = document.getElementById('groupFilterGroup');
+              if (gfg) gfg.style.display = 'none';
             }
           }
         }

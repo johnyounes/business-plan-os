@@ -1302,6 +1302,48 @@ function rowMonthKey(row) {
   return s.length >= 7 ? s.slice(0, 7) : s;
 }
 
+// Cheap probe: which months does the cache actually hold for this type?
+// Selecting only snapshot_month keeps this tiny (payload can be tens of MB), so we can
+// learn real cache coverage before deciding what to request live.
+async function fetchCachedMonths(type, cutoffMonth) {
+  const url = `${SUPA_URL}/rest/v1/dashboard_historical_cache`
+    + `?query_type=eq.${encodeURIComponent(type)}`
+    + `&snapshot_month=lt.${encodeURIComponent(cutoffMonth)}`
+    + `&select=snapshot_month`
+    + `&order=snapshot_month.asc`;
+  const res = await fetch(url, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+  });
+  if (!res.ok) throw new Error(`Cache probe ${res.status}: ${await res.text()}`);
+  return (await res.json()).map(r => r.snapshot_month).filter(Boolean).sort();
+}
+
+// The month immediately after 'YYYY-MM'.
+function nextMonth(m) {
+  let y = parseInt(String(m).slice(0, 4), 10);
+  let mm = parseInt(String(m).slice(5, 7), 10) + 1;
+  if (mm > 12) { mm = 1; y += 1; }
+  return `${y}-${String(mm).padStart(2, '0')}`;
+}
+
+// Merge cached history with the live window without double counting.
+// Live data always wins: any cached row for a month that also came back live is dropped.
+// This is a backstop — with months_from the two halves should already be disjoint.
+function mergeCacheAndLive(type, historicRows, liveRows) {
+  const liveMonthSet = new Set(liveRows.map(rowMonthKey).filter(Boolean));
+  if (!liveMonthSet.size) return [...historicRows, ...liveRows];
+  const kept = historicRows.filter(r => {
+    const m = rowMonthKey(r);
+    return m === null || !liveMonthSet.has(m);
+  });
+  const dropped = historicRows.length - kept.length;
+  if (dropped > 0) {
+    console.warn(`[cache] ${type}: dropped ${dropped} cached row(s) whose month also came back `
+      + `live (${[...liveMonthSet].sort().join(', ')}) — prevented double counting`);
+  }
+  return [...kept, ...liveRows];
+}
+
 // Pull cached historical rows from Supabase (one row per (type, month); rows in .payload).
 async function fetchHistoricCache(type, cutoffMonth) {
   const url = `${SUPA_URL}/rest/v1/dashboard_historical_cache`
@@ -1327,70 +1369,60 @@ async function fetchHistoricCache(type, cutoffMonth) {
 
 async function callEdgeFn(type, params = {}) {
   // ── Fast path: hybrid cache for month-keyed queries ──
+  //
+  // History (< cutoff) comes from Supabase; everything from the first uncached month
+  // onward comes live from BigQuery. The live boundary is derived from what the cache
+  // ACTUALLY holds, not from today's date.
+  //
+  // The previous version read the cache with `snapshot_month < priorMonth` but asked
+  // BigQuery for exactly [priorMonth, currentMonth]. Those only line up if the cache is
+  // rebuilt every month. When it fell behind — cache built through 2026-05 while the live
+  // window was [2026-07, 2026-08] — 2026-06 belonged to neither half and vanished from
+  // every KPI. Deriving the boundary from the cache itself cannot leave a hole.
   if (CACHEABLE_TYPES.has(type) && !params.skipCache) {
-    const { priorMonth, liveMonths } = computeLiveWindow();
+    const { priorMonth } = computeLiveWindow();
+    const edgeHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPA_KEY}`,
+      'apikey': SUPA_KEY,
+    };
+    const postEdge = (payload) => fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
+      method: 'POST', headers: edgeHeaders, body: JSON.stringify(payload),
+    });
+
     try {
-      // Read cache + live window in parallel
-      const [historicRows, liveRes] = await Promise.all([
-        fetchHistoricCache(type, priorMonth).catch(err => {
-          console.warn(`[cache] ${type} read failed, falling back to BQ-only:`, err.message);
-          return null; // null signals to fall through to full BQ fetch
-        }),
-        fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPA_KEY}`,
-            'apikey': SUPA_KEY,
-          },
-          body: JSON.stringify({ type, months: liveMonths, ...params }),
-        }),
-      ]);
+      // 1) Probe (metadata only) to learn real cache coverage.
+      const cachedMonths = await fetchCachedMonths(type, priorMonth);
 
-      if (!liveRes.ok) {
-        const txt = await liveRes.text();
-        throw new Error(`Edge fn error ${liveRes.status}: ${txt}`);
-      }
-      const liveJson = await liveRes.json();
-      const liveRows = liveJson.rows || liveJson.data || [];
-
-      // If cache miss entirely, fall back to a full BQ call so nothing breaks
-      // on first load before superadmin has populated the cache.
-      if (historicRows === null || historicRows.length === 0) {
+      // 2) Nothing cached — one full BigQuery fetch, no gap possible.
+      if (!cachedMonths.length) {
         console.log(`[cache] ${type}: cache empty, full BQ fetch`);
-        const full = await fetch(`${SUPA_URL}/functions/v1/${FN_NAME}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPA_KEY}`,
-            'apikey': SUPA_KEY,
-          },
-          body: JSON.stringify({ type, ...params }),
-        });
-        if (!full.ok) {
-          const txt = await full.text();
-          throw new Error(`Edge fn error ${full.status}: ${txt}`);
-        }
+        const full = await postEdge({ type, ...params });
+        if (!full.ok) throw new Error(`Edge fn error ${full.status}: ${await full.text()}`);
         const fullJson = await full.json();
         return { data: fullJson.rows || fullJson.data || [] };
       }
 
-      // ── Dedupe live window vs cache ──
-      // The edge function currently ignores the `months` parameter and returns the full
-      // view (all months). Historic cache holds months < priorMonth. If we merge
-      // naively we double-count every row for months < priorMonth. Filter liveRows
-      // to only the live window before merging.
-      const liveMonthSet = new Set(liveMonths);
-      const filteredLive = liveRows.filter(r => {
-        const m = rowMonthKey(r);
-        return m && liveMonthSet.has(m);
-      });
-      const dropped = liveRows.length - filteredLive.length;
-      console.log(`[cache] ${type}: ${historicRows.length} cached + ${filteredLive.length} live${dropped ? ` (dropped ${dropped} duplicate pre-${priorMonth} rows)` : ''}`);
-      return { data: [...historicRows, ...filteredLive] };
+      // 3) Live window starts at the first month the cache does NOT cover.
+      const liveFrom = nextMonth(cachedMonths[cachedMonths.length - 1]);
+
+      // 4) Cache payload + live BigQuery in parallel.
+      const [historicRows, liveRes] = await Promise.all([
+        fetchHistoricCache(type, priorMonth),
+        postEdge({ type, months_from: liveFrom, ...params }),
+      ]);
+      if (!liveRes.ok) throw new Error(`Edge fn error ${liveRes.status}: ${await liveRes.text()}`);
+      const liveJson = await liveRes.json();
+      const liveRows = liveJson.rows || liveJson.data || [];
+
+      const merged = mergeCacheAndLive(type, historicRows, liveRows);
+      console.log(`[cache] ${type}: ${historicRows.length} cached (through `
+        + `${cachedMonths[cachedMonths.length - 1]}) + ${liveRows.length} live (from ${liveFrom}) `
+        + `= ${merged.length} rows`);
+      return { data: merged };
     } catch (e) {
       console.warn(`[cache] ${type} hybrid fetch failed, retrying without cache:`, e.message);
-      // Fall through to legacy path below
+      // Fall through to the legacy full-fetch path below.
     }
   }
 
@@ -1428,8 +1460,22 @@ async function callEdgeFn(type, params = {}) {
 // so one bad view can't take the whole dashboard down.
 async function batchEdgeFn(types, { skipCache = false } = {}) {
   const cacheableTypes = types.filter(t => CACHEABLE_TYPES.has(t) && !skipCache);
-  const { priorMonth, liveMonths } = computeLiveWindow();
-  const liveMonthSet = new Set(liveMonths);
+  const { priorMonth } = computeLiveWindow();
+
+  // Learn each cacheable type's real cache coverage first (metadata only — cheap).
+  // The live window is then derived per type from what the cache actually holds, never
+  // from today's date, so a cache that has fallen behind can no longer leave a month
+  // belonging to neither half (that is how 2026-06 disappeared from every KPI).
+  const monthsByType = {};
+  await Promise.all(cacheableTypes.map(async t => {
+    try {
+      const months = await fetchCachedMonths(t, priorMonth);
+      monthsByType[t] = months.length ? nextMonth(months[months.length - 1]) : null;
+    } catch (err) {
+      console.warn(`[cache] ${t} probe failed, will fetch full view:`, err.message);
+      monthsByType[t] = null;
+    }
+  }));
 
   const cachePromise = Promise.all(
     cacheableTypes.map(t =>
@@ -1448,11 +1494,18 @@ async function batchEdgeFn(types, { skipCache = false } = {}) {
         'Authorization': `Bearer ${SUPA_KEY}`,
         'apikey': SUPA_KEY,
       },
-      body: JSON.stringify({ batch: types.map(t => ({ type: t })) }),
+      // months_from lets the edge function return only the uncached tail instead of the
+      // whole view. Types with no cache (or no month column) send no filter and come
+      // back in full, exactly as before.
+      body: JSON.stringify({
+        batch: types.map(t => (
+          monthsByType[t] ? { type: t, months_from: monthsByType[t] } : { type: t }
+        )),
+      }),
     });
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`Batch edge fn ${res.status}: ${txt}`);
+      throw new Error(`Edge fn error ${res.status}: ${txt}`);
     }
     return res.json();
   })();
@@ -1475,25 +1528,16 @@ async function batchEdgeFn(types, { skipCache = false } = {}) {
     const liveRows = (liveEntry && !liveEntry.error && liveEntry.rows) ? liveEntry.rows : [];
 
     if (cacheableTypes.includes(t)) {
-      const idx = cacheableTypes.indexOf(t);
-      const historic = cacheArr[idx];
+      const historic = cacheArr[cacheableTypes.indexOf(t)];
       if (historic === null || !historic.length) {
-        // No cache → keep full live dataset (no duplicates possible)
+        // No cache → keep the full live dataset (no duplicates possible).
         out[t] = { data: liveRows };
         if (liveRows.length) console.log(`[cache] ${t}: miss, live=${liveRows.length}`);
       } else {
-        // ── Dedupe live vs cache ──
-        // The edge function currently returns the full view (all months). The historic
-        // cache holds months < priorMonth. If we concat naively, every month < priorMonth
-        // is counted twice. Filter liveRows to only the live window (priorMonth +
-        // currentMonth) so historic+live = exactly one copy of each month.
-        const filteredLive = liveRows.filter(r => {
-          const m = rowMonthKey(r);
-          return m && liveMonthSet.has(m);
-        });
-        const dropped = liveRows.length - filteredLive.length;
-        out[t] = { data: [...historic, ...filteredLive] };
-        console.log(`[cache] ${t}: ${historic.length} cached + ${filteredLive.length} live${dropped ? ` (dropped ${dropped} dup pre-${priorMonth} rows)` : ''}`);
+        const merged = mergeCacheAndLive(t, historic, liveRows);
+        out[t] = { data: merged };
+        console.log(`[cache] ${t}: ${historic.length} cached + ${liveRows.length} live`
+          + `${monthsByType[t] ? ` (from ${monthsByType[t]})` : ''} = ${merged.length} rows`);
       }
     } else {
       out[t] = { data: liveRows };
@@ -1969,6 +2013,10 @@ function rebuildFilterCache() {
       if (p.name)    _allowedNameCache.add(p.name);
       if (p.apiName) _allowedNameCache.add(p.apiName);
       if (p.t12Name) _allowedNameCache.add(p.t12Name);
+      // Alternate names the BigQuery views use for this property (registered during
+      // load). Required because v_rent_roll / v_vacancy expose only property_name,
+      // with no property_id, so a renamed property matches on name or not at all.
+      if (p.aliases) p.aliases.forEach(a => { if (a) _allowedNameCache.add(a); });
     }
   });
 }
@@ -5640,6 +5688,73 @@ async function loadDashboardData() {
       units: parseInt(p.units) || 0,
     })).sort((a, b) => a.name.localeCompare(b.name));
 
+    // ── UNION IN NEWLY ACQUIRED PROPERTIES + REGISTER NAME ALIASES ──
+    // Every view filters rows through matchesSelectedProps(), which is scoped to
+    // allProperties. Building that list from `properties` alone silently drops any
+    // property the occupancy pipeline knows about but that table does not — that was
+    // 40 properties / 750 units (16.4% of the portfolio), the recently acquired
+    // "- TWC" portfolio. They have occupancy, rent roll and vacancy data but no
+    // `properties` row, no property group and no P&L yet.
+    //
+    // Two distinct gaps are closed here, both seeded from v_occupancy_summary (which is
+    // per-property and carries total_units):
+    //   1. property absent from `properties`      -> adopt it
+    //   2. property present but under a different name -> register the extra name as an
+    //      alias. v_rent_roll and v_vacancy expose ONLY property_name (no property_id),
+    //      so a rename drops rows outright: `AksarbenLIV - PGO` vs `Liv on 68th - PGO`,
+    //      `Dora Duplexes` vs `Casitas On The Park`, `301 S. Meridian Ave.` vs
+    //      `Meridian 79` — 65 units lost between them.
+    //
+    // Both are self-healing: once buildium_data.properties is corrected they stop firing.
+    {
+      const knownIds = new Set(allProperties.map(p => p.id));
+      const knownNames = new Set();
+      allProperties.forEach(p => {
+        [p.name, p.apiName, p.t12Name].forEach(nm => { if (nm) knownNames.add(nm); });
+      });
+      const byId = new Map(allProperties.map(p => [p.id, p]));
+
+      const adopted = [];
+      let aliased = 0;
+      (DATA.occupancy || []).forEach(o => {
+        const id = parseInt(o.property_id) || 0;
+        const nm = o.property_name || '';
+        if (!id && !nm) return;
+
+        if (id && knownIds.has(id)) {
+          const existing = byId.get(id);
+          if (existing && nm && !knownNames.has(nm)) {
+            (existing.aliases || (existing.aliases = [])).push(nm);
+            knownNames.add(nm);
+            aliased++;
+          }
+          return;
+        }
+        if (nm && knownNames.has(nm)) return;
+        if (id) knownIds.add(id);
+        if (nm) knownNames.add(nm);
+        adopted.push({
+          id,
+          name:    nm || `Property ${id}`,
+          t12Name: nm,
+          apiName: nm,
+          units:   parseInt(o.total_units) || 0,
+          notInPropertiesTable: true,
+        });
+      });
+
+      if (aliased) {
+        console.log(`[BPOS] Registered ${aliased} alternate property name(s) used by the `
+          + `occupancy views but not by buildium_data.properties (renamed properties)`);
+      }
+      if (adopted.length) {
+        const addedUnits = adopted.reduce((sum, p) => sum + p.units, 0);
+        console.log(`[BPOS] Adopted ${adopted.length} propert${adopted.length === 1 ? 'y' : 'ies'} `
+          + `(${addedUnits} units) present in occupancy data but not in buildium_data.properties`);
+        allProperties = allProperties.concat(adopted).sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+
     // ── ENFORCE USER PROPERTY ACCESS ──
     // If the parent app stored a user profile with restricted property access,
     // filter allProperties to only the allowed ones.
@@ -5710,10 +5825,13 @@ async function loadDashboardData() {
       if (r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
     });
     // Coerce turns: map buildium_property_id → property_id so matchesSelectedProps works
-    if (DATA.turns) DATA.turns.forEach(r => {
-      if (r.buildium_property_id && !r.property_id) r.property_id = parseInt(r.buildium_property_id);
-      if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
-    });
+    if (DATA.turns) {
+      DATA.turns.forEach(r => {
+        if (r.buildium_property_id && !r.property_id) r.property_id = parseInt(r.buildium_property_id);
+        if (!r.property_id && r.property_name && nameToId[r.property_name]) r.property_id = nameToId[r.property_name];
+      });
+      resolveUnmappedTurns();
+    }
     [DATA.noiSummary, DATA.occupancy, DATA.rentRoll, DATA.vacancy, DATA.expirations, DATA.turns,
      DATA.unitTurnCosts, DATA.unitTurnCostsByCategory].forEach(arr => {
       if (arr && arr.length) addPropId(arr);
@@ -5802,8 +5920,16 @@ async function loadDashboardData() {
           noiMap[key].total_income += r.total_amount;
         } else if (sec === 'expense' || sec === 'operating_expense') {
           noiMap[key].total_expenses += r.total_amount;
-        } else if (sec.includes('non_operating')) {
+        } else if (sec === 'non_operating_income') {
+          // Buildium stores income and expense both as positive magnitudes, so
+          // non-operating income and expense must NET, not add. Matching on
+          // sec.includes('non_operating') lumped both together with the same sign, so
+          // ~$15.7M of non-operating EXPENSE was added as though it were income:
+          // non_operating came out at +$15.76M instead of -$15.72M, and any
+          // net_income = noi + non_operating was overstated by 2x the expense.
           noiMap[key].non_operating += r.total_amount;
+        } else if (sec === 'non_operating_expense') {
+          noiMap[key].non_operating -= r.total_amount;
         }
       });
       // NOI = Income minus Expenses (Buildium stores both as positive)
@@ -5852,8 +5978,12 @@ async function loadDashboardData() {
         if (r.lease_id) r.status = 'Current';
         else r.status = 'Vacant';
       }
-      // MTM: lease_type = 'AtWill' or 'Month-to-Month' or 'MonthToMonth'
-      const lt = (r.lease_type || '').toLowerCase();
+      // MTM: lease type = 'AtWill' / 'Month-to-Month' / 'MonthToMonth'.
+      // v_rent_roll exposes this as `active_lease_type` — reading only `lease_type`
+      // (which that view does not have) made is_mtm permanently false, so the
+      // Month-to-Month KPI always showed 0 and the MTM badge never rendered even
+      // though ~447 of ~3,974 leases are Month-to-Month.
+      const lt = String(r.active_lease_type || r.lease_type || '').toLowerCase().replace(/[\s_]/g, '');
       r.is_mtm = lt.includes('atwill') || lt.includes('month-to-month') || lt.includes('monthtomonth');
       if (!r.property_id && r.property_name) r.property_id = nameToId[r.property_name] || 0;
     });
@@ -6037,9 +6167,19 @@ async function loadDashboardData() {
 
     // If properties loaded, we're connected — even if some queries failed
     if (allProperties.length > 0) {
-      const warnings = [];
-      if (!DATA.turns.length) warnings.push('Unit Turns');
-      const warnMsg = warnings.length ? ` (${warnings.join(', ')} unavailable)` : '';
+      const unavailable = [];
+      if (!DATA.turns.length) unavailable.push('Unit Turns');
+
+      // Regression guard: after the adoption/alias pass this should be zero. Non-zero
+      // means occupancy rows are again being dropped from every KPI — surface it.
+      const unmatched = reportPropertyCoverage();
+
+      const notes = [];
+      if (unavailable.length) notes.push(`${unavailable.join(', ')} unavailable`);
+      if (unmatched.units > 0) {
+        notes.push(`${unmatched.units} units in ${unmatched.properties} properties excluded — not in properties table`);
+      }
+      const warnMsg = notes.length ? ` (${notes.join('; ')})` : '';
       setApiStatus('ok', `${allProperties.length} properties loaded${warnMsg}`);
       showToast(`Dashboard loaded — ${allProperties.length} properties, ${DATA.months.length} months of data${warnMsg}`);
       renderCurrentView();
@@ -6056,9 +6196,130 @@ async function loadDashboardData() {
     console.error('Dashboard load error:', err);
     setApiStatus('error', 'Connection failed');
 
-    // Load demo data for development
+    // Load demo data for development.
+    // This renders complete, realistic-looking financials built from Math.random().
+    // A small status dot is not enough warning on a financial dashboard, so make it
+    // impossible to mistake synthetic numbers for real ones.
     loadDemoData();
+    showDemoDataBanner(err && err.message ? err.message : 'unknown error');
   }
+}
+
+// ── Resolve turns that propup_data.property_mapping does not cover ──
+// The `turns` query LEFT JOINs PropUp -> property_mapping -> Buildium properties. When a
+// property has no mapping row the join yields NULL, so the turn has no property_id and no
+// property_name and is dropped from every view by matchesSelectedProps().
+//
+// That was 199 of 456 turns (44%), almost all of them the recently acquired portfolio,
+// which PropUp names "<Property> - W Collection" while Buildium names it "<Property> - TWC".
+// Same buildings, different suffix, no mapping row.
+//
+// The durable fix is to populate propup_data.property_mapping. Until then fall back to
+// matching on a normalised name. Deliberately conservative:
+//   * only applied to turns that have NO mapping (never overrides a real one)
+//   * only applied when the normalised name resolves to exactly ONE property, so an
+//     ambiguous name is left unresolved rather than attributed to the wrong building
+function normalizePropertyName(n) {
+  if (!n) return '';
+  return String(n).toLowerCase().trim()
+    .replace(/\s*-\s*(w collection|twc|pgo|sd|tul|dal|oma|man)\s*$/, '')
+    .replace(/\b(apartments|apartment|apts)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function resolveUnmappedTurns() {
+  const unmapped = DATA.turns.filter(t => !t.property_id);
+  if (!unmapped.length) return;
+
+  const index = new Map();
+  const add = (name, id) => {
+    const k = normalizePropertyName(name);
+    if (!k || !id) return;
+    if (!index.has(k)) index.set(k, new Set());
+    index.get(k).add(id);
+  };
+  allProperties.forEach(p => {
+    add(p.name, p.id); add(p.apiName, p.id); add(p.t12Name, p.id);
+    if (p.aliases) p.aliases.forEach(a => add(a, p.id));
+  });
+
+  const byId = new Map(allProperties.map(p => [p.id, p]));
+  let resolved = 0;
+  const ambiguous = [];
+  unmapped.forEach(t => {
+    const hits = index.get(normalizePropertyName(t.propup_property_name));
+    if (!hits) return;
+    if (hits.size > 1) { ambiguous.push(t.propup_property_name); return; }
+    const id = [...hits][0];
+    t.property_id = id;
+    if (!t.property_name) t.property_name = (byId.get(id) || {}).name || '';
+    t.propertyResolvedByName = true;   // provenance: not from property_mapping
+    resolved++;
+  });
+
+  if (resolved) {
+    console.log(`[BPOS] Resolved ${resolved} of ${unmapped.length} unmapped turn(s) by `
+      + `normalised property name (missing rows in propup_data.property_mapping)`);
+  }
+  const still = unmapped.length - resolved;
+  if (still) {
+    console.warn(`[BPOS] ${still} turn(s) still unmapped and hidden from all views`
+      + (ambiguous.length ? `; ambiguous names: ${[...new Set(ambiguous)].join(', ')}` : ''));
+  }
+}
+
+// Report occupancy rows whose property is absent from allProperties. Those rows are
+// invisible to every view because matchesSelectedProps() is scoped to allProperties.
+// After the adoption/alias pass above this should read zero; if it ever does not, rows
+// are being silently dropped from every KPI and that needs surfacing rather than
+// letting a coverage gap masquerade as a real occupancy number.
+function reportPropertyCoverage() {
+  const known = new Set(allProperties.map(p => p.id));
+  const knownNames = new Set();
+  allProperties.forEach(p => {
+    if (p.name)    knownNames.add(p.name);
+    if (p.apiName) knownNames.add(p.apiName);
+    if (p.t12Name) knownNames.add(p.t12Name);
+    if (p.aliases) p.aliases.forEach(a => { if (a) knownNames.add(a); });
+  });
+  const isKnown = (r) => {
+    const pid = typeof r.property_id === 'number' ? r.property_id : parseInt(r.property_id);
+    if (pid && known.has(pid)) return true;
+    return !!(r.property_name && knownNames.has(r.property_name));
+  };
+
+  const orphans = (DATA.occupancy || []).filter(r => !isKnown(r));
+  const units = orphans.reduce((sum, r) => sum + (parseInt(r.total_units) || 0), 0);
+  if (orphans.length) {
+    console.warn(`[BPOS] COVERAGE GAP: ${orphans.length} propert${orphans.length === 1 ? 'y' : 'ies'} `
+      + `(${units} units) have occupancy data but no row in buildium_data.properties, `
+      + `so they are excluded from every dashboard view.`);
+    console.table(orphans.map(r => ({
+      property_id: r.property_id, property_name: r.property_name,
+      total_units: r.total_units, occupancy_pct: r.physical_occupancy_pct,
+    })));
+  }
+  return { properties: orphans.length, units };
+}
+
+// Persistent, unmissable banner shown whenever the dashboard falls back to randomly
+// generated demo data because the live load failed.
+function showDemoDataBanner(reason) {
+  if (document.getElementById('demoDataBanner')) return;
+  const bar = document.createElement('div');
+  bar.id = 'demoDataBanner';
+  bar.setAttribute('role', 'alert');
+  bar.style.cssText = [
+    'position:sticky', 'top:0', 'z-index:9999', 'width:100%',
+    'background:#b42318', 'color:#fff', 'padding:10px 16px',
+    'font:600 13px/1.4 system-ui,-apple-system,Segoe UI,sans-serif',
+    'text-align:center', 'letter-spacing:.01em',
+    'box-shadow:0 1px 4px rgba(0,0,0,.3)',
+  ].join(';');
+  bar.textContent = 'SAMPLE DATA — the live data connection failed, so every figure below is '
+    + 'randomly generated and must not be used for reporting or decisions. (' + reason + ')';
+  document.body.insertBefore(bar, document.body.firstChild);
 }
 
 function loadDemoData() {

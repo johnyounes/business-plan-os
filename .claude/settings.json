@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(curl:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(diff:*)",
+      "Bash(npx --yes esbuild:*)",
+      "Bash(node --check:*)",
+      "Bash(node -e:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  }
+}

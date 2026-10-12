@@ -424,7 +424,18 @@ def pull_financial_current_month(api, bq, current_month, snap_date, gl_accounts,
 
                 if not prop_id or prop_id not in property_ids:
                     continue
-                if any(kw.lower() in prop_name.lower() for kw in exclude_keywords):
+
+                # Match the exclude keywords against the ROSTER name, not just the name on
+                # the GL entry. AccountingEntity.Name comes back empty for some entries, so
+                # checking it alone lets management and service entities through -- TurnKey
+                # Make Readies, Odd Fellow Hall, Point Guard Maintenance, PG Omaha. Those
+                # were previously blocked only by accident, because they were absent from
+                # the static property_matches.json; once the map is sourced from
+                # buildium_data.properties they pass the id filter, and the keyword filter
+                # has to do the work it was always meant to do.
+                mapped = property_map.get(prop_id, {})
+                check_name = mapped.get('api_name') or mapped.get('t12_name') or prop_name
+                if any(kw.lower() in check_name.lower() for kw in exclude_keywords):
                     continue
 
                 amount = entry.get('Amount', 0)

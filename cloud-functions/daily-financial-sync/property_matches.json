@@ -1,0 +1,1914 @@
+[
+  {
+    "t12_name": "1001 NW 21st St. - 116 NW 29th, LLC, Andrew Harroz",
+    "api_id": 139414,
+    "api_name": "1001 NW 21st St.",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "10013 W. Dora - Foster Holdings LLC",
+    "api_id": 168851,
+    "api_name": "10013 W. Dora",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1003-1005 Avenue K - PGO - Midwest Portfolio 4, LLC",
+    "api_id": 169240,
+    "api_name": "1003-1005 Avenue K - PGO",
+    "api_units": 20,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1015 South Meridian Avenue - F4, LLC",
+    "api_id": 180731,
+    "api_name": "1015 South Meridian Avenue",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "102 N. 38th Ave. - PGO - Fast Ave Properties, LLC",
+    "api_id": 168773,
+    "api_name": "102 N. 38th Ave. - PGO",
+    "api_units": 5,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "102 W. Zimmerly St. - F4, LLC",
+    "api_id": 147920,
+    "api_name": "102 W. Zimmerly St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "10517 Queensbury Drive - Michelle Jackman",
+    "api_id": 175966,
+    "api_name": "10517 Queensbury Drive",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "110 N. Vine - JMS Holdings, LLC",
+    "api_id": 155771,
+    "api_name": "110 N. Vine",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1102 E. Donnell Ave. - F4, LLC",
+    "api_id": 122703,
+    "api_name": "1102 E. Donnell Ave.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1121 E. Berkeley Ave. - JMS Holdings, LLC",
+    "api_id": 111335,
+    "api_name": "1121 E. Berkeley Ave.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1125 S. Wichita - F4, LLC",
+    "api_id": 119015,
+    "api_name": "1125 S. Wichita",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "116 NW 29th St. - Andrew Harroz",
+    "api_id": 143205,
+    "api_name": "116 NW 29th St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1160 S. Richmond - JMS Holdings, LLC",
+    "api_id": 120084,
+    "api_name": "1160 S. Richmond",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1204-1206 N. Jefferson Ave. - Under Evening Prokeimenon, LLC",
+    "api_id": 169295,
+    "api_name": "1204-1206 N. Jefferson Ave.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1213 S. Ellis St. - F4, LLC",
+    "api_id": 138870,
+    "api_name": "1213 S. Ellis St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1217 N. Bitting - FS, LLC",
+    "api_id": 123136,
+    "api_name": "1217 N. Bitting",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1220 S. Pattie - 316 KS Investments",
+    "api_id": 116487,
+    "api_name": "1220 S. Pattie",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1225 S. Pattie St. - ITFH LLC",
+    "api_id": 135509,
+    "api_name": "1225 S. Pattie St.",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1301 N. Oliver St. - ITFH LLC",
+    "api_id": 135575,
+    "api_name": "1301 N. Oliver St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1301-1303 E. Mount Vernon St. - Finite Field LLC",
+    "api_id": 166891,
+    "api_name": "1301-1303 E. Mount Vernon St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1313 W. 32nd St. S. - Bobcat Investments LLC",
+    "api_id": 111060,
+    "api_name": "1313 W. 32nd St. S.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1318 N. Piatt - F4, LLC",
+    "api_id": 120820,
+    "api_name": "1318 N. Piatt",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1327 S. St. Francis - Farha Development",
+    "api_id": 86418,
+    "api_name": "1327 S. St. Francis",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1338 S. Sedgwick - F4, LLC",
+    "api_id": 147923,
+    "api_name": "1338 S. Sedgwick",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1342 S. Emporia - FS, LLC",
+    "api_id": 115416,
+    "api_name": "1342 S. Emporia",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "135 S. Minneapolis - F4, LLC",
+    "api_id": 119165,
+    "api_name": "135 S. Minneapolis",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "136 N. Baehr St. - Next Level Properties 2, LLC",
+    "api_id": 152604,
+    "api_name": "136 N. Baehr St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1422 S. Wichita St. - Bobcat Investments LLC",
+    "api_id": 131917,
+    "api_name": "1422 S. Wichita St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1430 S. Wichita - F4, LLC",
+    "api_id": 143858,
+    "api_name": "1430 S. Wichita",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "149 S. Richmond - Foster Holdings LLC",
+    "api_id": 163262,
+    "api_name": "149 S. Richmond",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1507 N. Old Manor Rd. - F4, LLC",
+    "api_id": 115973,
+    "api_name": "1507 N. Old Manor Rd.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1527 E. Fortuna - Next Level Properties 2, LLC",
+    "api_id": 152608,
+    "api_name": "1527 E. Fortuna",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "159 N. Madison - Next Level Properties 2, LLC",
+    "api_id": 152610,
+    "api_name": "159 N. Madison",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1601 S. Pattie St. - ITFH LLC",
+    "api_id": 135589,
+    "api_name": "1601 S. Pattie St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1615 W. Crawford St. - 316 KS Investments",
+    "api_id": 136581,
+    "api_name": "1615 W. Crawford St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1625 N. Vassar - Pacific Avenue Rentals, LLC",
+    "api_id": 97196,
+    "api_name": "1625 N. Vassar",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1643-45 N. Vassar - Pacific Avenue Rentals, LLC",
+    "api_id": 90761,
+    "api_name": "1643-45 N. Vassar",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1647 N. Fairmount - Pacific Avenue Rentals, LLC",
+    "api_id": 86413,
+    "api_name": "1647 N. Fairmount",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1650 S. Pattie St. - F4, LLC",
+    "api_id": 141136,
+    "api_name": "1650 S. Pattie St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "169 S. Belmont - F4, LLC",
+    "api_id": 147912,
+    "api_name": "169 S. Belmont",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1710 N. Harvard - Pacific Avenue Rentals, LLC",
+    "api_id": 96801,
+    "api_name": "1710 N. Harvard",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1716 N. Harvard - Pacific Avenue Rentals, LLC",
+    "api_id": 96805,
+    "api_name": "1716 N. Harvard",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1722 N. Holyoke St. - Pacific Avenue Rentals, LLC",
+    "api_id": 141069,
+    "api_name": "1722 N. Holyoke St.",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1728 N. Holyoke - Pacific Avenue Rentals, LLC",
+    "api_id": 141065,
+    "api_name": "1728 N. Holyoke",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1747 N. Old Manor Rd. - F4, LLC",
+    "api_id": 118926,
+    "api_name": "1747 N. Old Manor Rd.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1800 E. 1st St. N. - Tim Nathan Jeff (PGD LLC)",
+    "api_id": 164334,
+    "api_name": "1800 E. 1st St. N.",
+    "api_units": 6,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1822 South Topeka St - F4, LLC",
+    "api_id": 166650,
+    "api_name": "1822 South Topeka St",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1826 S. Laura St. - Next Level Properties 2, LLC",
+    "api_id": 152619,
+    "api_name": "1826 S. Laura St.",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1827-1829 W. Walker - F4, LLC",
+    "api_id": 159455,
+    "api_name": "1827-1829 W. Walker",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1828 E. Park St. - F4, LLC",
+    "api_id": 122702,
+    "api_name": "1828 E. Park St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1864-1866 Winstead - Beverly Kouri",
+    "api_id": 133632,
+    "api_name": "1864-1866 Winstead",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1902 S. Volutsia - 316 KS Investments",
+    "api_id": 118423,
+    "api_name": "1902 S. Volutsia",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1927 S. Mosley St. - ITFH LLC",
+    "api_id": 135557,
+    "api_name": "1927 S. Mosley St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1931 S. Oliver - Next Level Properties 2, LLC",
+    "api_id": 152662,
+    "api_name": "1931 S. Oliver",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1938 W. Walker Ave. - Foster Holdings LLC",
+    "api_id": 171178,
+    "api_name": "1938 W. Walker Ave.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1941 S. Oliver - Next Level Properties 2, LLC",
+    "api_id": 152663,
+    "api_name": "1941 S. Oliver",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1942 S. Dellrose - Next Level Properties 2, LLC",
+    "api_id": 152667,
+    "api_name": "1942 S. Dellrose",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1947 N. Payne Avenue - NEW - Camo LLC",
+    "api_id": 178095,
+    "api_name": "1947 N. Payne Avenue - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "1951 S. Oliver - Next Level Properties 2, LLC",
+    "api_id": 152618,
+    "api_name": "1951 S. Oliver",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2006 S. Emporia St. - ITFH LLC",
+    "api_id": 135565,
+    "api_name": "2006 S. Emporia St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2041 S. Emporia St. - F4, LLC",
+    "api_id": 144029,
+    "api_name": "2041 S. Emporia St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2046 S. Ida St. - ITFH LLC",
+    "api_id": 136516,
+    "api_name": "2046 S. Ida St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "216 W. Patterson - 316 KS Investments",
+    "api_id": 116488,
+    "api_name": "216 W. Patterson",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "219 S. Estelle - Todd Farha",
+    "api_id": 132798,
+    "api_name": "219 S. Estelle",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "219-221 S. Millwood - F4, LLC",
+    "api_id": 122371,
+    "api_name": "219-221 S. Millwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2208 W. Haskell - 316 KS Investments",
+    "api_id": 116490,
+    "api_name": "2208 W. Haskell",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2214 E. Douglas - Carl T Allen LLC",
+    "api_id": 116361,
+    "api_name": "2214 E. Douglas",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2215 S. Hydraulic - F4, LLC",
+    "api_id": 128644,
+    "api_name": "2215 S. Hydraulic",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2216 E. Douglas - Carl T Allen LLC",
+    "api_id": 116362,
+    "api_name": "2216 E. Douglas",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2216 S. Topeka - ITFH LLC",
+    "api_id": 135580,
+    "api_name": "2216 S. Topeka",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2227 S. Walnut St. - Heman Hollingsworth",
+    "api_id": 142129,
+    "api_name": "2227 S. Walnut St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "226 S. Millwood - F4, LLC",
+    "api_id": 117219,
+    "api_name": "226 S. Millwood",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2261 S. Grove - JMS Holdings, LLC",
+    "api_id": 98422,
+    "api_name": "2261 S. Grove",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "228 S. Erie St. - F4, LLC",
+    "api_id": 177740,
+    "api_name": "228 S. Erie St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "229 S. Charles St. - F4, LLC",
+    "api_id": 176492,
+    "api_name": "229 S. Charles St.",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2301-2303 N. Shefford Cir. - JMS Holdings, LLC",
+    "api_id": 116152,
+    "api_name": "2301-2303 N. Shefford Cir.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "231 N. Crestway St. - Keith Stevens",
+    "api_id": 180289,
+    "api_name": "231 N. Crestway St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2333-2335 S. Topeka - ITFH LLC",
+    "api_id": 135574,
+    "api_name": "2333-2335 S. Topeka",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2345 S Greenwood St - F4, LLC",
+    "api_id": 166649,
+    "api_name": "2345 S Greenwood St",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2650 S. Lulu St. - F4, LLC",
+    "api_id": 146068,
+    "api_name": "2650 S. Lulu St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2711 E. Douglas Ave. - Keith Stevens",
+    "api_id": 177538,
+    "api_name": "2711 E. Douglas Ave.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "2749 N. Poplar - Nick Pohlenz",
+    "api_id": 148049,
+    "api_name": "2749 N. Poplar",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3004 Marcy Street - PGO - NB Brothers LLC",
+    "api_id": 169285,
+    "api_name": "3004 Marcy Street - PGO",
+    "api_units": 3,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3009 West Maple Street - F4, LLC",
+    "api_id": 176481,
+    "api_name": "3009 West Maple Street",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "301 S. Meridian Ave. - 301 Meridian Partners, LLC",
+    "api_id": 176494,
+    "api_name": "301 S. Meridian Ave.",
+    "api_units": 21,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "302 S. Poplar St. - F4, LLC",
+    "api_id": 137110,
+    "api_name": "302 S. Poplar St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "304 S. Chautauqua - F4, LLC",
+    "api_id": 137109,
+    "api_name": "304 S. Chautauqua",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "305 N. Green - Todd Farha",
+    "api_id": 114662,
+    "api_name": "305 N. Green",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "306 Maple Lane - JMS Holdings, LLC",
+    "api_id": 99160,
+    "api_name": "306 Maple Lane",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "315-317 S. Green St. - F4, LLC",
+    "api_id": 149045,
+    "api_name": "315-317 S. Green St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "321 Townhomes - KC - PGO - Independence 18 LLC",
+    "api_id": 172326,
+    "api_name": "321 Townhomes - KC - PGO",
+    "api_units": 20,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3221 Chatfield Place - Bobcat Investments LLC",
+    "api_id": 147972,
+    "api_name": "3221 Chatfield Place",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3224 E. Oakland Ave. - F4, LLC",
+    "api_id": 149704,
+    "api_name": "3224 E. Oakland Ave.",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3224 S. Euclid - F4, LLC",
+    "api_id": 147924,
+    "api_name": "3224 S. Euclid",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3309-3311 E. English St. - College Hill Real Estate",
+    "api_id": 133215,
+    "api_name": "3309-3311 E. English St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "331 N. 127th Street E. - Lynn Wagnon",
+    "api_id": 177069,
+    "api_name": "331 N. 127th Street E.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "331 S. Green St. - F4, LLC",
+    "api_id": 153120,
+    "api_name": "331 S. Green St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3338 E. Victor Pl. - F4, LLC",
+    "api_id": 122206,
+    "api_name": "3338 E. Victor Pl.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "334 S. Elizabeth St. - WJ, LLC",
+    "api_id": 115226,
+    "api_name": "334 S. Elizabeth St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3412-3414 E. Aster St. - TLW Enterprises LLC",
+    "api_id": 177067,
+    "api_name": "3412-3414 E. Aster St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3425 E. 16th St. N. - Pacific Avenue Rentals, LLC",
+    "api_id": 141057,
+    "api_name": "3425 E. 16th St. N.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "348 S. All Hallows - F4, LLC",
+    "api_id": 176480,
+    "api_name": "348 S. All Hallows",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "350 N. Edwards - NEW - Camo LLC",
+    "api_id": 178094,
+    "api_name": "350 N. Edwards - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "352 S. Chautauqua - F4, LLC",
+    "api_id": 116769,
+    "api_name": "352 S. Chautauqua",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "357 S. All Hallows - F4, LLC",
+    "api_id": 124550,
+    "api_name": "357 S. All Hallows",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "3810 E. 16th St. - Pacific Avenue Rentals, LLC",
+    "api_id": 131110,
+    "api_name": "3810 E. 16th St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "4001 E. Bellaire - JMS Holdings, LLC",
+    "api_id": 98426,
+    "api_name": "4001 E. Bellaire",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "405-407 N. Erie St. - F4, LLC",
+    "api_id": 147918,
+    "api_name": "405-407 N. Erie St.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "408 South Elizabeth Street - F4, LLC",
+    "api_id": 176493,
+    "api_name": "408 South Elizabeth Street",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "4111 Regents Ln - F4, LLC",
+    "api_id": 117599,
+    "api_name": "4111 Regents Ln",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "417 N. Dodge Ave. - Foster Holdings LLC",
+    "api_id": 162590,
+    "api_name": "417 N. Dodge Ave.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "421-423 North Emporia Avenue - NEW - Heartland RE Partners LLC",
+    "api_id": 182358,
+    "api_name": "421-423 North Emporia Avenue - NEW",
+    "api_units": 7,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "4220 Vesta Dr. - F4, LLC",
+    "api_id": 118074,
+    "api_name": "4220 Vesta Dr.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "425 N. Dodge - Next Level Properties 2, LLC",
+    "api_id": 152668,
+    "api_name": "425 N. Dodge",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "430 S. Sedgwick - NEW - F4, LLC",
+    "api_id": 159606,
+    "api_name": "430 S. Sedgwick - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "437-439 Hillcrest Ct. N. - Brent Buller",
+    "api_id": 135700,
+    "api_name": "437-439 Hillcrest Ct. N.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "4710-4740 E. Mt. Vernon - Next Level Properties 2, LLC",
+    "api_id": 152675,
+    "api_name": "4710-4740 E. Mt. Vernon",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "504-604 Cordes Dr. - PGO - Cordes Partners, LLC",
+    "api_id": 168858,
+    "api_name": "504-604 Cordes Dr. - PGO",
+    "api_units": 24,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5112 E. Crestview - F4, LLC",
+    "api_id": 142531,
+    "api_name": "5112 E. Crestview",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "515 S. Belmont - Next Level Properties 2, LLC",
+    "api_id": 152659,
+    "api_name": "515 S. Belmont",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "517 S. Belmont - Next Level Properties 2, LLC",
+    "api_id": 152660,
+    "api_name": "517 S. Belmont",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "524 S. St. Paul - JMS Holdings, LLC",
+    "api_id": 98424,
+    "api_name": "524 S. St. Paul",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "530 N. Bluff - F4, LLC",
+    "api_id": 116492,
+    "api_name": "530 N. Bluff",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5359-5361 N. Pinecrest Ct. - Lynn Wagnon",
+    "api_id": 177068,
+    "api_name": "5359-5361 N. Pinecrest Ct.",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5490 South Gold Street - NEW - Toehead Properties, LLC",
+    "api_id": 181140,
+    "api_name": "5490 South Gold Street - NEW",
+    "api_units": 4,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5520 South Gold Street - NEW - Toehead Properties, LLC",
+    "api_id": 180544,
+    "api_name": "5520 South Gold Street - NEW",
+    "api_units": 2,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5530 South Gold Street #200 - NEW - Toehead Properties, LLC",
+    "api_id": 180541,
+    "api_name": "5530 South Gold Street #200 - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5550 South Gold Avenue #200 - NEW - Toehead Properties, LLC",
+    "api_id": 180545,
+    "api_name": "5550 South Gold Avenue #200 - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5566 South Gold Street #100 - NEW - Toehead Properties, LLC",
+    "api_id": 180546,
+    "api_name": "5566 South Gold Street #100 - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "557 S. Chautauqua - F4, LLC",
+    "api_id": 158110,
+    "api_name": "557 S. Chautauqua",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5570 South Gold Street #100 - NEW - Toehead Properties, LLC",
+    "api_id": 180543,
+    "api_name": "5570 South Gold Street #100 - NEW",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5590 South Gold Street - NEW - Toehead Properties, LLC",
+    "api_id": 180548,
+    "api_name": "5590 South Gold Street - NEW",
+    "api_units": 3,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "5617 S. 77th St. Ralston - PGO - Red Park, LLC",
+    "api_id": 168856,
+    "api_name": "5617 S. 77th St. Ralston - PGO",
+    "api_units": 5,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6002 East 8th Street North - Leila Younes",
+    "api_id": 182037,
+    "api_name": "6002 East 8th Street North",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6007 N. Grace Ln. - Colin Haenel",
+    "api_id": 130968,
+    "api_name": "6007 N. Grace Ln.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6026-6028 E. Oakwood - Next Level Properties 2, LLC",
+    "api_id": 152650,
+    "api_name": "6026-6028 E. Oakwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "60th Street Duplexes - PGO - Red Park 2, LLC",
+    "api_id": 175404,
+    "api_name": "60th Street Duplexes - PGO",
+    "api_units": 10,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6102-6104 E. Oakwood - Next Level Properties 2, LLC",
+    "api_id": 152655,
+    "api_name": "6102-6104 E. Oakwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6110-6112 E. Oakwood - Next Level Properties 2, LLC",
+    "api_id": 152672,
+    "api_name": "6110-6112 E. Oakwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6116-6118 E. Oakwood - Next Level Properties 2, LLC",
+    "api_id": 152673,
+    "api_name": "6116-6118 E. Oakwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6122-6124 E. Oakwood - Next Level Properties 2, LLC",
+    "api_id": 152621,
+    "api_name": "6122-6124 E. Oakwood",
+    "api_units": 2,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "615 N. Old Manor - F4, LLC",
+    "api_id": 147921,
+    "api_name": "615 N. Old Manor",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "619 North Glendale Street - F4, LLC",
+    "api_id": 180732,
+    "api_name": "619 North Glendale Street",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "623 N. Spruce St. - F4, LLC",
+    "api_id": 138871,
+    "api_name": "623 N. Spruce St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "623-627 S. Hydraulic - F4, LLC",
+    "api_id": 146807,
+    "api_name": "623-627 S. Hydraulic",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "631 N. Mount Carmel - F4, LLC",
+    "api_id": 147922,
+    "api_name": "631 N. Mount Carmel",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "633 N. Harding - F4, LLC",
+    "api_id": 122372,
+    "api_name": "633 N. Harding",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "635 S. Sycamore St. - F4, LLC",
+    "api_id": 119162,
+    "api_name": "635 S. Sycamore St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "637 S. Lightner Dr. - Foster Holdings LLC",
+    "api_id": 171177,
+    "api_name": "637 S. Lightner Dr.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6419 E. 9th St. N - John Rupp",
+    "api_id": 149753,
+    "api_name": "6419 E. 9th St. N",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "6427 E. 9th St. N. - John Rupp",
+    "api_id": 118444,
+    "api_name": "6427 E. 9th St. N.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "654 S. Eastridge - Farha Development",
+    "api_id": 86373,
+    "api_name": "654 S. Eastridge",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "702 S. Yale - F4, LLC",
+    "api_id": 149465,
+    "api_name": "702 S. Yale",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "706 S. Pattie St. - F4, LLC",
+    "api_id": 144147,
+    "api_name": "706 S. Pattie St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "749 S. Pattie St. - Finite Field LLC",
+    "api_id": 170131,
+    "api_name": "749 S. Pattie St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "750 W. Dayton Ave. - John Younes",
+    "api_id": 178172,
+    "api_name": "750 W. Dayton Ave.",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "805 N. Pershing - Ben & Todd's, LLC",
+    "api_id": 95723,
+    "api_name": "805 N. Pershing",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "808 N. Pinecrest - JMS Holdings, LLC",
+    "api_id": 100791,
+    "api_name": "808 N. Pinecrest",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "836 S. Broadview - F4, LLC",
+    "api_id": 119164,
+    "api_name": "836 S. Broadview",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "839 S. Broadview - F4, LLC",
+    "api_id": 116770,
+    "api_name": "839 S. Broadview",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "846 S. Belmont St. - F4, LLC",
+    "api_id": 122705,
+    "api_name": "846 S. Belmont St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "852 S. Belmont St. - F4, LLC",
+    "api_id": 122707,
+    "api_name": "852 S. Belmont St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "854 S. Belmont St. - F4, LLC",
+    "api_id": 122706,
+    "api_name": "854 S. Belmont St.",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "855-863 S. Broadview St. - Toehead Properties, LLC",
+    "api_id": 172142,
+    "api_name": "855-863 S. Broadview St.",
+    "api_units": 4,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "9109 East Elm Street - Nick Bonavia",
+    "api_id": 180780,
+    "api_name": "9109 East Elm Street",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "930 W. Douglas - Wichita Odd Fellows LLC",
+    "api_id": 112697,
+    "api_name": "930 W. Douglas",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "9445-9449 J St. - PGO - Midwest Portfolio 4, LLC",
+    "api_id": 168859,
+    "api_name": "9445-9449 J St. - PGO",
+    "api_units": 2,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "AksarbenLIV - PGO - Red Park 2, LLC",
+    "api_id": 175401,
+    "api_name": "AksarbenLIV - PGO",
+    "api_units": 24,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Alabaster Homes - Tim Nathan Jeff (PGD LLC)",
+    "api_id": 142772,
+    "api_name": "Alabaster Homes",
+    "api_units": 44,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Argo II - NEW - Charlie Murray",
+    "api_id": 160876,
+    "api_name": "Argo II - NEW",
+    "api_units": 4,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Bancroft Place Apartments - SD - PGO - Bancroft Place Apartments LLC",
+    "api_id": 179734,
+    "api_name": "Bancroft Place Apartments - SD - PGO",
+    "api_units": 52,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Benson Place Apartments - PGO - Theodora & Nick Petrow",
+    "api_id": 178316,
+    "api_name": "Benson Place Apartments - PGO",
+    "api_units": 12,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "BLUEBIRD - 6990 Dodge St LLC",
+    "api_id": 182817,
+    "api_name": "BLUEBIRD",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Boulder Pointe Townhomes - SD - PGO - Boulder Pointe Townhomes LLC",
+    "api_id": 179774,
+    "api_name": "Boulder Pointe Townhomes - SD - PGO",
+    "api_units": 52,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Brent Village - PGO - Brent Partners LLC",
+    "api_id": 180254,
+    "api_name": "Brent Village - PGO",
+    "api_units": 180,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Cedar Haven Duplexes - PGO - NDD Partners LLC",
+    "api_id": 178580,
+    "api_name": "Cedar Haven Duplexes - PGO",
+    "api_units": 33,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Cedar Haven Homeowners Association",
+    "api_id": null,
+    "api_name": null,
+    "api_units": null,
+    "match_method": "unmatched",
+    "confidence": "low"
+  },
+  {
+    "t12_name": "Central Heights Apartments - Central Heights LLC",
+    "api_id": 137377,
+    "api_name": "Central Heights Apartments",
+    "api_units": 52,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Cobblestone Apartments - F4, LLC",
+    "api_id": 165699,
+    "api_name": "Cobblestone Apartments",
+    "api_units": 24,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "College Heights - Manhattan - PGO - Midwest Portfolio 5 LLC",
+    "api_id": 169407,
+    "api_name": "College Heights - Manhattan - PGO",
+    "api_units": 23,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Copperleaf - PGO - Copperleaf Investments LLC",
+    "api_id": 168862,
+    "api_name": "Copperleaf - PGO",
+    "api_units": 87,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Cornerstone Apartments - NEW - Wichita Property Holdings II, LLC",
+    "api_id": 172379,
+    "api_name": "Cornerstone Apartments - NEW",
+    "api_units": 61,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Creekside Apartments - Receiver for Creekside Apartments",
+    "api_id": 168112,
+    "api_name": "Creekside Apartments",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Dora Duplexes - Wichita Property Holdings V LLC",
+    "api_id": 182510,
+    "api_name": "Dora Duplexes",
+    "api_units": 16,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Dundee Village - PGO - Collin Schwartz",
+    "api_id": 177976,
+    "api_name": "Dundee Village - PGO",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Dwell Apartments - Pacific Avenue Rentals, LLC",
+    "api_id": 92326,
+    "api_name": "Dwell Apartments",
+    "api_units": 25,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Eagle Creek Apartments - SD - PGO - Eagle Annex LLC",
+    "api_id": 179731,
+    "api_name": "Eagle Creek Apartments - SD - PGO",
+    "api_units": 65,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Estrella at Kiest - PGO - 4542 West Kiest Blvd LLC",
+    "api_id": 173177,
+    "api_name": "Estrella at Kiest - PGO",
+    "api_units": 231,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Fairmount Flats - Pacific Avenue Rentals, LLC",
+    "api_id": 96536,
+    "api_name": "Fairmount Flats",
+    "api_units": 52,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Gold Coast Townhomes - 5504 - Toehead Properties, LLC",
+    "api_id": 150552,
+    "api_name": "Gold Coast Townhomes - 5504",
+    "api_units": 3,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Gold Coast Townhomes - 5510 - Toehead Properties, LLC",
+    "api_id": 160728,
+    "api_name": "Gold Coast Townhomes - 5510",
+    "api_units": 5,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Harvard 3 - Pacific Avenue Rentals, LLC",
+    "api_id": 96802,
+    "api_name": "Harvard 3",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Harvest Apartments - NEW - Wichita Property Holdings I, LLC",
+    "api_id": 172569,
+    "api_name": "Harvest Apartments - NEW",
+    "api_units": 55,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Heston Pointe - PGO - Heston Pointe, LLC",
+    "api_id": 176940,
+    "api_name": "Heston Pointe - PGO",
+    "api_units": 64,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Jefferson Commons - SD - PGO - Dakota 1 Properties LLC",
+    "api_id": 183247,
+    "api_name": "Jefferson Commons - SD - PGO",
+    "api_units": 16,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Judee Estates - SD - PGO - Judee Partners LLC",
+    "api_id": 179783,
+    "api_name": "Judee Estates - SD - PGO",
+    "api_units": 56,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Langston Apartments - PGO - Langston Loge TIC",
+    "api_id": 169167,
+    "api_name": "Langston Apartments - PGO",
+    "api_units": 81,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Leavenwealth - Bricktown - Collin Schwartz",
+    "api_id": 176116,
+    "api_name": "Leavenwealth - Bricktown",
+    "api_units": 1,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Liv Apartments - Pacific Avenue Rentals, LLC",
+    "api_id": 92328,
+    "api_name": "Liv Apartments",
+    "api_units": 67,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Maple Park Apartments - SD - PGO - The Maples Partners LLC",
+    "api_id": 179733,
+    "api_name": "Maple Park Apartments - SD - PGO",
+    "api_units": 48,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Midtown Place Apartments - Nerio Flyer LLC",
+    "api_id": 169673,
+    "api_name": "Midtown Place Apartments",
+    "api_units": 120,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Modern Heights - PGO - 7300 Graceland LLC",
+    "api_id": 179751,
+    "api_name": "Modern Heights - PGO",
+    "api_units": 162,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Morris Manor - F4, LLC",
+    "api_id": 120822,
+    "api_name": "Morris Manor",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Park Place - Manhattan - PGO - Partners of Park Place LLC",
+    "api_id": 170274,
+    "api_name": "Park Place - Manhattan - PGO",
+    "api_units": 262,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Patrick's Place - PGO - Patricks Place Partners LLC",
+    "api_id": 168871,
+    "api_name": "Patrick's Place - PGO",
+    "api_units": 48,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Plazzio Place Apartments - Plazzio Place Apartments LLC",
+    "api_id": 150153,
+    "api_name": "Plazzio Place Apartments",
+    "api_units": 42,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Prairie Breeze Apartments - Finite Field LLC",
+    "api_id": 166584,
+    "api_name": "Prairie Breeze Apartments",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "RADAR - Keystone Neighborhood LLC",
+    "api_id": 181615,
+    "api_name": "RADAR",
+    "api_units": 1,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Sandra Ann - PGO - Sarpy Douglas Investments, LLC",
+    "api_id": 168879,
+    "api_name": "Sandra Ann - PGO",
+    "api_units": 26,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Sierra Gardens - PGO - 2200 Ridgmar Plaza LLC",
+    "api_id": 173176,
+    "api_name": "Sierra Gardens - PGO",
+    "api_units": 235,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "SoSA Heights - WB Holdings LLC",
+    "api_id": 134370,
+    "api_name": "SoSA Heights",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Stonebriar Apartments - Wichita Property Holdings IV, LLC",
+    "api_id": 181617,
+    "api_name": "Stonebriar Apartments",
+    "api_units": 32,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Stoneybrook Apartments - PSNP, LLC",
+    "api_id": 151566,
+    "api_name": "Stoneybrook Apartments",
+    "api_units": 101,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Tall Oaks - KC - PGO - Tall Oaks Partners LLC",
+    "api_id": 171268,
+    "api_name": "Tall Oaks - KC - PGO",
+    "api_units": 52,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Baltimore - The Baltimore, LLC",
+    "api_id": 131278,
+    "api_name": "The Baltimore",
+    "api_units": 36,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Beverly Apartments - PGO - Keystone Neighborhood LLC",
+    "api_id": 173174,
+    "api_name": "The Beverly Apartments - PGO",
+    "api_units": 176,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Buckstaff Apartments - WB Holdings LLC",
+    "api_id": 134239,
+    "api_name": "The Buckstaff Apartments",
+    "api_units": 15,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Carter Apartments - Jeff Meierhofer",
+    "api_id": 142138,
+    "api_name": "The Carter Apartments",
+    "api_units": 47,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Cass Apartments - PGO - 6990 Dodge St LLC",
+    "api_id": 182753,
+    "api_name": "The Cass Apartments - PGO",
+    "api_units": 80,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Enclave Townhomes - SD - PGO - The Maples Partners LLC",
+    "api_id": 183639,
+    "api_name": "The Enclave Townhomes - SD - PGO",
+    "api_units": 29,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Granada - Granada Housing, LLC",
+    "api_id": 145337,
+    "api_name": "The Granada",
+    "api_units": 12,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Greenway Townhomes 1 - SD - PGO - Midwest Portfolio 8 LLC",
+    "api_id": 180484,
+    "api_name": "The Greenway Townhomes 1 - SD - PGO",
+    "api_units": 59,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Greenway Townhomes 2 - SD - PGO - Midwest Portfolio 8 LLC",
+    "api_id": 180485,
+    "api_name": "The Greenway Townhomes 2 - SD - PGO",
+    "api_units": 70,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Landmark on Dakota - SD - PGO - 500 S Dakota Ave LLC",
+    "api_id": 179815,
+    "api_name": "The Landmark on Dakota - SD - PGO",
+    "api_units": 22,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Mews HOA",
+    "api_id": null,
+    "api_name": null,
+    "api_units": null,
+    "match_method": "unmatched",
+    "confidence": "low"
+  },
+  {
+    "t12_name": "The Preserve - SD - PGO - Preserve Partners LLC",
+    "api_id": 179754,
+    "api_name": "The Preserve - SD - PGO",
+    "api_units": 72,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Taj Apartments - ARJE Properties LLC",
+    "api_id": 159277,
+    "api_name": "The Taj Apartments",
+    "api_units": 8,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Todd - Manhattan - PGO - Midwest Portfolio 4, LLC",
+    "api_id": 170310,
+    "api_name": "The Todd - Manhattan - PGO",
+    "api_units": 22,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Towers Apartments - Wichita Property Holdings III, LLC",
+    "api_id": 172579,
+    "api_name": "The Towers Apartments",
+    "api_units": 71,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "The Vincent 107 - PGO - Sarpy Douglas Investments, LLC",
+    "api_id": 168885,
+    "api_name": "The Vincent 107 - PGO",
+    "api_units": 48,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Towne Park Homeowners Association",
+    "api_id": null,
+    "api_name": null,
+    "api_units": null,
+    "match_method": "unmatched",
+    "confidence": "low"
+  },
+  {
+    "t12_name": "Tuscan Village - Jany Moussa",
+    "api_id": 97832,
+    "api_name": "Tuscan Village",
+    "api_units": 3,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Vassar Flats - Pacific Avenue Rentals, LLC",
+    "api_id": 152854,
+    "api_name": "Vassar Flats",
+    "api_units": 50,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Venice - PGO - Midwest Portfolio 4, LLC",
+    "api_id": 168790,
+    "api_name": "Venice - PGO",
+    "api_units": 11,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Villa Blanca Apartments - PGO - Midwest Portfolio 4, LLC",
+    "api_id": 168784,
+    "api_name": "Villa Blanca Apartments - PGO",
+    "api_units": 24,
+    "match_method": "contains",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Walnut Grove Apartments - Sibylla Toomey",
+    "api_id": 162037,
+    "api_name": "Walnut Grove Apartments",
+    "api_units": 58,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Waterman 5-plex - WJ, LLC",
+    "api_id": 114302,
+    "api_name": "Waterman 5-plex",
+    "api_units": 5,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Wellington Place - Savage Real Estate VI LLC",
+    "api_id": 156801,
+    "api_name": "Wellington Place",
+    "api_units": 20,
+    "match_method": "exact",
+    "confidence": "high"
+  },
+  {
+    "t12_name": "Willow Creek Apartments - Hutchinson48 LLC",
+    "api_id": 178694,
+    "api_name": "Willow Creek Apartments",
+    "api_units": 48,
+    "match_method": "exact",
+    "confidence": "high"
+  }
+]

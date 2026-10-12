@@ -271,14 +271,74 @@ def load_gl_accounts():
     raise FileNotFoundError("gl_accounts_enriched.json not found. Deploy it with the Cloud Function.")
 
 
-def load_property_matches():
-    """Load property mapping."""
+def _load_property_matches_file():
+    """The original bundled mapping. Kept as a floor, never as the whole truth."""
     for path in ['property_matches.json', '../property_matches.json']:
         if os.path.exists(path):
             with open(path) as f:
                 return json.load(f)
 
     raise FileNotFoundError("property_matches.json not found. Deploy it with the Cloud Function.")
+
+
+def load_property_matches(bq=None):
+    """Property mapping, read from BigQuery and backstopped by the bundled file.
+
+    This used to read property_matches.json alone — a static file shipped inside the
+    function, holding 236 properties with a maximum api_id of 183,639. The roster in
+    buildium_data.properties now holds over 1,100. pull_financial_current_month drops
+    any GL entry whose property is absent from this map:
+
+        if not prop_id or prop_id not in property_ids: continue
+
+    so every property created after that file was written had NO financials at all, and
+    nothing said so. Measured 2026-10-12: 58 properties, 809 units (17.7% of the
+    portfolio), 617 of them occupied, $539,438 a month of contract rent — the entire TWC
+    portfolio included — missing from every income, NOI and economic-occupancy figure.
+    v_economic_occupancy inner-joins income to potential, so those properties vanished
+    from it outright: 205 properties against 277 with physical occupancy.
+
+    It is the same failure as the properties roster itself (see daily-properties-sync):
+    a static file that silently stopped matching reality.
+
+    The two sources are UNIONed rather than swapped, so this can only ever widen
+    coverage. A BigQuery failure degrades to exactly the old behaviour instead of
+    returning an empty map — which would drop every row and zero out the month.
+    """
+    file_rows = _load_property_matches_file()
+    by_id = {int(m['api_id']): m for m in file_rows if m.get('api_id')}
+    file_count = len(by_id)
+
+    if bq is None:
+        logger.warning("No BigQuery client passed — using the bundled property map only")
+        return list(by_id.values())
+
+    try:
+        query = f"""
+            SELECT property_id, api_name, t12_name, units
+            FROM `{bq.table_ref('properties')}`
+        """
+        for row in bq.client.query(query).result():
+            pid = int(row.property_id)
+            name = row.api_name or row.t12_name or f"Property {pid}"
+            # BigQuery wins on conflicts: it carries current names, the file may not.
+            by_id[pid] = {
+                'api_id': pid,
+                'api_name': name,
+                't12_name': row.t12_name or name,
+                'api_units': row.units,
+                'match_method': 'bigquery',
+                'confidence': 'high',
+            }
+        logger.info(
+            f"Property map: {file_count} from file, {len(by_id)} after merging "
+            f"buildium_data.properties (+{len(by_id) - file_count})"
+        )
+    except Exception as e:
+        logger.error(f"Could not read buildium_data.properties ({e}); "
+                     f"falling back to the bundled file of {file_count} properties")
+
+    return list(by_id.values())
 
 
 def load_exclude_keywords():
@@ -634,7 +694,7 @@ def daily_snapshot_sync(request):
 
         # Load mapping data
         gl_accounts = load_gl_accounts()
-        property_matches = load_property_matches()
+        property_matches = load_property_matches(bq)
         property_map = {m['api_id']: m for m in property_matches if m.get('api_id')}
         exclude_keywords = load_exclude_keywords()
 
@@ -696,7 +756,7 @@ def daily_rent_roll_sync(request):
         if locked_month:
             logger.info(f"Locked previous month (rent_roll): {locked_month}")
 
-        property_matches = load_property_matches()
+        property_matches = load_property_matches(bq)
         property_map = {m['api_id']: m for m in property_matches if m.get('api_id')}
         exclude_keywords = load_exclude_keywords()
 
@@ -745,7 +805,7 @@ def daily_financial_sync(request):
             logger.info(f"Locked previous month (financial): {locked_month}")
 
         gl_accounts = load_gl_accounts()
-        property_matches = load_property_matches()
+        property_matches = load_property_matches(bq)
         property_map = {m['api_id']: m for m in property_matches if m.get('api_id')}
         exclude_keywords = load_exclude_keywords()
 

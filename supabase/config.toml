@@ -1,0 +1,21 @@
+# Supabase project configuration.
+#
+# The bq-dashboard function had been deployed with JWT verification DISABLED: it
+# answered HTTP 200 to a POST carrying no Authorization header at all, which made the
+# full rent roll, P&L, occupancy and delinquency data readable by anyone who knew the
+# URL. This file pins verification on so a future deploy cannot quietly drop it again.
+#
+# Every caller already sends a bearer token, so nothing in the app needs to change:
+#   * bpos-dashboard.html sends the Supabase anon key on every call
+#   * index.html sends the anon key for property_groups
+#   * the superadmin `cache_type` action sends the signed-in user's JWT and additionally
+#     checks profiles.role === 'superadmin' inside the function
+#
+# NOTE: verify_jwt only authenticates the caller — any signed-in user (or anyone holding
+# the public anon key) still reaches every query type. If you want per-role data access,
+# that has to be enforced inside the function.
+
+project_id = "hpsvhffjebeuqutwpkaa"
+
+[functions.bq-dashboard]
+verify_jwt = true

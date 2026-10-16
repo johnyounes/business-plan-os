@@ -582,7 +582,21 @@ def covering_lease(spans, unit_id, as_of):
 
 
 def has_future_tenancy(spans, unit_id, as_of):
-    return any(start and start > as_of for start, _, _ in spans.get(unit_id, []))
+    """Preleased means a lease already signed for a start date still to come.
+
+    Testing only for a later start date counts a unit as preleased because someone moved
+    in a year afterwards, which is hindsight rather than a prelease. That read 285-494
+    units preleased in the rebuilt months against 58-99 in the live ones, and left Heston
+    showing 100% preleased occupancy for every historical month. Requiring the lease to
+    have been created by as_of restores the meaning the live path has.
+    """
+    for start, _, lease in spans.get(unit_id, []):
+        if not start or start <= as_of:
+            continue
+        created = _d10(lease.get('CreatedDateTime'))
+        if created and created <= as_of:
+            return True
+    return False
 
 
 def build_onboarding(leases, bq):

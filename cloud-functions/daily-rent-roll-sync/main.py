@@ -477,8 +477,15 @@ def pull_rent_roll_current_month(api, bq, current_month, snap_date, property_map
             'unit_number': u.get('UnitNumber', ''),
             'building_name': u.get('BuildingName', ''),
             'market_rent': u.get('MarketRent', 0) or 0,
-            'bedrooms': u.get('Bedrooms', ''),
-            'bathrooms': u.get('Bathrooms', ''),
+            # Buildium calls these UnitBedrooms / UnitBathrooms ('TwoBed', 'OneBath').
+            # Reading 'Bedrooms'/'Bathrooms' wrote an empty string on every row, which
+            # collapsed v_economic_occupancy's layout buckets into one and silently
+            # degraded its per-layout average for vacant units into a blended property
+            # average. At The Cass Apartments -- 80 units, 3 occupied -- that valued 59
+            # vacant studios at $1,217.63 each, the average of two occupied 2-beds,
+            # overstating the month's charge potential by about $36k.
+            'bedrooms': u.get('UnitBedrooms') or u.get('Bedrooms') or '',
+            'bathrooms': u.get('UnitBathrooms') or u.get('Bathrooms') or '',
             'unit_size_sqft': u.get('UnitSize', 0) or 0,
             # Occupancy must not rest on lease STATUS alone. Buildium leaves leases
             # flagged Active long after they end: on 2026-10-12, 873 units were counted
@@ -711,8 +718,8 @@ def pull_rent_roll_history(api, bq, from_month, to_month, exclude_keywords):
                     'unit_number': u.get('UnitNumber', ''),
                     'building_name': u.get('BuildingName', ''),
                     'market_rent': u.get('MarketRent', 0) or 0,
-                    'bedrooms': u.get('Bedrooms', ''),
-                    'bathrooms': u.get('Bathrooms', ''),
+                    'bedrooms': u.get('UnitBedrooms') or u.get('Bedrooms') or '',
+                    'bathrooms': u.get('UnitBathrooms') or u.get('Bathrooms') or '',
                     'unit_size_sqft': u.get('UnitSize', 0) or 0,
                     'is_physically_occupied': lease is not None,
                     'is_preleased': preleased,

@@ -522,6 +522,218 @@ def pull_rent_roll_current_month(api, bq, current_month, snap_date, property_map
 
 
 # ============================================================
+# Rent Roll: Historical reconstruction
+# ============================================================
+# The 17 months from 2025-01 to 2026-05 were written in a single batch on 2026-07-16 by a
+# one-off script, not captured at the time. It asked Buildium for Active leases only --
+# 5,200 of the 16,453 that exist -- so it was blind to the 11,184 ended tenancies that
+# make up the history, and it marked units occupied with nothing behind them at all
+# (118 units in 2025-01, 381 in 2026-05). Every month before 2026-06 came out overstated;
+# Heston Pointe by 1-4 units a month, up to 6 points.
+#
+# This rebuild reproduces the four known-good live month-end snapshots to within +0.02 to
+# +0.23 points, with unit counts within 20.
+def _d10(v):
+    """Some Buildium endpoints return full timestamps where others return plain dates."""
+    return (v or '')[:10] or None
+
+
+def build_tenancy_spans(leases):
+    """unit_id -> [(move_in, move_out, lease)], one span per tenant. None end = in place.
+
+    Occupancy cannot rest on LeaseStatus: Buildium leaves superseded terms flagged Active
+    for years. Nor on LeaseToDate -- a FixedWithRollover term keeps covering the unit past
+    its fixed end date, and 2060-01-01 is the open-ended sentinel rather than a real date.
+    Tenancy dates are the only dependable signal.
+    """
+    spans = {}
+    for lease in leases:
+        unit_id = lease.get('UnitId')
+        if not unit_id:
+            continue
+        lease_from = _d10(lease.get('LeaseFromDate'))
+        move_outs = {m.get('TenantId'): _d10(m.get('MoveOutDate'))
+                     for m in (lease.get('MoveOutData') or [])}
+        bucket = spans.setdefault(unit_id, [])
+        tenants = lease.get('Tenants') or []
+        if not tenants:
+            end = _d10(lease.get('LeaseToDate'))
+            if end and end[:4] >= '2060':
+                end = None
+            bucket.append((lease_from, end, lease))
+            continue
+        for t in tenants:
+            bucket.append((_d10(t.get('MoveInDate')) or lease_from,
+                           move_outs.get(t.get('Id')), lease))
+    return spans
+
+
+def covering_lease(spans, unit_id, as_of):
+    """The lease whose tenancy covers as_of, or None.
+
+    A move-out dated exactly on as_of still counts as occupied. That convention
+    reproduced all five live month-end snapshots at Heston Pointe; treating the move-out
+    date as already vacated matched only two of the five.
+    """
+    for start, end, lease in spans.get(unit_id, []):
+        if start and start <= as_of and (end is None or end >= as_of):
+            return lease
+    return None
+
+
+def has_future_tenancy(spans, unit_id, as_of):
+    return any(start and start > as_of for start, _, _ in spans.get(unit_id, []))
+
+
+def build_onboarding(leases, bq):
+    """property_id -> 'YYYY-MM' in which it came under management.
+
+    Dating a property by its earliest tenancy is wrong for anything taken over with
+    sitting tenants: the 25 TWC properties carry move-ins reaching back to 2017, which
+    would place 23 of them in 2025 history where they were not under management. A lease's
+    CreatedDateTime is when the record was entered into Buildium, i.e. the takeover. That
+    agreed with first GL activity on 239 of 241 properties; GL activity serves as a floor
+    for the two where it did not, and for properties that have never carried a lease.
+    """
+    onboard = {}
+    for lease in leases:
+        pid = lease.get('PropertyId')
+        created = _d10(lease.get('CreatedDateTime'))
+        if pid is not None and created and created[:7] < onboard.get(pid, '9999-99'):
+            onboard[pid] = created[:7]
+    try:
+        query = f"""SELECT property_id, MIN(snapshot_month) AS first_month
+                    FROM `{bq.table_ref('financial_snapshots')}`
+                    GROUP BY property_id"""
+        for row in bq.client.query(query).result():
+            pid = int(row.property_id)
+            if row.first_month and row.first_month < onboard.get(pid, '9999-99'):
+                onboard[pid] = row.first_month
+    except Exception as e:
+        logger.warning(f"Could not read financial_snapshots for onboarding dates ({e}); "
+                       f"falling back to lease creation dates alone")
+    return onboard
+
+
+def months_between(from_month, to_month):
+    out = []
+    year, month = int(from_month[:4]), int(from_month[5:7])
+    while f"{year:04d}-{month:02d}" <= to_month:
+        out.append(f"{year:04d}-{month:02d}")
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return out
+
+
+def pull_rent_roll_history(api, bq, from_month, to_month, exclude_keywords):
+    """Rebuild rent_roll_snapshots across a closed range of months.
+
+    Pulls Buildium once and loops the months: the lease sweep is the expensive part
+    (~90s for 16,453 leases) and re-pulling it per month would be wasteful.
+
+    Known limitation: unit inventory and lease rent are today's values. A unit added to a
+    property later still appears in earlier months, and active_rent_amount is the lease's
+    current rent rather than the rent in force then -- AccountDetails.Rent is not dated,
+    and /leases/{id}/rent is, but that is one call per lease. Physical occupancy is
+    unaffected; it depends only on tenancy dates.
+    """
+    months = months_between(from_month, to_month)
+    if not months:
+        raise ValueError(f"empty month range: {from_month}..{to_month}")
+
+    units = api.get_rental_units()
+    leases = api.get_leases('Active,Past,Future')
+    properties = api.get_properties()
+    logger.info(f"History rebuild: {len(units)} units, {len(leases)} leases (all "
+                f"statuses), {len(properties)} properties, {len(months)} months")
+
+    prop_name_map = {p['Id']: p.get('Name', '') for p in properties}
+    spans = build_tenancy_spans(leases)
+    onboard = build_onboarding(leases, bq)
+
+    units_by_prop = {}
+    for u in units:
+        units_by_prop.setdefault(u.get('PropertyId'), []).append(u)
+
+    results = {}
+    for ym in months:
+        as_of = month_end(int(ym[:4]), int(ym[5:7])).isoformat()
+        rows = []
+        for pid, prop_units in units_by_prop.items():
+            name = prop_name_map.get(pid, '')
+            if any(kw.lower() in name.lower() for kw in exclude_keywords):
+                continue
+            came_on = onboard.get(pid)
+            if not came_on or came_on > ym:
+                continue
+            for u in prop_units:
+                unit_id = u.get('Id')
+                lease = covering_lease(spans, unit_id, as_of)
+                preleased = lease is None and has_future_tenancy(spans, unit_id, as_of)
+                rent, lease_type, tenant_names = None, None, None
+                if lease:
+                    rent = (lease.get('AccountDetails') or {}).get('Rent', 0) or 0
+                    raw = lease.get('LeaseType', '')
+                    lease_type = 'Month-to-Month' if raw == 'AtWill' else raw
+                    # Residents who were current THEN are flagged MovedOut now, so Status
+                    # cannot pick them out -- take everyone whose tenancy covered as_of.
+                    outs = {m.get('TenantId'): _d10(m.get('MoveOutDate'))
+                            for m in (lease.get('MoveOutData') or [])}
+                    names = []
+                    for t in (lease.get('Tenants') or []):
+                        moved_in = _d10(t.get('MoveInDate')) or _d10(lease.get('LeaseFromDate'))
+                        moved_out = outs.get(t.get('Id'))
+                        if moved_in and moved_in <= as_of and (moved_out is None
+                                                               or moved_out >= as_of):
+                            who = f"{t.get('FirstName', '')} {t.get('LastName', '')}".strip()
+                            if who:
+                                names.append(who)
+                    tenant_names = ', '.join(names) or None
+                rows.append({
+                    'snapshot_month': ym,
+                    'snapshot_date': as_of,
+                    'property_id': pid,
+                    'property_name': name,
+                    'unit_id': unit_id,
+                    'unit_number': u.get('UnitNumber', ''),
+                    'building_name': u.get('BuildingName', ''),
+                    'market_rent': u.get('MarketRent', 0) or 0,
+                    'bedrooms': u.get('Bedrooms', ''),
+                    'bathrooms': u.get('Bathrooms', ''),
+                    'unit_size_sqft': u.get('UnitSize', 0) or 0,
+                    'is_physically_occupied': lease is not None,
+                    'is_preleased': preleased,
+                    'is_truly_vacant': lease is None and not preleased,
+                    'active_lease_id': lease.get('Id') if lease else None,
+                    'active_lease_type': lease_type,
+                    'active_rent_amount': rent,
+                    'active_lease_from': _d10(lease.get('LeaseFromDate')) if lease else None,
+                    'active_lease_to': _d10(lease.get('LeaseToDate')) if lease else None,
+                    'active_tenant_names': tenant_names,
+                    'future_lease_id': None,
+                    'future_rent_amount': None,
+                    'future_lease_from': None,
+                    'future_lease_to': None,
+                    'pull_date': datetime.utcnow().isoformat(),
+                    'recurring_charges': None,
+                })
+
+        # delete_month wipes the month before inserting, so an empty rebuild would destroy
+        # it. Refuse rather than publish nothing.
+        if not rows:
+            raise RuntimeError(f"{ym}: rebuilt no rows; refusing to wipe the month")
+
+        occupied = sum(1 for r in rows if r['is_physically_occupied'])
+        bq.delete_month('rent_roll_snapshots', ym)
+        bq.insert_rows('rent_roll_snapshots', rows)
+        bq.update_metadata('rent_roll', ym, len(rows), as_of)
+        pct = round(occupied / len(rows) * 100, 2)
+        logger.info(f"  {ym}: {len(rows)} units, {occupied} occupied ({pct}%)")
+        results[ym] = {'units': len(rows), 'occupied': occupied, 'occupancy_pct': pct}
+
+    return results
+
+
+# ============================================================
 # Month Rollover: Lock previous month on 1st of new month
 # ============================================================
 def handle_month_rollover(bq, today, data_type=None):
@@ -630,17 +842,34 @@ def daily_rent_roll_sync(request):
 
     Query params (optional):
       ?month=2026-04 — Override target month (default: current PST month)
+      ?history_from=2025-01&history_to=2026-05 — Rebuild a closed range of past months
+          from tenancy dates instead of today's state. Does not lock months and does not
+          touch the current month unless the range includes it.
     """
     try:
         month_override = request.args.get('month') if request else None
+        history_from = request.args.get('history_from') if request else None
         today = get_pst_today()
         current_month = month_override or today.strftime('%Y-%m')
         snap_date = today
 
-        logger.info(f"=== Daily Rent Roll Sync: {current_month} (today: {today}) ===")
-
         api = BuildiumAPI()
         bq = BQClient()
+
+        if history_from:
+            history_to = (request.args.get('history_to') or history_from)
+            logger.info(f"=== Rent Roll HISTORY rebuild: {history_from}..{history_to} ===")
+            exclude_keywords = load_exclude_keywords()
+            results = pull_rent_roll_history(
+                api, bq, history_from, history_to, exclude_keywords
+            )
+            return json.dumps({
+                'job': 'rent_roll_history',
+                'range': f"{history_from}..{history_to}",
+                'months': results,
+            }), 200, {'Content-Type': 'application/json'}
+
+        logger.info(f"=== Daily Rent Roll Sync: {current_month} (today: {today}) ===")
 
         # Lock previous month's rent roll only (not financial — that's the other job's concern)
         locked_month = handle_month_rollover(bq, today, data_type='rent_roll')

@@ -279,7 +279,10 @@
     "parentId": null,
     "subs": 0,
     "is_mapped": false,
-    "is_recurring_income": null
+    "is_recurring_income": null,
+    "t12_section": null,
+    "t12_name": null,
+    "match_method": "excluded-2026-10-19"
   },
   {
     "id": 16,
@@ -4432,8 +4435,11 @@
     "subType": "Income",
     "parentId": null,
     "subs": 0,
-    "is_mapped": false,
-    "is_recurring_income": null
+    "is_mapped": true,
+    "is_recurring_income": null,
+    "t12_section": "income",
+    "t12_name": "No AutoPay Premium",
+    "match_method": "manual-2026-10-19"
   },
   {
     "id": 449303,
@@ -5130,8 +5136,11 @@
     "subType": "Income",
     "parentId": null,
     "subs": 0,
-    "is_mapped": false,
-    "is_recurring_income": null
+    "is_mapped": true,
+    "is_recurring_income": null,
+    "t12_section": "income",
+    "t12_name": "Foxen Waiver Fee",
+    "match_method": "manual-2026-10-19"
   },
   {
     "id": 477415,
